@@ -7,5 +7,7 @@
 [lints]
 
 [options]
+module.name_mapper.extension='mp3' -> '<PROJECT_ROOT>/scripts/flow-typed/static-stub.js'
+module.name_mapper.extension='wav' -> '<PROJECT_ROOT>/scripts/flow-typed/static-stub.js'
 
 [strict]
