@@ -1,5 +1,6 @@
 // @flow
 import React, { Component } from "react";
+import startGame from "./game";
 
 type State = {
   activated: boolean
@@ -21,6 +22,7 @@ export default class Engine extends Component<{}, State> {
           id="engine"
           ref={container => {
             this.gameContainerRef = container;
+            startGame();
           }}
         />
       );
