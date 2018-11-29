@@ -1,7 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './style.css';
-import Game from './Game';
+import Stream from './Stream';
+import Deployed from './Deployed';
 
-ReactDOM.render(<Game />, document.getElementById('root'));
+const Layout =
+  !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+    ? Stream
+    : Deployed;
 
+ReactDOM.render(<Layout />, document.getElementById('root'));
