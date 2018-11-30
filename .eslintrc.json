@@ -1,0 +1,29 @@
+{
+  "extends": ["airbnb", "airbnb-flow"],
+  "parser": "babel-eslint",
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "rules": {
+    "max-statements-per-line": ["error", { "max": 1 }],
+    "object-property-newline": [
+      "error",
+      {
+        "allowMultiplePropertiesPerLine": false
+      }
+    ],
+    "react/prefer-stateless-function": ["off"],
+    "react/no-multi-comp": ["off"],
+    "react/no-unescaped-entities": ["off"],
+    "react/jsx-filename-extension": ["off"],
+    "react/sort-comp": ["off"],
+    "jsx-a11y/click-events-have-key-events": ["off"],
+    "jsx-a11y/no-static-element-interactions": ["off"],
+    "new-cap": ["off"],
+    "no-param-reassign": ["off"],
+    "no-plusplus": ["off"],
+    "prefer-destructuring": ["off"],
+    "no-use-before-define": ["off"]
+  }
+}
