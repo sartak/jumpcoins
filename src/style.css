@@ -1,32 +1,30 @@
 body {
   margin: 0;
   padding: 0;
+  background-color: #efefff;
   font-family: "Avenir Next", "Avenir", "Helvetica Neue", "Helvetica",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.stream-metadata {
-  margin-left: 816px;
+.debugger {
+  margin-left: 840px;
   font-size: 1.4em;
   line-height: 1.4em;
-  text-align: center;
 }
 
-.stream-metadata img,
+.debugger > ul {
+  list-style-type: none;
+  padding: 0;
+}
+
 .game-metadata img {
   height: 1.4em;
   width: 1.4em;
   vertical-align: bottom;
 }
 
-.stream-metadata img:nth-child(1),
-.game-metadata img:nth-child(1) {
-  margin-left: 0.5em;
-}
-
-.stream-metadata .url,
 .game-metadata .url {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
@@ -36,6 +34,13 @@ body {
 #engine {
   width: 800px;
   height: 600px;
+  box-shadow: 0 13px 27px -5px rgba(50, 50, 93, 0.9),
+    0 8px 16px -8px rgba(0, 0, 0, 0.95), 0 -6px 16px -6px rgba(0, 0, 0, 0.5);
+}
+
+#engine,
+#engine canvas {
+  border-radius: 16px;
 }
 
 .deployed #engine {
@@ -46,17 +51,20 @@ body {
 
 .stream #engine {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 16px;
+  left: 16px;
+}
+
+.deployed #engine.activate {
+  position: relative;
 }
 
 #engine.activate {
+  background-size: 800px 600px;
+  background-repeat: no-repeat;
+
   cursor: pointer;
   font-size: 2em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: black;
   color: white;
 }
 
@@ -69,4 +77,28 @@ body {
 
 .game-metadata a {
   text-decoration: none;
+}
+
+.teaser {
+  text-align: center;
+  position: absolute;
+  top: 100px;
+  left: 80px;
+
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
+    1px 1px 0 #000;
+}
+
+.game-metadata h2 {
+  font-style: italic;
+}
+
+.cover {
+  position: absolute;
+  width: 800px;
+  height: 600px;
+}
+
+.debugger .dg.main > .close-button {
+  display: none;
 }

@@ -5,14 +5,10 @@
     "browser": true,
     "node": true
   },
+  "plugins": ["only-warn"],
   "rules": {
     "max-statements-per-line": ["error", { "max": 1 }],
-    "object-property-newline": [
-      "error",
-      {
-        "allowMultiplePropertiesPerLine": false
-      }
-    ],
+    "object-property-newline": ["off"],
     "react/prefer-stateless-function": ["off"],
     "react/no-multi-comp": ["off"],
     "react/no-unescaped-entities": ["off"],
@@ -24,6 +20,15 @@
     "no-param-reassign": ["off"],
     "no-plusplus": ["off"],
     "prefer-destructuring": ["off"],
-    "no-use-before-define": ["off"]
+    "no-use-before-define": ["off"],
+    "no-multi-assign": ["off"],
+    "no-unused-vars": ["off"],
+    "no-mixed-operators": ["off"],
+    "max-len": ["off"],
+    "camelcase": ["off"],
+    "react/jsx-one-expression-per-line": ["off"],
+    "react/destructuring-assignment": ["off"],
+    "react/prop-types": ["off"],
+    "no-useless-constructor": ["off"]
   }
 }

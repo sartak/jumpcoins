@@ -1,12 +1,13 @@
 // @flow
 import React, { Component } from 'react';
 import startGame from './game';
+import cover from './assets/cover.png';
 
 type State = {
   activated: boolean
 };
 
-export default class Engine extends Component<{}, State> {
+export default class Engine extends Component<any, State> {
   gameContainerRef = null;
 
   constructor(props: {}) {
@@ -22,14 +23,18 @@ export default class Engine extends Component<{}, State> {
           id="engine"
           ref={(container) => {
             this.gameContainerRef = container;
-            startGame();
+            startGame(this.props.debugger);
           }}
         />
       );
     }
     return (
-      <div className="activate" id="engine" onClick={() => this.activate()}>
+      <div style={{ backgroundImage: `url(${cover})` }} className="activate" id="engine" onClick={() => this.activate()}>
+        <div className="teaser">
           click to play
+          <br />
+          LD44
+        </div>
       </div>
     );
   }
