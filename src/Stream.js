@@ -1,40 +1,58 @@
 // @flow
 import React, { Component } from 'react';
+import * as dat from 'dat.gui';
 import Engine from './Engine';
 import twitchLogo from './assets/public/twitchLogo.png';
 import twitterLogo from './assets/public/twitterLogo.png';
 
-export default class Stream extends Component<{}> {
+function Debug() {
+}
+
+export default class Stream extends Component<any> {
+  debugger = new Debug();
+
+  gui = new dat.GUI({ autoPlace: false });
+
+  constructor(props: any) {
+    super(props);
+  }
+
   render() {
     return (
       <div className="stream">
-        <StreamMetadata />
-        <Engine />
+        <Engine debugger={this.debugger} />
+        <Debugger gui={this.gui} />
       </div>
     );
   }
 }
 
-class StreamMetadata extends Component<{}> {
+class Debugger extends Component<any> {
+  debugRef = null;
+
+  constructor(props: any) {
+    super(props);
+    this.debugRef = React.createRef();
+  }
+
+  componentDidMount() {
+    if (this.debugRef && this.debugRef.current) {
+      this.debugRef.current.append(this.props.gui.domElement);
+    }
+  }
+
   render() {
     return (
-      <div className="stream-metadata">
-        <p>
-          play now at:
-          <br />
-          <span className="url">LD43.sartak.org</span>
-        </p>
-        <p>
-          @sartak
-          <img src={twitterLogo} alt="@sartak on Twitter" />
-          <img src={twitchLogo} alt="sartak on Twitch" />
-        </p>
-        <p>
-          code at:
-          <br />
-          <span className="url">github.com/sartak/LD43</span>
-        </p>
+      <div className="debugger">
+        <ul>
+          <li><a target="_blank" rel="noopener noreferrer" href="https://labs.phaser.io/">labs</a></li>
+          <li><a target="_blank" rel="noopener noreferrer" href="https://photonstorm.github.io/phaser3-docs/">docs</a></li>
+          <li><a target="_blank" rel="noopener noreferrer" href="https://sfbgames.com/chiptone/">chiptone</a></li>
+          <li><a target="_blank" rel="noopener noreferrer" href="https://pernyblom.github.io/abundant-music/index.html">abundant</a></li>
+          <li><div ref={this.debugRef} id="debug-container" /></li>
+        </ul>
       </div>
     );
   }
 }
+
