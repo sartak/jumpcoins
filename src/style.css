@@ -32,8 +32,8 @@ body {
 }
 
 #engine {
-  width: 800px;
-  height: 600px;
+  width: 700px;
+  height: 700px;
   box-shadow: 0 13px 27px -5px rgba(50, 50, 93, 0.9),
     0 8px 16px -8px rgba(0, 0, 0, 0.95), 0 -6px 16px -6px rgba(0, 0, 0, 0.5);
 }
@@ -60,7 +60,7 @@ body {
 }
 
 #engine.activate {
-  background-size: 800px 600px;
+  background-size: 700px 700px;
   background-repeat: no-repeat;
 
   cursor: pointer;
@@ -95,8 +95,8 @@ body {
 
 .cover {
   position: absolute;
-  width: 800px;
-  height: 600px;
+  width: 700px;
+  height: 700px;
 }
 
 .debugger .dg.main > .close-button {
