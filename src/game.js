@@ -4,8 +4,10 @@ import _ from 'lodash';
 import props from './props';
 
 import levelHello from './assets/maps/hello.map';
+import levelBye from './assets/maps/bye.map';
 
 import tileWall from './assets/tiles/wall.png';
+import tileExit from './assets/tiles/exit.png';
 
 import spritePlayerDefault from './assets/sprites/player-default.png';
 
@@ -36,6 +38,7 @@ const config = {
   },
   levels: [
     levelHello,
+    levelBye,
   ],
   mapWidth: 30,
   mapHeight: 22,
@@ -45,6 +48,11 @@ const config = {
     '.': null, // background
     '#': {
       image: 'tileWall',
+      group: 'ground',
+    },
+    '+': {
+      image: 'tileExit',
+      group: 'exit',
     },
     '@': null, // player
   },
@@ -57,6 +65,7 @@ const state : any = {
   keys: {},
   debug: null,
   level: {},
+  commands: {},
 };
 
 function prop(name: string) {
@@ -108,6 +117,8 @@ export default function startGame(debug: any) {
     window.game = game;
     window.props = debug;
 
+    window.state.commands.winLevel = winLevel;
+
     Object.keys(props).forEach((key) => {
       debug[key] = props[key];
     });
@@ -128,6 +139,7 @@ function preload() {
   });
 
   game.load.image('tileWall', tileWall);
+  game.load.image('tileExit', tileExit);
   game.load.image('spritePlayerDefault', spritePlayerDefault);
 }
 
@@ -221,14 +233,20 @@ function renderInitialLevel() {
   const halfWidth = tileWidth / 2;
   const halfHeight = tileHeight / 2;
 
-  const tiles = physics.add.staticGroup();
+  const tiles = {};
 
   map.forEach((row, r) => {
     row.forEach((tile, c) => {
-      if (tile) {
-        const [x, y] = positionToScreenCoordinate(c, r);
-        tiles.create(x + halfWidth, y + halfHeight, tile.image);
+      if (!tile) {
+        return;
       }
+
+      if (!tiles[tile.group]) {
+        tiles[tile.group] = physics.add.staticGroup();
+      }
+
+      const [x, y] = positionToScreenCoordinate(c, r);
+      tiles[tile.group].create(x + halfWidth, y + halfHeight, tile.image);
     });
   });
 
@@ -249,11 +267,69 @@ function createPlayer() {
   return player;
 }
 
-function setupPhysics() {
-  const { level, physics } = state;
+function destroyGroup(group) {
+  const children = [];
+  group.children.iterate(child => children.push(child));
+  children.forEach(child => child.destroy());
+  group.destroy(true);
+}
+
+function removePhysics() {
+  const { physics } = state;
+  physics.world.colliders.destroy();
+}
+
+function destroyLevel() {
+  const { level } = state;
+  const { tiles, player } = level;
+
+  Object.keys(level.tiles).forEach((name) => {
+    const group = level.tiles[name];
+    destroyGroup(group);
+  });
+
+  player.destroy();
+}
+
+function winLevel() {
+  const { game, level } = state;
+
+  if (level.cleaningUp) {
+    return;
+  }
+
+  level.cleaningUp = true;
+
+  removePhysics();
+
+  // defer this to avoid crashes while removing during collider callback
+  game.time.addEvent({
+    callback: () => {
+      destroyLevel();
+
+      state.levelIndex++;
+      if (state.levelIndex === config.levels.length) {
+        state.levelIndex = 0;
+      }
+
+      setupLevel();
+    },
+  });
+}
+
+function setupInitialLevelPhysics() {
+  const { game, level, physics } = state;
   const { player, tiles } = level;
 
-  physics.add.collider(player, tiles);
+  physics.add.collider(player, tiles.ground);
+  physics.add.overlap(player, tiles.exit, winLevel);
+}
+
+function setupLevel() {
+  const { levelIndex } = state;
+  createLevel(levelIndex);
+  renderInitialLevel();
+  setupInitialLevelPhysics();
 }
 
 function create() {
@@ -275,11 +351,14 @@ function create() {
         engine.remove();
       }
     });
+
+    game.input.keyboard.on('keydown_W', () => {
+      winLevel();
+    });
   }
 
-  createLevel(0);
-  renderInitialLevel();
-  setupPhysics();
+  state.levelIndex = 0;
+  setupLevel();
 
   if (game.game.renderer.type === Phaser.WEBGL) {
     state.shader = game.game.renderer.addPipeline('Shader', new Shader(game.game));

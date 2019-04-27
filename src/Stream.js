@@ -29,6 +29,7 @@ export default class Stream extends Component<any> {
     const level = gui.addFolder('Level');
     level.add(debug, 'levelName').listen();
     level.add(debug, 'levelIndex').listen();
+    level.add(debug, 'winLevel');
     level.open();
 
     const input = gui.addFolder('Input');

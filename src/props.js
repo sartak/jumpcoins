@@ -35,5 +35,6 @@ export default {
   'gamepad.r_stick.x': 0.01,
   'gamepad.r_stick.y': 0.01,
 
+  winLevel: () => window.state.commands.winLevel(),
   // explode: () => alert(`${window.state.foo} / ${window.gameConfig.width} / ${window.props.temp}`),
 };
