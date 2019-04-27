@@ -58,6 +58,13 @@ export default class Stream extends Component<any> {
     input.add(debug, 'gamepad.r_stick.x').listen();
     input.add(debug, 'gamepad.r_stick.y').listen();
 
+    const rules = gui.addFolder('Rules');
+    rules.add(debug, 'invincibility_ms', 0, 10000);
+    rules.add(debug, 'min_ignore_input_ms', 0, 500);
+    rules.add(debug, 'spike_knockback.x', 0, 500);
+    rules.add(debug, 'spike_knockback.y', 0, 500);
+    rules.open();
+
     const level = gui.addFolder('Level');
     level.add(debug, 'level.name').listen();
     level.add(debug, 'level.index').listen();
@@ -70,6 +77,9 @@ export default class Stream extends Component<any> {
     player.add(debug, 'player.y').listen();
     player.add(debug, 'player.velocity.x').listen();
     player.add(debug, 'player.velocity.y').listen();
+    player.add(debug, 'player.invincible').listen();
+    player.add(debug, 'player.ignoreInput').listen();
+    player.add(debug, 'player.canCancelIgnoreInput').listen();
     player.open();
 
     Object.keys(defaultProps).forEach((key) => {

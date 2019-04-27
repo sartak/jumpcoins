@@ -1,4 +1,9 @@
 export default {
+  invincibility_ms: 5000,
+  min_ignore_input_ms: 50,
+  'spike_knockback.x': 40,
+  'spike_knockback.y': 100,
+
   time: 0,
   frameTime: 0,
 
@@ -40,6 +45,9 @@ export default {
   'player.y': 0.01,
   'player.velocity.x': 0.01,
   'player.velocity.y': 0.01,
+  'player.invincible': false,
+  'player.ignoreInput': false,
+  'player.canCancelIgnoreInput': false,
 
   winLevel: () => window.state.commands.winLevel(),
   restartLevel: () => window.state.commands.restartLevel(),

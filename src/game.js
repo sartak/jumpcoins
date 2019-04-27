@@ -332,16 +332,79 @@ function restartLevel() {
   winLevel();
 }
 
-function takeDamage() {
-  const { level } = state;
+function setPlayerInvincible() {
+  const { game, level } = state;
   const { player } = level;
 
-  if (player.facingRight) {
-    player.setVelocityX(-20);
-  } else {
-    player.setVelocityX(20);
+  player.invincible = true;
+  player.fastInvincible = false;
+  player.alpha = 1;
+
+  player.invincibleTween = game.tweens.add({
+    targets: player,
+    alpha: 0.5,
+    duration: 300,
+    ease: t => (t < 0.8 ? 0 : 1),
+    yoyo: true,
+    loop: -1,
+    onUpdate: () => {
+      if (player.fastInvincible && player.alpha >= 1) {
+        player.invincibleTween.stop();
+        player.invincibleTween = game.tweens.add({
+          targets: player,
+          alpha: 0.5,
+          duration: 100,
+          ease: t => (t < 0.8 ? 0 : 1),
+          yoyo: true,
+          loop: -1,
+        });
+      }
+    },
+  });
+
+  game.time.addEvent({
+    delay: prop('invincibility_ms') * 0.5,
+    callback: () => {
+      player.fastInvincible = true;
+    },
+  });
+
+  game.time.addEvent({
+    delay: prop('invincibility_ms'),
+    callback: () => {
+      player.invincible = false;
+      player.invincibleTween.stop();
+      player.alpha = 1;
+    },
+  });
+}
+
+function takeSpikeDamage() {
+  const { game, level } = state;
+  const { player } = level;
+
+  if (player.invincible) {
+    return;
   }
-  player.setVelocityY(-100);
+
+  setPlayerInvincible();
+
+  player.ignoreInput = true;
+  player.canCancelIgnoreInput = false;
+
+  game.time.addEvent({
+    delay: prop('min_ignore_input_ms'),
+    callback: () => {
+      player.canCancelIgnoreInput = true;
+    },
+  });
+
+  if (player.facingLeft) {
+    player.setVelocityX(prop('spike_knockback.x'));
+  } else {
+    player.setVelocityX(-prop('spike_knockback.x'));
+  }
+  player.setVelocityY(-prop('spike_knockback.y'));
 }
 
 function setupInitialLevelPhysics() {
@@ -350,7 +413,7 @@ function setupInitialLevelPhysics() {
 
   physics.add.collider(player, tiles.ground);
   physics.add.overlap(player, tiles.exit, winLevel);
-  physics.add.overlap(player, tiles.spikes, takeDamage);
+  physics.add.collider(player, tiles.spikes, takeSpikeDamage);
 }
 
 function setupLevel() {
@@ -455,14 +518,20 @@ function processInput() {
   const { level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonDown } = state;
   const { player } = level;
 
+  if (player.ignoreInput) {
+    return;
+  }
+
   if (jumpButtonDown && player.body.touching.down) {
     player.setVelocityY(-200);
   }
 
   if (leftButtonDown) {
     player.setVelocityX(-200);
+    player.facingLeft = true;
   } else if (rightButtonDown) {
     player.setVelocityX(200);
+    player.facingLeft = false;
   } else {
     player.setVelocityX(0);
   }
@@ -476,6 +545,21 @@ function renderDebug() {
   listenProp('player.y', player.y);
   listenProp('player.velocity.x', player.body.velocity.x);
   listenProp('player.velocity.y', player.body.velocity.y);
+  listenProp('player.invincible', player.invincible);
+  listenProp('player.ignoreInput', player.ignoreInput);
+  listenProp('player.canCancelIgnoreInput', player.canCancelIgnoreInput);
+}
+
+function frameUpdates() {
+  const { level } = state;
+  const { player } = level;
+
+  if (player.ignoreInput && player.canCancelIgnoreInput) {
+    if (player.body.touching.down || player.body.touching.left || player.body.touching.right || player.body.touching.up) {
+      player.ignoreInput = false;
+      player.canCancelIgnoreInput = false;
+    }
+  }
 }
 
 function update(time, dt) {
@@ -483,6 +567,8 @@ function update(time, dt) {
 
   listenProp('time', time);
   listenProp('frameTime', dt);
+
+  frameUpdates();
 
   readInput();
   processInput();
