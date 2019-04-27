@@ -240,6 +240,7 @@ export default function startGame(debug: any) {
     window.state.commands.previousLevel = previousLevel;
     window.state.commands.damageBlur = damageBlur;
     window.state.commands.deathShockwave = deathShockwave;
+    window.state.commands.jumpShake = jumpShake;
 
     Object.keys(props).forEach((key) => {
       debug[key] = props[key];
@@ -895,6 +896,14 @@ function readInput() {
   listenProp('input.jumpButtonDown', state.jumpButtonDown);
 }
 
+function jumpShake() {
+  state.rumble = true;
+  state.game.cameras.main.shake(
+    prop('effect.jumpshake.duration_ms'),
+    prop('effect.jumpshake.amount'),
+  );
+}
+
 function processInput() {
   const { game, level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonStarted } = state;
   const { player } = level;
@@ -907,10 +916,10 @@ function processInput() {
 
   if (jumpButtonStarted) {
     if (isStanding) {
-      state.rumble = true;
+      jumpShake();
       player.setVelocityY(-prop('velocityY.jump'));
     } else if (player.canWallJump && ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown))) {
-      state.rumble = true;
+      jumpShake();
       player.setVelocityY(-prop('velocityY.wall_jump'));
       if (player.body.touching.right) {
         player.facingLeft = true;
@@ -935,7 +944,7 @@ function processInput() {
 
       player.isDoubleJumping = false;
     } else if (player.canDoubleJump && upButtonDown) {
-      state.rumble = true;
+      jumpShake();
       player.setVelocityY(-prop('velocityY.double_jump'));
       player.isDoubleJumping = true;
 

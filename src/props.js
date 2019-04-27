@@ -86,6 +86,9 @@ export default {
   'effect.shockwave.inner': 0.09,
   'effect.shockwave.dropoff': 40.0,
 
+  'effect.jumpshake.amount': 0.0,
+  'effect.jumpshake.duration_ms': 0,
+
   'physics.debug': false,
 
   winLevel: () => window.state.commands.winLevel(),
@@ -93,4 +96,5 @@ export default {
   previousLevel: () => window.state.commands.previousLevel(),
   damageBlur: () => window.state.commands.damageBlur(),
   deathShockwave: () => window.state.commands.deathShockwave(),
+  jumpShake: () => window.state.commands.jumpShake(),
 };

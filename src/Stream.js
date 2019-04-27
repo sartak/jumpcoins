@@ -122,6 +122,10 @@ export default class Stream extends Component<any> {
     vfx.add(debug, 'effect.shockwave.dropoff', 0, 500.0);
     vfx.add(debug, 'deathShockwave');
 
+    vfx.add(debug, 'effect.jumpshake.amount', 0, 0.1);
+    vfx.add(debug, 'effect.jumpshake.duration_ms', 0, 1000.0);
+    vfx.add(debug, 'jumpShake');
+
     Object.keys(defaultProps).forEach((key) => {
       // eslint-disable-next-line no-underscore-dangle
       if (gui.__controllers.filter(controller => controller.property === key).length) {
