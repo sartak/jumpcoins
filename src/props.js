@@ -1,5 +1,5 @@
 export default {
-  invincibility_ms: 5000,
+  invincibility_ms: 2000,
   min_ignore_input_ms: 50,
   'spike_knockback.x': 40,
   'spike_knockback.y': 100,

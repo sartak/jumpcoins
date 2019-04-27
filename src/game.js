@@ -25,6 +25,7 @@ import tileSpikesDown from './assets/tiles/spikes-down.png';
 import tileSpikesLeft from './assets/tiles/spikes-left.png';
 import tileSpikesRight from './assets/tiles/spikes-right.png';
 import tileEye from './assets/tiles/eye.png';
+import tileOneWay from './assets/tiles/oneway.png';
 
 import spritePlayer from './assets/sprites/player.png';
 import spriteFreebie from './assets/sprites/freebie.png';
@@ -110,6 +111,10 @@ const config = {
     '0': {
       image: 'tileEye',
       group: 'ground',
+    },
+    '=': {
+      image: 'tileOneWay',
+      group: 'semiground',
     },
     '@': null, // player
     '*': {
@@ -280,6 +285,7 @@ function preload() {
   game.load.image('tileSpikesLeft', tileSpikesLeft);
   game.load.image('tileSpikesRight', tileSpikesRight);
   game.load.image('tileEye', tileEye);
+  game.load.image('tileOneWay', tileOneWay);
 
   game.load.image('spritePlayer', spritePlayer);
   game.load.image('spriteEnemyA', spriteEnemyA);
@@ -810,12 +816,26 @@ function checkFreebieSpent(object1, object2) {
   return !freebie.spent;
 }
 
+function checkSemiground(object1, object2) {
+  const { game, level } = state;
+  const { player, hud } = level;
+
+  const semiground = object1.config && object1.config.group === 'semiground' ? object1 : object2;
+  if (player.body.velocity.y < 0 || player.body.y >= semiground.y) {
+    return false;
+  }
+  return true;
+}
+
 function setupLevelPhysics(isInitial) {
   const { game, level, physics } = state;
   const { player, statics, enemies } = level;
 
   physics.add.collider(player, statics.ground);
   physics.add.collider(enemies, statics.ground);
+
+  physics.add.collider(player, statics.semiground, null, checkSemiground);
+  physics.add.collider(enemies, statics.semiground);
 
   physics.add.overlap(player, statics.exit, winLevel);
   physics.add.collider(enemies, statics.exit);
