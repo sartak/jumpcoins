@@ -175,6 +175,10 @@ const config = {
   yBorder: 0,
 };
 
+const JUMP_NORMAL = 1;
+const JUMP_DOUBLE = 2;
+const JUMP_WALL = 3;
+
 {
   const { width, height, mapWidth, mapHeight, tileWidth, tileHeight } = config;
   config.xBorder = (width - (mapWidth * tileWidth)) / 2;
@@ -1213,12 +1217,14 @@ function readInput() {
   listenProp('input.jumpButtonDown', state.jumpButtonDown);
 }
 
-function jumpShake() {
-  state.rumble = true;
-  state.game.cameras.main.shake(
-    prop('effect.jumpshake.duration_ms'),
-    prop('effect.jumpshake.amount'),
-  );
+function jumpShake(type) {
+  if (type !== JUMP_NORMAL) {
+    state.rumble = true;
+    state.game.cameras.main.shake(
+      prop('effect.jumpshake.duration_ms'),
+      prop('effect.jumpshake.amount'),
+    );
+  }
 }
 
 function processInput() {
@@ -1233,10 +1239,10 @@ function processInput() {
 
   if (jumpButtonStarted) {
     if (isStanding) {
-      jumpShake();
+      jumpShake(JUMP_NORMAL);
       player.setVelocityY(-prop('velocityY.jump'));
     } else if (player.canWallJump && ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown))) {
-      jumpShake();
+      jumpShake(JUMP_WALL);
       player.setVelocityY(-prop('velocityY.wall_jump'));
       if (player.body.touching.right) {
         player.facingLeft = true;
@@ -1261,7 +1267,7 @@ function processInput() {
 
       player.isDoubleJumping = false;
     } else if (player.canDoubleJump && upButtonDown) {
-      jumpShake();
+      jumpShake(JUMP_DOUBLE);
       player.setVelocityY(-prop('velocityY.double_jump'));
       player.isDoubleJumping = true;
 

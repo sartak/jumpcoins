@@ -90,8 +90,8 @@ export default {
   'effect.shockwave.inner': 0.09,
   'effect.shockwave.dropoff': 40.0,
 
-  'effect.jumpshake.amount': 0.0,
-  'effect.jumpshake.duration_ms': 0,
+  'effect.jumpshake.amount': 0.01,
+  'effect.jumpshake.duration_ms': 75,
 
   'physics.debug': false,
 
