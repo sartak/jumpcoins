@@ -79,10 +79,18 @@ export default {
   'effect.damageBlur.in_ms': 100,
   'effect.damageBlur.out_ms': 200,
 
+  'effect.shockwave.scale': 10.0,
+  'effect.shockwave.range': 0.8,
+  'effect.shockwave.thickness': 0.1,
+  'effect.shockwave.speed': 3.0,
+  'effect.shockwave.inner': 0.09,
+  'effect.shockwave.dropoff': 40.0,
+
   'physics.debug': false,
 
   winLevel: () => window.state.commands.winLevel(),
   restartLevel: () => window.state.commands.restartLevel(),
   previousLevel: () => window.state.commands.previousLevel(),
   damageBlur: () => window.state.commands.damageBlur(),
+  deathShockwave: () => window.state.commands.deathShockwave(),
 };

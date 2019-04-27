@@ -166,10 +166,34 @@ const Shader = new Phaser.Class({
         uniform sampler2D u_texture;
         varying vec2      outTexCoord;
 
+        uniform float shockwaveTime;
+        uniform vec2  shockwaveCenter;
+        uniform float shockwaveScale;
+        uniform float shockwaveRange;
+        uniform float shockwaveThickness;
+        uniform float shockwaveSpeed;
+        uniform float shockwaveInner;
+        uniform float shockwaveDropoff;
+
         uniform float blurEffect;
 
         void main( void ) {
           vec2 uv = outTexCoord;
+
+          if (shockwaveTime < 10.0) {
+            float dist = distance(uv, shockwaveCenter);
+            float t = shockwaveTime * shockwaveSpeed;
+
+            if (dist <= t + shockwaveThickness && dist >= t - shockwaveThickness && dist >= shockwaveInner) {
+              float diff = dist - t;
+              float scaleDiff = 1.0 - pow(abs(diff * shockwaveScale), shockwaveRange);
+              float diffTime = diff * scaleDiff;
+
+              vec2 diffTexCoord = normalize(uv - shockwaveCenter);
+              uv += (diffTexCoord * diffTime) / (t * dist * shockwaveDropoff);
+            }
+          }
+
           vec4 c = texture2D(u_texture, uv);
 
           if (blurEffect > 0.0) {
@@ -215,6 +239,7 @@ export default function startGame(debug: any) {
     window.state.commands.restartLevel = restartLevel;
     window.state.commands.previousLevel = previousLevel;
     window.state.commands.damageBlur = damageBlur;
+    window.state.commands.deathShockwave = deathShockwave;
 
     Object.keys(props).forEach((key) => {
       debug[key] = props[key];
@@ -560,6 +585,10 @@ function damageBlur() {
   const { game, level } = state;
   const { player } = level;
 
+  if (!state.shader) {
+    return;
+  }
+
   if (player.blurTween) {
     player.blurTween.stop();
   }
@@ -584,6 +613,18 @@ function damageBlur() {
   });
 }
 
+function deathShockwave() {
+  const { game, level } = state;
+  const { player } = level;
+
+  if (!state.shader) {
+    return;
+  }
+
+  state.shockwaveTime = 0;
+  state.shader.setFloat2('shockwaveCenter', player.x / config.width, player.y / config.height);
+}
+
 function spendLife(isVoluntary) {
   const { level } = state;
   const { player, hud } = level;
@@ -606,6 +647,7 @@ function spendLife(isVoluntary) {
   }
 
   if (player.life <= 0) {
+    deathShockwave();
     respawn();
   }
 }
@@ -753,8 +795,21 @@ function create() {
 
   if (game.game.renderer.type === Phaser.WEBGL) {
     state.shader = game.game.renderer.addPipeline('Shader', new Shader(game.game));
-    state.shader.setFloat1('blurEffect', 0.0);
+
     state.shader.setFloat2('resolution', config.width, config.height);
+
+    state.shockwaveTime = 1000000;
+    state.shockwaveIncrement = 0.005;
+    state.shader.setFloat1('shockwaveTime', state.shockwaveTime);
+    state.shader.setFloat1('shockwaveScale', prop('effect.shockwave.scale'));
+    state.shader.setFloat1('shockwaveRange', prop('effect.shockwave.range'));
+    state.shader.setFloat1('shockwaveThickness', prop('effect.shockwave.thickness'));
+    state.shader.setFloat1('shockwaveSpeed', prop('effect.shockwave.speed'));
+    state.shader.setFloat1('shockwaveInner', prop('effect.shockwave.inner'));
+    state.shader.setFloat1('shockwaveDropoff', prop('effect.shockwave.dropoff'));
+
+    state.shader.setFloat1('blurEffect', 0.0);
+
     game.cameras.main.setRenderToTexture(state.shader);
   }
 }
@@ -932,6 +987,15 @@ function renderDebug() {
   listenProp('player.touching.down', player.body.touching.down);
   listenProp('player.touching.left', player.body.touching.left);
   listenProp('player.touching.right', player.body.touching.right);
+
+  if (state.shader) {
+    state.shader.setFloat1('shockwaveScale', prop('effect.shockwave.scale'));
+    state.shader.setFloat1('shockwaveRange', prop('effect.shockwave.range'));
+    state.shader.setFloat1('shockwaveThickness', prop('effect.shockwave.thickness'));
+    state.shader.setFloat1('shockwaveSpeed', prop('effect.shockwave.speed'));
+    state.shader.setFloat1('shockwaveInner', prop('effect.shockwave.inner'));
+    state.shader.setFloat1('shockwaveDropoff', prop('effect.shockwave.dropoff'));
+  }
 }
 
 function frameUpdates() {
@@ -961,6 +1025,11 @@ function frameUpdates() {
     if (prop('cheat.forbidWallJump')) {
       player.canWallJump = false;
     }
+  }
+
+  if (state.shader) {
+    state.shockwaveTime += state.shockwaveIncrement;
+    state.shader.setFloat1('shockwaveTime', state.shockwaveTime);
   }
 }
 

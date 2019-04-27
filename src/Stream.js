@@ -114,6 +114,14 @@ export default class Stream extends Component<any> {
     vfx.add(debug, 'effect.damageBlur.out_ms', 0, 2000);
     vfx.add(debug, 'damageBlur');
 
+    vfx.add(debug, 'effect.shockwave.scale', 0, 500.0);
+    vfx.add(debug, 'effect.shockwave.range', 0, 10.0);
+    vfx.add(debug, 'effect.shockwave.thickness', 0, 10.0);
+    vfx.add(debug, 'effect.shockwave.speed', 0, 50.0);
+    vfx.add(debug, 'effect.shockwave.inner', 0, 1.0);
+    vfx.add(debug, 'effect.shockwave.dropoff', 0, 500.0);
+    vfx.add(debug, 'deathShockwave');
+
     Object.keys(defaultProps).forEach((key) => {
       // eslint-disable-next-line no-underscore-dangle
       if (gui.__controllers.filter(controller => controller.property === key).length) {
