@@ -26,12 +26,6 @@ export default class Stream extends Component<any> {
     engine.add(debug, 'time').listen();
     engine.add(debug, 'frameTime').listen();
 
-    const level = gui.addFolder('Level');
-    level.add(debug, 'levelName').listen();
-    level.add(debug, 'levelIndex').listen();
-    level.add(debug, 'winLevel');
-    level.open();
-
     const input = gui.addFolder('Input');
     input.add(debug, 'input.upButtonDown').listen();
     input.add(debug, 'input.downButtonDown').listen();
@@ -63,6 +57,19 @@ export default class Stream extends Component<any> {
     input.add(debug, 'gamepad.l_stick.y').listen();
     input.add(debug, 'gamepad.r_stick.x').listen();
     input.add(debug, 'gamepad.r_stick.y').listen();
+
+    const level = gui.addFolder('Level');
+    level.add(debug, 'level.name').listen();
+    level.add(debug, 'level.index').listen();
+    level.add(debug, 'winLevel');
+    level.open();
+
+    const player = gui.addFolder('Player');
+    player.add(debug, 'player.x').listen();
+    player.add(debug, 'player.y').listen();
+    player.add(debug, 'player.velocity.x').listen();
+    player.add(debug, 'player.velocity.y').listen();
+    player.open();
 
     // gui.add(debug, 'temp', 0, 100);
 

@@ -4,10 +4,12 @@ import _ from 'lodash';
 import props from './props';
 
 import levelHello from './assets/maps/hello.map';
+import levelSpikes from './assets/maps/spikes.map';
 import levelBye from './assets/maps/bye.map';
 
 import tileWall from './assets/tiles/wall.png';
 import tileExit from './assets/tiles/exit.png';
+import tileSpikesUp from './assets/tiles/spikes-up.png';
 
 import spritePlayerDefault from './assets/sprites/player-default.png';
 
@@ -38,6 +40,7 @@ const config = {
   },
   levels: [
     levelHello,
+    levelSpikes,
     levelBye,
   ],
   mapWidth: 30,
@@ -53,6 +56,10 @@ const config = {
     '+': {
       image: 'tileExit',
       group: 'exit',
+    },
+    '^': {
+      image: 'tileSpikesUp',
+      group: 'spikes',
     },
     '@': null, // player
   },
@@ -140,6 +147,7 @@ function preload() {
 
   game.load.image('tileWall', tileWall);
   game.load.image('tileExit', tileExit);
+  game.load.image('tileSpikesUp', tileSpikesUp);
   game.load.image('spritePlayerDefault', spritePlayerDefault);
 }
 
@@ -147,20 +155,20 @@ function parseMap(lines, level) {
   const map = _.range(config.mapHeight).map(() => _.range(config.mapWidth).map(() => null));
 
   if (lines.length !== config.mapHeight) {
-    throw new Error(`Wrong map height: got ${lines.length} expected ${config.mapHeight} in ${level.name}`);
+    err(`Wrong map height: got ${lines.length} expected ${config.mapHeight} in ${level.name}`);
   }
 
   const locationForTile = {};
 
   lines.forEach((line, y) => {
     if (line.length !== config.mapWidth) {
-      throw new Error(`Wrong map width: got ${line.length} expected ${config.mapWidth} in ${level.name}`);
+      err(`Wrong map width: got ${line.length} expected ${config.mapWidth} in ${level.name}`);
     }
 
     line.split('').forEach((tileCharacter, x) => {
       const tile = config.tileDefinitions[tileCharacter];
       if (tile === undefined) {
-        throw new Error(`Invalid tile character '${tileCharacter}' in ${level.name}`);
+        err(`Invalid tile character '${tileCharacter}' in ${level.name}`);
       }
 
       locationForTile[tileCharacter] = [x, y];
@@ -176,7 +184,7 @@ function parseMap(lines, level) {
 
   const playerLocation = locationForTile['@'];
   if (!playerLocation) {
-    throw new Error(`Missing @ for player location in ${level.name}`);
+    err(`Missing @ for player location in ${level.name}`);
   }
 
   return {
@@ -207,9 +215,10 @@ function createLevel(index) {
 
   if (DEBUG) {
     window.level = level;
-    debug.levelName = level.name;
-    debug.levelIndex = index;
   }
+
+  listenProp('level.name', level.name);
+  listenProp('level.index', index);
 
   state.level = level;
 
@@ -317,12 +326,25 @@ function winLevel() {
   });
 }
 
+function takeDamage() {
+  const { level } = state;
+  const { player } = level;
+
+  if (player.facingRight) {
+    player.setVelocityX(-20);
+  } else {
+    player.setVelocityX(20);
+  }
+  player.setVelocityY(-100);
+}
+
 function setupInitialLevelPhysics() {
   const { game, level, physics } = state;
   const { player, tiles } = level;
 
   physics.add.collider(player, tiles.ground);
   physics.add.overlap(player, tiles.exit, winLevel);
+  physics.add.overlap(player, tiles.spikes, takeDamage);
 }
 
 function setupLevel() {
@@ -440,6 +462,16 @@ function processInput() {
   }
 }
 
+function renderDebug() {
+  const { level } = state;
+  const { player } = level;
+
+  listenProp('player.x', player.x);
+  listenProp('player.y', player.y);
+  listenProp('player.velocity.x', player.body.velocity.x);
+  listenProp('player.velocity.y', player.body.velocity.y);
+}
+
 function update(time, dt) {
   const { game, keys, cursors, debug } = state;
 
@@ -448,5 +480,20 @@ function update(time, dt) {
 
   readInput();
   processInput();
+
+  if (DEBUG) {
+    renderDebug();
+  }
+}
+
+let didAlert = false;
+function err(msg) {
+  if (!didAlert) {
+    // eslint-disable-next-line no-alert
+    alert(msg);
+    didAlert = true;
+  }
+
+  throw new Error(msg);
 }
 

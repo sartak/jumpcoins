@@ -1,8 +1,9 @@
 export default {
   time: 0,
   frameTime: 0,
-  levelName: '',
-  levelIndex: -1,
+
+  'level.name': '',
+  'level.index': -1,
 
   'input.upButtonDown': false,
   'input.downButtonDown': false,
@@ -34,6 +35,11 @@ export default {
   'gamepad.l_stick.y': 0.01,
   'gamepad.r_stick.x': 0.01,
   'gamepad.r_stick.y': 0.01,
+
+  'player.x': 0.01,
+  'player.y': 0.01,
+  'player.velocity.x': 0.01,
+  'player.velocity.y': 0.01,
 
   winLevel: () => window.state.commands.winLevel(),
   // explode: () => alert(`${window.state.foo} / ${window.gameConfig.width} / ${window.props.temp}`),
