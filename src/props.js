@@ -78,4 +78,5 @@ export default {
 
   winLevel: () => window.state.commands.winLevel(),
   restartLevel: () => window.state.commands.restartLevel(),
+  previousLevel: () => window.state.commands.previousLevel(),
 };

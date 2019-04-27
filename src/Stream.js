@@ -85,6 +85,7 @@ export default class Stream extends Component<any> {
     level.add(debug, 'level.index').listen();
     level.add(debug, 'winLevel');
     level.add(debug, 'restartLevel');
+    level.add(debug, 'previousLevel');
     level.open();
 
     const player = gui.addFolder('Player');

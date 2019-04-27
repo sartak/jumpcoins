@@ -4,9 +4,17 @@ import _ from 'lodash';
 import props from './props';
 
 import levelHello from './assets/maps/hello.map';
+
 import levelDoubleJump from './assets/maps/doublejump.map';
 import levelDoubleJumpA from './assets/maps/doublejump-a.map';
 import levelDoubleJumpB from './assets/maps/doublejump-b.map';
+import levelDoubleJumpBB from './assets/maps/doublejump-bb.map';
+import levelDoubleJumpC from './assets/maps/doublejump-c.map';
+import levelDoubleJumpD from './assets/maps/doublejump-d.map';
+
+import levelWallJump from './assets/maps/walljump.map';
+import levelWallJumpA from './assets/maps/walljump-a.map';
+
 import levelBye from './assets/maps/bye.map';
 
 import tileWall from './assets/tiles/wall.png';
@@ -52,6 +60,12 @@ const config = {
     levelDoubleJump,
     levelDoubleJumpA,
     levelDoubleJumpB,
+    levelDoubleJumpC,
+    levelDoubleJumpBB,
+    levelDoubleJumpD,
+
+    levelWallJump,
+    levelWallJumpA,
 
     levelBye,
   ],
@@ -179,6 +193,7 @@ export default function startGame(debug: any) {
 
     window.state.commands.winLevel = winLevel;
     window.state.commands.restartLevel = restartLevel;
+    window.state.commands.previousLevel = previousLevel;
 
     Object.keys(props).forEach((key) => {
       debug[key] = props[key];
@@ -460,6 +475,11 @@ function restartLevel() {
   winLevel();
 }
 
+function previousLevel() {
+  state.levelIndex -= 2;
+  winLevel();
+}
+
 function setPlayerInvincible() {
   const { game, level } = state;
   const { player } = level;
@@ -656,6 +676,14 @@ function create() {
 
     game.input.keyboard.on('keydown_W', () => {
       winLevel();
+    });
+
+    game.input.keyboard.on('keydown_R', () => {
+      restartLevel();
+    });
+
+    game.input.keyboard.on('keydown_P', () => {
+      previousLevel();
     });
   }
 
