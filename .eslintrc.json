@@ -29,6 +29,7 @@
     "react/jsx-one-expression-per-line": ["off"],
     "react/destructuring-assignment": ["off"],
     "react/prop-types": ["off"],
-    "no-useless-constructor": ["off"]
+    "no-useless-constructor": ["off"],
+    "quote-props": ["off"]
   }
 }
