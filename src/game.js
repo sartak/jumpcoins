@@ -133,6 +133,7 @@ const config = {
       group: 'enemies',
       object: true,
       dynamic: true,
+      speed: 40,
     },
   },
 
@@ -1311,6 +1312,30 @@ function frameUpdates() {
   }
 }
 
+function updateEnemies() {
+  const { level } = state;
+  const { enemies } = level;
+
+  enemies.forEach((enemy) => {
+    // hasn't ever touched the floor yet…
+    if (!enemy.body.touching.down && enemy.movingLeft === undefined) {
+      enemy.setVelocityX(0);
+    } else {
+      if (enemy.movingLeft && enemy.body.touching.left) {
+        enemy.movingLeft = false;
+      } else if (!enemy.movingLeft && enemy.body.touching.right) {
+        enemy.movingLeft = true;
+      }
+
+      if (enemy.movingLeft) {
+        enemy.setVelocityX(-enemy.config.speed);
+      } else {
+        enemy.setVelocityX(enemy.config.speed);
+      }
+    }
+  });
+}
+
 function update(time, dt) {
   const { game, keys, cursors, debug } = state;
 
@@ -1318,6 +1343,7 @@ function update(time, dt) {
   listenProp('frameTime', dt);
 
   frameUpdates();
+  updateEnemies();
 
   readInput();
   processInput();
