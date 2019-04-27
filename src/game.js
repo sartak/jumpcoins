@@ -14,6 +14,7 @@ import levelDoubleJumpD from './assets/maps/doublejump-d.map';
 
 import levelWallJump from './assets/maps/walljump.map';
 import levelWallJumpA from './assets/maps/walljump-a.map';
+import levelWallJumpB from './assets/maps/walljump-b.map';
 
 import levelBye from './assets/maps/bye.map';
 
@@ -66,6 +67,7 @@ const config = {
 
     levelWallJump,
     levelWallJumpA,
+    levelWallJumpB,
 
     levelBye,
   ],
