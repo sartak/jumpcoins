@@ -731,6 +731,11 @@ function frameUpdates() {
   if (player.body.touching.down) {
     player.canDoubleJump = true;
     player.isDoubleJumping = false;
+
+    if (prop('cheat.forbidDoubleJump')) {
+      player.canDoubleJump = false;
+    }
+
   }
 }
 

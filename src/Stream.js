@@ -72,6 +72,7 @@ export default class Stream extends Component<any> {
 
     const cheats = gui.addFolder('Cheats');
     cheats.add(debug, 'cheat.hearty');
+    cheats.add(debug, 'cheat.forbidDoubleJump');
     cheats.open();
 
     const level = gui.addFolder('Level');

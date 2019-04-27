@@ -62,6 +62,7 @@ export default {
   'player.touching.right': false,
 
   'cheat.hearty': true,
+  'cheat.forbidDoubleJump': false,
 
   winLevel: () => window.state.commands.winLevel(),
   restartLevel: () => window.state.commands.restartLevel(),
