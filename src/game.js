@@ -133,7 +133,15 @@ const config = {
       group: 'enemies',
       object: true,
       dynamic: true,
-      speed: 40,
+      speed: 30,
+    },
+    'a': {
+      image: 'spriteEnemyA',
+      group: 'enemies',
+      object: true,
+      dynamic: true,
+      startsMovingLeft: true,
+      speed: 30,
     },
   },
 
@@ -1321,7 +1329,9 @@ function updateEnemies() {
     if (!enemy.body.touching.down && enemy.movingLeft === undefined) {
       enemy.setVelocityX(0);
     } else {
-      if (enemy.movingLeft && enemy.body.touching.left) {
+      if (enemy.movingLeft === undefined && enemy.config.startsMovingLeft) {
+        enemy.movingLeft = true;
+      } else if (enemy.movingLeft && enemy.body.touching.left) {
         enemy.movingLeft = false;
       } else if (!enemy.movingLeft && enemy.body.touching.right) {
         enemy.movingLeft = true;
