@@ -667,6 +667,10 @@ function destroyLevel(keepStatics) {
     hint.destroy();
   });
 
+  Object.keys(hud.intro).forEach((key) => {
+    hud.intro[key].destroy();
+  });
+
   player.destroy();
 }
 
@@ -1037,6 +1041,38 @@ function setupLevel() {
   createLevel(levelIndex);
   renderHud();
   setupLevelPhysics(true);
+  renderLevelIntro();
+}
+
+function renderLevelIntro() {
+  const { game, level } = state;
+  const { hud } = level;
+
+  const levelName = game.add.text(
+    config.width / 2,
+    config.height / 2,
+    level.name,
+    {
+      fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
+      fontSize: '20px',
+      color: 'rgb(246, 196, 86)',
+    },
+  );
+  levelName.setStroke('#000000', 6);
+  levelName.x -= levelName.width / 2;
+  levelName.y -= levelName.height / 2;
+  hud.intro = {
+    levelName,
+  };
+
+  game.time.addEvent({
+    delay: 2000,
+    callback: () => {
+      Object.keys(hud.intro).forEach((key) => {
+        hud.intro[key].destroy();
+      });
+    },
+  });
 }
 
 function create() {
