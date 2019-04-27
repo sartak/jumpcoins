@@ -427,7 +427,7 @@ function processInput() {
   const { level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonDown } = state;
   const { player } = level;
 
-  if (jumpButtonDown) {
+  if (jumpButtonDown && player.body.touching.down) {
     player.setVelocityY(-200);
   }
 
