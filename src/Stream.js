@@ -31,6 +31,38 @@ export default class Stream extends Component<any> {
     level.add(debug, 'levelIndex').listen();
     level.open();
 
+    const input = gui.addFolder('Input');
+    input.add(debug, 'input.upButtonDown').listen();
+    input.add(debug, 'input.downButtonDown').listen();
+    input.add(debug, 'input.leftButtonDown').listen();
+    input.add(debug, 'input.rightButtonDown').listen();
+    input.add(debug, 'input.jumpButtonDown').listen();
+
+    input.add(debug, 'keyboard.Z').listen();
+    input.add(debug, 'keyboard.X').listen();
+    input.add(debug, 'keyboard.C').listen();
+    input.add(debug, 'keyboard.up').listen();
+    input.add(debug, 'keyboard.down').listen();
+    input.add(debug, 'keyboard.left').listen();
+    input.add(debug, 'keyboard.right').listen();
+
+    input.add(debug, 'gamepad.A').listen();
+    input.add(debug, 'gamepad.B').listen();
+    input.add(debug, 'gamepad.X').listen();
+    input.add(debug, 'gamepad.Y').listen();
+    input.add(debug, 'gamepad.L1').listen();
+    input.add(debug, 'gamepad.L2').listen();
+    input.add(debug, 'gamepad.R1').listen();
+    input.add(debug, 'gamepad.R2').listen();
+    input.add(debug, 'gamepad.up').listen();
+    input.add(debug, 'gamepad.down').listen();
+    input.add(debug, 'gamepad.left').listen();
+    input.add(debug, 'gamepad.right').listen();
+    input.add(debug, 'gamepad.l_stick.x').listen();
+    input.add(debug, 'gamepad.l_stick.y').listen();
+    input.add(debug, 'gamepad.r_stick.x').listen();
+    input.add(debug, 'gamepad.r_stick.y').listen();
+
     // gui.add(debug, 'temp', 0, 100);
 
     Object.keys(defaultProps).forEach((key) => {

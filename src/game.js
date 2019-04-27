@@ -7,6 +7,8 @@ import levelHello from './assets/maps/hello.map';
 
 import tileWall from './assets/tiles/wall.png';
 
+import spritePlayerDefault from './assets/sprites/player-default.png';
+
 // YOUR LIFE IS CURRENCY
 
 const DEBUG = (!process.env.NODE_ENV || process.env.NODE_ENV === 'development');
@@ -40,10 +42,11 @@ const config = {
   tileWidth: 24,
   tileHeight: 24,
   tileDefinitions: {
-    '.': null,
+    '.': null, // background
     '#': {
       image: 'tileWall',
     },
+    '@': null, // player
   },
 };
 
@@ -125,6 +128,7 @@ function preload() {
   });
 
   game.load.image('tileWall', tileWall);
+  game.load.image('spritePlayerDefault', spritePlayerDefault);
 }
 
 function parseMap(lines, level) {
@@ -133,6 +137,8 @@ function parseMap(lines, level) {
   if (lines.length !== config.mapHeight) {
     throw new Error(`Wrong map height: got ${lines.length} expected ${config.mapHeight} in ${level.name}`);
   }
+
+  const locationForTile = {};
 
   lines.forEach((line, y) => {
     if (line.length !== config.mapWidth) {
@@ -145,6 +151,8 @@ function parseMap(lines, level) {
         throw new Error(`Invalid tile character '${tileCharacter}' in ${level.name}`);
       }
 
+      locationForTile[tileCharacter] = [x, y];
+
       // background tile
       if (tile === null) {
         return;
@@ -153,7 +161,16 @@ function parseMap(lines, level) {
       map[y][x] = { ...tile, x, y };
     });
   });
-  return map;
+
+  const playerLocation = locationForTile['@'];
+  if (!playerLocation) {
+    throw new Error(`Missing @ for player location in ${level.name}`);
+  }
+
+  return {
+    map,
+    playerLocation,
+  };
 }
 
 function parseLevel(levelDefinition) {
@@ -162,8 +179,11 @@ function parseLevel(levelDefinition) {
   const mapLines = allLines.slice(0, mapHeight);
   const levelJSON = allLines.slice(mapHeight).join('\n');
 
-  const level = JSON.parse(levelJSON);
-  level.map = parseMap(mapLines, level);
+  let level = JSON.parse(levelJSON);
+  level = {
+    ...level,
+    ...parseMap(mapLines, level),
+  };
 
   return level;
 }
@@ -178,6 +198,10 @@ function createLevel(index) {
     debug.levelName = level.name;
     debug.levelIndex = index;
   }
+
+  state.level = level;
+
+  createPlayer();
 
   return level;
 }
@@ -207,6 +231,29 @@ function renderInitialLevel() {
       }
     });
   });
+
+  level.tiles = tiles;
+}
+
+function createPlayer() {
+  const { physics, level } = state;
+
+  const location = level.playerLocation;
+  const [x, y] = positionToScreenCoordinate(location[0], location[1]);
+  const player = physics.add.sprite(x, y, 'spritePlayerDefault');
+
+  player.x += player.width / 2;
+  player.y += player.height / 2;
+
+  level.player = player;
+  return player;
+}
+
+function setupPhysics() {
+  const { level, physics } = state;
+  const { player, tiles } = level;
+
+  physics.add.collider(player, tiles);
 }
 
 function create() {
@@ -215,6 +262,10 @@ function create() {
   state.physics = game.physics;
 
   state.cursors = game.input.keyboard.createCursorKeys();
+
+  ['Z', 'X', 'C'].forEach((code) => {
+    state.keys[code] = game.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes[code]);
+  });
 
   if (config.debug) {
     game.input.keyboard.on('keydown_Q', () => {
@@ -226,8 +277,9 @@ function create() {
     });
   }
 
-  state.level = createLevel(0);
+  createLevel(0);
   renderInitialLevel();
+  setupPhysics();
 
   if (game.game.renderer.type === Phaser.WEBGL) {
     state.shader = game.game.renderer.addPipeline('Shader', new Shader(game.game));
@@ -236,16 +288,68 @@ function create() {
   }
 }
 
+function readInput() {
+  const { game, keys, cursors, debug } = state;
+
+  state.upButtonDown = cursors.up.isDown;
+  state.leftButtonDown = cursors.left.isDown;
+  state.rightButtonDown = cursors.right.isDown;
+  state.downButtonDown = cursors.down.isDown;
+
+  state.jumpButtonDown = keys.Z.isDown;
+
+  listenProp('keyboard.Z', keys.Z.isDown);
+  listenProp('keyboard.X', keys.X.isDown);
+  listenProp('keyboard.C', keys.C.isDown);
+  listenProp('keyboard.up', cursors.up.isDown);
+  listenProp('keyboard.down', cursors.down.isDown);
+  listenProp('keyboard.left', cursors.left.isDown);
+  listenProp('keyboard.right', cursors.right.isDown);
+
+  if (game.input.gamepad.total) {
+    const pads = game.input.gamepad.gamepads;
+    pads.filter(pad => pad).forEach((pad) => {
+      const { A, B, X, Y, L1, L2, R1, R2, up, down, left, right, leftStick, rightStick } = pad;
+
+      state.upButtonDown = state.upButtonDown || up;
+      state.leftButtonDown = state.leftButtonDown || left;
+      state.rightButtonDown = state.rightButtonDown || right;
+      state.downButtonDown = state.downButtonDown || down;
+
+      state.jumpButtonDown = state.jumpButtonDown || A;
+
+      listenProp('gamepad.A', A);
+      listenProp('gamepad.B', B);
+      listenProp('gamepad.X', X);
+      listenProp('gamepad.Y', Y);
+      listenProp('gamepad.L1', L1 > 0);
+      listenProp('gamepad.L2', L2 > 0);
+      listenProp('gamepad.R1', R1 > 0);
+      listenProp('gamepad.R2', R2 > 0);
+      listenProp('gamepad.up', up);
+      listenProp('gamepad.down', down);
+      listenProp('gamepad.left', left);
+      listenProp('gamepad.right', right);
+      listenProp('gamepad.l_stick.x', leftStick.x);
+      listenProp('gamepad.l_stick.y', leftStick.y);
+      listenProp('gamepad.r_stick.x', rightStick.x);
+      listenProp('gamepad.r_stick.y', rightStick.y);
+    });
+  }
+
+  listenProp('input.upButtonDown', state.upButtonDown);
+  listenProp('input.downButtonDown', state.downButtonDown);
+  listenProp('input.leftButtonDown', state.leftButtonDown);
+  listenProp('input.rightButtonDown', state.rightButtonDown);
+  listenProp('input.jumpButtonDown', state.jumpButtonDown);
+}
+
 function update(time, dt) {
   const { game, keys, cursors, debug } = state;
 
   listenProp('time', time);
   listenProp('frameTime', dt);
 
-  if (game.input.gamepad.total) {
-    const pads = this.input.gamepad.gamepads;
-    pads.filter(pad => pad).forEach((pad) => {
-    });
-  }
+  readInput();
 }
 
