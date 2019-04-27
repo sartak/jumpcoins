@@ -106,7 +106,7 @@ const config = {
       group: 'spikes',
       knockback: 'left',
     },
-    0: {
+    '0': {
       image: 'tileEye',
       group: 'ground',
     },
