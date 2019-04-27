@@ -16,6 +16,7 @@ import levelWallJump from './assets/maps/walljump.map';
 import levelWallJumpA from './assets/maps/walljump-a.map';
 import levelWallJumpB from './assets/maps/walljump-b.map';
 
+import levelStairs from './assets/maps/stairs.map';
 import levelBye from './assets/maps/bye.map';
 
 import tileWall from './assets/tiles/wall.png';
@@ -25,7 +26,8 @@ import tileSpikesDown from './assets/tiles/spikes-down.png';
 import tileSpikesLeft from './assets/tiles/spikes-left.png';
 import tileSpikesRight from './assets/tiles/spikes-right.png';
 import tileEye from './assets/tiles/eye.png';
-import tileOneWay from './assets/tiles/oneway.png';
+import tileSemiground from './assets/tiles/semiground.png';
+import tileTransparent from './assets/tiles/transparent.png';
 
 import spritePlayer from './assets/sprites/player.png';
 import spriteFreebie from './assets/sprites/freebie.png';
@@ -71,6 +73,7 @@ const config = {
     levelWallJumpA,
     levelWallJumpB,
 
+    levelStairs,
     levelBye,
   ],
   mapWidth: 30,
@@ -113,7 +116,7 @@ const config = {
       group: 'ground',
     },
     '_': {
-      image: 'tileOneWay',
+      image: 'tileSemiground',
       group: 'semiground',
     },
     '[': {
@@ -126,6 +129,11 @@ const config = {
     '*': {
       image: 'spriteFreebie',
       group: 'freebies',
+      object: true,
+    },
+    '?': {
+      image: 'tileTransparent',
+      group: 'removeHints',
       object: true,
     },
     'A': {
@@ -306,7 +314,8 @@ function preload() {
   game.load.image('tileSpikesLeft', tileSpikesLeft);
   game.load.image('tileSpikesRight', tileSpikesRight);
   game.load.image('tileEye', tileEye);
-  game.load.image('tileOneWay', tileOneWay);
+  game.load.image('tileSemiground', tileSemiground);
+  game.load.image('tileTransparent', tileTransparent);
 
   game.load.image('spritePlayer', spritePlayer);
   game.load.image('spriteEnemyA', spriteEnemyA);
@@ -534,6 +543,9 @@ function setupMover(mover) {
   scheduleMover(mover, true);
 }
 
+function setupEnemy(enemy) {
+}
+
 function createLevelObjects() {
   const { level, physics } = state;
   const { objectDescriptions, statics } = level;
@@ -542,6 +554,7 @@ function createLevelObjects() {
     freebies: [],
     enemies: [],
     movers: [],
+    removeHints: [],
   };
 
   objectDescriptions.forEach(({ x, y, tile }) => {
@@ -567,6 +580,7 @@ function createLevelObjects() {
   level.objects = objects;
 
   level.objects.movers.forEach(mover => setupMover(mover));
+  level.enemies.forEach(enemy => setupEnemy(enemy));
 }
 
 function createPlayer() {
@@ -600,43 +614,39 @@ function removePhysics() {
   physics.world.colliders.destroy();
 }
 
-function destroyLevel(playerOnly) {
+function destroyLevel(keepStatics) {
   const { level } = state;
   const { statics, images, player, hud } = level;
-  const { hearts, freebies, hints } = hud;
 
-  if (!playerOnly) {
-    level.timers.forEach((timer) => {
-      timer.destroy();
-    });
+  level.timers.forEach((timer) => {
+    timer.destroy();
+  });
 
+  if (!keepStatics) {
     Object.keys(level.statics).forEach((name) => {
       const group = level.statics[name];
       destroyGroup(group);
     });
-
-    level.enemies.forEach((enemy) => {
-      enemy.destroy();
-    });
-
-    level.objects.movers.forEach((mover) => {
-      mover.destroy();
-    });
-
     images.forEach((image) => {
       image.destroy();
     });
   }
 
-  hearts.forEach((heart) => {
+  Object.keys(level.objects).forEach((type) => {
+    level.objects[type].forEach((object) => {
+      object.destroy();
+    });
+  });
+
+  hud.hearts.forEach((heart) => {
     heart.destroy();
   });
 
-  freebies.forEach((freebie) => {
+  hud.freebies.forEach((freebie) => {
     freebie.destroy();
   });
 
-  hints.forEach((hint) => {
+  hud.hints.forEach((hint) => {
     hint.destroy();
   });
 
@@ -847,6 +857,10 @@ function takeSpikeDamage(object1, object2) {
   }
 }
 
+function destroyEnemy(enemy) {
+  enemy.disableBody(true, true);
+}
+
 function takeEnemyDamage(object1, object2) {
   const { game, level } = state;
   const { player } = level;
@@ -860,6 +874,8 @@ function takeEnemyDamage(object1, object2) {
   spendLife(false);
 
   setPlayerInvincible();
+
+  destroyEnemy(enemy);
 }
 
 function acquireFreebie(object1, object2) {
@@ -900,6 +916,24 @@ function checkSemiground(object1, object2) {
   return true;
 }
 
+function removeHints() {
+  const { game, level } = state;
+  const { hud } = level;
+
+  hud.hints.forEach((hint) => {
+    hint.destroy();
+  });
+
+  game.time.addEvent({
+    callback: () => {
+      level.objects.removeHints.forEach((removeHint) => {
+        removeHint.destroy();
+      });
+      level.objects.removeHints = [];
+    },
+  });
+}
+
 function setupLevelPhysics(isInitial) {
   const { game, level, physics } = state;
   const { player, statics, enemies, objects } = level;
@@ -920,8 +954,10 @@ function setupLevelPhysics(isInitial) {
   physics.add.collider(enemies, statics.spikes);
 
   physics.add.overlap(player, statics.freebies, acquireFreebie, checkFreebieSpent);
+  physics.add.overlap(player, statics.removeHints, removeHints);
 
   physics.add.collider(player, enemies, takeEnemyDamage);
+  physics.add.collider(enemies, enemies);
 }
 
 function renderHud() {
