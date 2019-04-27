@@ -1354,7 +1354,7 @@ function renderDebug() {
   }
 }
 
-function frameUpdates() {
+function frameUpdates(dt) {
   const { level } = state;
   const { player, hud } = level;
 
@@ -1409,6 +1409,33 @@ function frameUpdates() {
     }
   });
 
+  // squish and stretch
+  let vx = Math.abs(player.body.velocity.x) / (config.tileWidth * config.tileWidth);
+  let vy = Math.abs(player.body.velocity.y) / (config.tileHeight * config.tileHeight);
+  /*
+  if (vx > vy) {
+    vy = -vx;
+  } else if (vy > vx) {
+    vx = -vy;
+  }
+  */
+  if (vx + vy > 0) {
+    [vx, vy] = [
+      (vx - vy) / (vx + vy),
+      (vy - vx) / (vx + vy),
+    ];
+  }
+  vx *= prop('player.squish.max');
+  vy *= prop('player.squish.max');
+  vy += 1;
+  vx += 1;
+
+  // intentionally flipped for vx, vy
+  const scaleX = player.scaleX + prop('player.squish.speed') * (vy - player.scaleX) * dt / 16.667;
+  const scaleY = player.scaleY + prop('player.squish.speed') * (vx - player.scaleY) * dt / 16.667;
+
+  player.setScale(scaleX, scaleY); // intentionally flipped
+
   if (state.shader) {
     state.shockwaveTime += state.shockwaveIncrement;
     state.shader.setFloat1('shockwaveTime', state.shockwaveTime);
@@ -1458,7 +1485,7 @@ function update(time, dt) {
   listenProp('time', time);
   listenProp('frameTime', dt);
 
-  frameUpdates();
+  frameUpdates(dt);
   updateEnemies();
 
   readInput();

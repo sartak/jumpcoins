@@ -15,8 +15,8 @@ export default {
   'mover.speed': 40,
   'mover.distance': 3,
 
-  time: 0,
-  frameTime: 0,
+  time: 0.01,
+  frameTime: 0.01,
 
   'level.name': '',
   'level.index': -1,
@@ -74,6 +74,8 @@ export default {
   'player.touching.left': false,
   'player.touching.right': false,
   'player.freebies': 0,
+  'player.squish.max': 0.16,
+  'player.squish.speed': 0.2,
 
   'cheat.hearty': true,
   'cheat.forbidDoubleJump': false,
