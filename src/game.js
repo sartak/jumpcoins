@@ -344,6 +344,23 @@ function readInput() {
   listenProp('input.jumpButtonDown', state.jumpButtonDown);
 }
 
+function processInput() {
+  const { level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonDown } = state;
+  const { player } = level;
+
+  if (jumpButtonDown) {
+    player.setVelocityY(-200);
+  }
+
+  if (leftButtonDown) {
+    player.setVelocityX(-200);
+  } else if (rightButtonDown) {
+    player.setVelocityX(200);
+  } else {
+    player.setVelocityX(0);
+  }
+}
+
 function update(time, dt) {
   const { game, keys, cursors, debug } = state;
 
@@ -351,5 +368,6 @@ function update(time, dt) {
   listenProp('frameTime', dt);
 
   readInput();
+  processInput();
 }
 
