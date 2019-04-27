@@ -4,7 +4,6 @@ import _ from 'lodash';
 import props from './props';
 
 import levelHello from './assets/maps/hello.map';
-import levelSpikes from './assets/maps/spikes.map';
 import levelDoubleJump from './assets/maps/doublejump.map';
 import levelBye from './assets/maps/bye.map';
 
@@ -46,7 +45,6 @@ const config = {
   },
   levels: [
     levelHello,
-    levelSpikes,
     levelDoubleJump,
     levelBye,
   ],
@@ -78,12 +76,12 @@ const config = {
     '<': {
       image: 'tileSpikesLeft',
       group: 'spikes',
-      knockback: 'left',
+      knockback: 'right',
     },
     '>': {
       image: 'tileSpikesRight',
       group: 'spikes',
-      knockback: 'right',
+      knockback: 'left',
     },
     '@': null, // player
   },
