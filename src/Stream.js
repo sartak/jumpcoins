@@ -23,11 +23,15 @@ export default class Stream extends Component<any> {
     const { gui, debug } = this;
 
     const engine = gui.addFolder('Engine');
-
     engine.add(debug, 'time').listen();
     engine.add(debug, 'frameTime').listen();
 
-    gui.add(debug, 'temp', 0, 100);
+    const level = gui.addFolder('Level');
+    level.add(debug, 'levelName').listen();
+    level.add(debug, 'levelIndex').listen();
+    level.open();
+
+    // gui.add(debug, 'temp', 0, 100);
 
     Object.keys(defaultProps).forEach((key) => {
       // eslint-disable-next-line no-underscore-dangle
