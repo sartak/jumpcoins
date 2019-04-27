@@ -112,9 +112,15 @@ const config = {
       image: 'tileEye',
       group: 'ground',
     },
-    '=': {
+    '_': {
       image: 'tileOneWay',
       group: 'semiground',
+    },
+    '[': {
+      image: 'tileWall',
+      group: 'movers',
+      object: true,
+      dynamic: true,
     },
     '@': null, // player
     '*': {
@@ -139,6 +145,12 @@ const config = {
   const { width, height, mapWidth, mapHeight, tileWidth, tileHeight } = config;
   config.xBorder = (width - (mapWidth * tileWidth)) / 2;
   config.yBorder = (height - (mapHeight * tileHeight)) / 2;
+
+  Object.keys(config.tileDefinitions).forEach((glyph) => {
+    if (config.tileDefinitions[glyph]) {
+      config.tileDefinitions.glyph = glyph;
+    }
+  });
 }
 
 const state : any = {
@@ -373,6 +385,7 @@ function createLevel(index) {
   }
 
   level.hud = {};
+  level.timers = [];
 
   initializeMap();
 
@@ -472,6 +485,46 @@ function initializeMap() {
   level.objectDescriptions = objectDescriptions;
 }
 
+function scheduleMover(mover, isFirst) {
+  const { game, level } = state;
+
+  const speed = prop('mover.speed');
+  const distance = config.tileWidth * prop('mover.distance') * (isFirst ? 0.5 : 1);
+  const duration = distance / speed;
+
+  let timer;
+  // eslint-disable-next-line prefer-const
+  timer = game.time.addEvent({
+    delay: duration * 1000,
+    callback: () => {
+      level.timers = level.timers.filter(t => t !== timer);
+      mover.movingLeft = !mover.movingLeft;
+      if (mover.movingLeft) {
+        mover.setVelocityX(-speed);
+      } else {
+        mover.setVelocityX(speed);
+      }
+
+      scheduleMover(mover, false);
+    },
+  });
+
+  level.timers.push(timer);
+}
+
+function setupMover(mover) {
+  mover.setImmovable(true);
+  mover.body.allowGravity = false;
+
+  const speed = prop('mover.speed');
+
+  mover.initialPosition = [mover.x, mover.y];
+  mover.setVelocityX(-speed);
+  mover.movingLeft = true;
+
+  scheduleMover(mover, true);
+}
+
 function createLevelObjects() {
   const { level, physics } = state;
   const { objectDescriptions, statics } = level;
@@ -479,21 +532,22 @@ function createLevelObjects() {
   const objects = {
     freebies: [],
     enemies: [],
+    movers: [],
   };
 
   objectDescriptions.forEach(({ x, y, tile }) => {
-    const { group, dynamic } = tile;
+    const { group, dynamic, glyph, image } = tile;
 
     let body;
 
     if (dynamic) {
-      body = physics.add.sprite(x, y, tile.image);
+      body = physics.add.sprite(x, y, image);
     } else {
       if (!statics[group]) {
         statics[group] = physics.add.staticGroup();
       }
 
-      body = statics[group].create(x, y, tile.image);
+      body = statics[group].create(x, y, image);
     }
 
     body.config = tile;
@@ -502,6 +556,8 @@ function createLevelObjects() {
 
   level.enemies = objects.enemies;
   level.objects = objects;
+
+  level.objects.movers.forEach(mover => setupMover(mover));
 }
 
 function createPlayer() {
@@ -541,6 +597,10 @@ function destroyLevel(playerOnly) {
   const { hearts, freebies, hints } = hud;
 
   if (!playerOnly) {
+    level.timers.forEach((timer) => {
+      timer.destroy();
+    });
+
     Object.keys(level.statics).forEach((name) => {
       const group = level.statics[name];
       destroyGroup(group);
@@ -548,6 +608,10 @@ function destroyLevel(playerOnly) {
 
     level.enemies.forEach((enemy) => {
       enemy.destroy();
+    });
+
+    level.objects.movers.forEach((mover) => {
+      mover.destroy();
     });
 
     images.forEach((image) => {
@@ -829,13 +893,16 @@ function checkSemiground(object1, object2) {
 
 function setupLevelPhysics(isInitial) {
   const { game, level, physics } = state;
-  const { player, statics, enemies } = level;
+  const { player, statics, enemies, objects } = level;
 
   physics.add.collider(player, statics.ground);
   physics.add.collider(enemies, statics.ground);
 
   physics.add.collider(player, statics.semiground, null, checkSemiground);
   physics.add.collider(enemies, statics.semiground);
+
+  physics.add.collider(player, objects.movers);
+  physics.add.collider(enemies, objects.movers);
 
   physics.add.overlap(player, statics.exit, winLevel);
   physics.add.collider(enemies, statics.exit);
@@ -1149,6 +1216,8 @@ function renderDebug() {
   const { level } = state;
   const { player } = level;
 
+  listenProp('level.timers', level.timers.length);
+
   listenProp('player.life', player.life);
   listenProp('player.x', player.x);
   listenProp('player.y', player.y);
@@ -1224,6 +1293,17 @@ function frameUpdates() {
       hud.freebies = [];
     }
   }
+
+  // make sure movers never get out of hand
+  const distance = prop('mover.distance') * config.tileWidth / 2;
+  level.objects.movers.forEach((mover) => {
+    if (mover.x < mover.initialPosition[0] - distance) {
+      mover.x = mover.initialPosition[0] - distance;
+    }
+    if (mover.x > mover.initialPosition[0] + distance) {
+      mover.x = mover.initialPosition[0] + distance;
+    }
+  });
 
   if (state.shader) {
     state.shockwaveTime += state.shockwaveIncrement;

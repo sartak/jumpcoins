@@ -12,6 +12,8 @@ export default {
   'velocityY.double_jump': 300,
   'velocityY.wall_jump': 175,
   wall_jump_ignore_direction_ms: 400,
+  'mover.speed': 40,
+  'mover.distance': 3,
 
   time: 0,
   frameTime: 0,
@@ -19,6 +21,7 @@ export default {
   'level.name': '',
   'level.index': -1,
   'level.file': '',
+  'level.timers': 0,
 
   'input.upButtonDown': false,
   'input.downButtonDown': false,
