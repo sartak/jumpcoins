@@ -50,7 +50,7 @@ body {
 }
 
 .stream #engine {
-  position: absolute;
+  position: fixed;
   top: 16px;
   left: 16px;
 }

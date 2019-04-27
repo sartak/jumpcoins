@@ -63,7 +63,16 @@ export default class Stream extends Component<any> {
     rules.add(debug, 'min_ignore_input_ms', 0, 500);
     rules.add(debug, 'spike_knockback.x', 0, 500);
     rules.add(debug, 'spike_knockback.y', 0, 500);
+    rules.add(debug, 'velocityX.walk', 0, 1000);
+    rules.add(debug, 'velocityX.jump', 0, 1000);
+    rules.add(debug, 'velocityX.double_jump', 0, 1000);
+    rules.add(debug, 'velocityY.jump', 0, 1000);
+    rules.add(debug, 'velocityY.double_jump', 0, 1000);
     rules.open();
+
+    const cheats = gui.addFolder('Cheats');
+    cheats.add(debug, 'cheat.hearty');
+    cheats.open();
 
     const level = gui.addFolder('Level');
     level.add(debug, 'level.name').listen();
@@ -81,6 +90,12 @@ export default class Stream extends Component<any> {
     player.add(debug, 'player.invincible').listen();
     player.add(debug, 'player.ignoreInput').listen();
     player.add(debug, 'player.canCancelIgnoreInput').listen();
+    player.add(debug, 'player.canDoubleJump').listen();
+    player.add(debug, 'player.isDoubleJumping').listen();
+    player.add(debug, 'player.touching.up').listen();
+    player.add(debug, 'player.touching.down').listen();
+    player.add(debug, 'player.touching.left').listen();
+    player.add(debug, 'player.touching.right').listen();
     player.open();
 
     Object.keys(defaultProps).forEach((key) => {

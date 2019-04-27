@@ -404,6 +404,10 @@ function spendLife(isVoluntary) {
   const { level } = state;
   const { player } = level;
 
+  if (prop('cheat.hearty')) {
+    return;
+  }
+
   player.life--;
 
   const heart = level.hud.hearts.pop();
@@ -584,6 +588,14 @@ function readInput() {
     });
   }
 
+  if (state.jumpButtonDown) {
+    state.jumpButtonFrames = (state.jumpButtonFrames || 0) + 1;
+    state.jumpButtonStarted = state.jumpButtonFrames === 1;
+  } else {
+    state.jumpButtonFrames = 0;
+    state.jumpButtonStarted = false;
+  }
+
   listenProp('input.upButtonDown', state.upButtonDown);
   listenProp('input.downButtonDown', state.downButtonDown);
   listenProp('input.leftButtonDown', state.leftButtonDown);
@@ -592,22 +604,40 @@ function readInput() {
 }
 
 function processInput() {
-  const { level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonDown } = state;
+  const { level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonStarted } = state;
   const { player } = level;
 
   if (player.ignoreInput) {
     return;
   }
 
-  if (jumpButtonDown && player.body.touching.down) {
-    player.setVelocityY(-200);
+  const isStanding = player.body.touching.down;
+
+  if (jumpButtonStarted && (isStanding || (player.canDoubleJump && upButtonDown))) {
+    if (isStanding) {
+      player.setVelocityY(-prop('velocityY.jump'));
+    } else {
+      player.setVelocityY(-prop('velocityY.double_jump'));
+      player.canDoubleJump = false;
+      player.isDoubleJumping = true;
+      spendLife(true);
+    }
+  }
+
+  let x = prop('velocityX.walk');
+  if (!isStanding) {
+    if (player.isDoubleJumping) {
+      x = prop('velocityX.double_jump');
+    } else {
+      x = prop('velocityX.jump');
+    }
   }
 
   if (leftButtonDown) {
-    player.setVelocityX(-200);
+    player.setVelocityX(-x);
     player.facingLeft = true;
   } else if (rightButtonDown) {
-    player.setVelocityX(200);
+    player.setVelocityX(x);
     player.facingLeft = false;
   } else {
     player.setVelocityX(0);
@@ -626,6 +656,12 @@ function renderDebug() {
   listenProp('player.invincible', player.invincible);
   listenProp('player.ignoreInput', player.ignoreInput);
   listenProp('player.canCancelIgnoreInput', player.canCancelIgnoreInput);
+  listenProp('player.canDoubleJump', player.canDoubleJump);
+  listenProp('player.isDoubleJumping', player.isDoubleJumping);
+  listenProp('player.touching.up', player.body.touching.up);
+  listenProp('player.touching.down', player.body.touching.down);
+  listenProp('player.touching.left', player.body.touching.left);
+  listenProp('player.touching.right', player.body.touching.right);
 }
 
 function frameUpdates() {
@@ -637,6 +673,11 @@ function frameUpdates() {
       player.ignoreInput = false;
       player.canCancelIgnoreInput = false;
     }
+  }
+
+  if (player.body.touching.down) {
+    player.canDoubleJump = true;
+    player.isDoubleJumping = false;
   }
 }
 

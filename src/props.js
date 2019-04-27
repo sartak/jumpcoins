@@ -3,6 +3,11 @@ export default {
   min_ignore_input_ms: 50,
   'spike_knockback.x': 40,
   'spike_knockback.y': 100,
+  'velocityX.walk': 200,
+  'velocityX.jump': 200,
+  'velocityX.double_jump': 50,
+  'velocityY.jump': 200,
+  'velocityY.double_jump': 300,
 
   time: 0,
   frameTime: 0,
@@ -49,6 +54,14 @@ export default {
   'player.invincible': false,
   'player.ignoreInput': false,
   'player.canCancelIgnoreInput': false,
+  'player.canDoubleJump': false,
+  'player.isDoubleJumping': false,
+  'player.touching.up': false,
+  'player.touching.down': false,
+  'player.touching.left': false,
+  'player.touching.right': false,
+
+  'cheat.hearty': true,
 
   winLevel: () => window.state.commands.winLevel(),
   restartLevel: () => window.state.commands.restartLevel(),
