@@ -54,6 +54,7 @@ const config = {
     '#': {
       image: 'tileWall',
       group: 'ground',
+      combineVertical: true,
     },
     '+': {
       image: 'tileExit',
@@ -256,7 +257,9 @@ function renderInitialLevel() {
   const halfWidth = tileWidth / 2;
   const halfHeight = tileHeight / 2;
 
+  const images = [];
   const tiles = {};
+  const toCombine = _.range(config.mapWidth).map(() => []);
 
   map.forEach((row, r) => {
     row.forEach((tile, c) => {
@@ -264,16 +267,60 @@ function renderInitialLevel() {
         return;
       }
 
+      let [x, y] = positionToScreenCoordinate(c, r);
+      x += halfWidth;
+      y += halfHeight;
+
+      if (tile.combineVertical) {
+        toCombine[c].push(tile);
+        const image = game.add.image(x, y, tile.image);
+        images.push(image);
+      } else {
+        if (!tiles[tile.group]) {
+          tiles[tile.group] = physics.add.staticGroup();
+        }
+
+        tiles[tile.group].create(x, y, tile.image);
+      }
+    });
+  });
+
+  toCombine.forEach((column) => {
+    if (!column.length) {
+      return;
+    }
+
+    column.sort((a, b) => a.y - b.y);
+
+    const processGroup = (members) => {
+      const [tile] = members;
       if (!tiles[tile.group]) {
         tiles[tile.group] = physics.add.staticGroup();
       }
 
-      const [x, y] = positionToScreenCoordinate(c, r);
-      tiles[tile.group].create(x + halfWidth, y + halfHeight, tile.image);
-    });
+      let [x, y] = positionToScreenCoordinate(tile.x, tile.y);
+      x += halfWidth;
+      y += halfHeight;
+      const body = tiles[tile.group].create(x, y, tile.image);
+      body.setSize(tileWidth, tileHeight * members.length);
+    };
+
+    let group = [column.shift()];
+    while (column.length) {
+      const tile = column.shift();
+      const prevTile = group[group.length-1];
+      if (tile.y === prevTile.y + 1 && tile.group === prevTile.group) {
+        group.push(tile);
+      } else {
+        processGroup(group);
+        group = [tile];
+      }
+    }
+    processGroup(group);
   });
 
   level.tiles = tiles;
+  level.images = images;
 }
 
 function createPlayer() {
@@ -287,6 +334,8 @@ function createPlayer() {
   player.y += player.height / 2;
 
   player.life = level.baseLife;
+
+  player.setCircle(player.width / 2);
 
   level.player = player;
   return player;
@@ -306,12 +355,16 @@ function removePhysics() {
 
 function destroyLevel(playerOnly) {
   const { level } = state;
-  const { tiles, player } = level;
+  const { tiles, images, player } = level;
 
   if (!playerOnly) {
     Object.keys(level.tiles).forEach((name) => {
       const group = level.tiles[name];
       destroyGroup(group);
+    });
+
+    images.forEach((image) => {
+      image.destroy();
     });
   }
 
