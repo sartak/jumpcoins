@@ -74,6 +74,8 @@ export default {
   'cheat.forbidDoubleJump': false,
   'cheat.forbidWallJump': false,
 
+  'physics.debug': false,
+
   winLevel: () => window.state.commands.winLevel(),
   restartLevel: () => window.state.commands.restartLevel(),
 };

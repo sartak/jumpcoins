@@ -5,6 +5,7 @@ import props from './props';
 
 import levelHello from './assets/maps/hello.map';
 import levelSpikes from './assets/maps/spikes.map';
+import levelDoubleJump from './assets/maps/doublejump.map';
 import levelBye from './assets/maps/bye.map';
 
 import tileWall from './assets/tiles/wall.png';
@@ -32,7 +33,7 @@ const config = {
     default: 'arcade',
     arcade: {
       gravity: { y: 300 },
-      // debug: DEBUG,
+      debug: false, // will be populated based on dat.gui just in time
     },
   },
   scene: {
@@ -43,6 +44,7 @@ const config = {
   levels: [
     levelHello,
     levelSpikes,
+    levelDoubleJump,
     levelBye,
   ],
   mapWidth: 30,
@@ -136,11 +138,16 @@ if (DEBUG) {
 }
 
 export default function startGame(debug: any) {
+  if (DEBUG) {
+    window.props = debug;
+  }
+
+  config.physics.arcade.debug = prop('physics.debug');
+
   const game = new Phaser.Game(config);
 
   if (DEBUG) {
     window.game = game;
-    window.props = debug;
 
     window.state.commands.winLevel = winLevel;
     window.state.commands.restartLevel = restartLevel;
@@ -244,6 +251,8 @@ function createLevel(index) {
 
   level.hud = {};
 
+  renderMap();
+
   createPlayer();
 
   return level;
@@ -254,7 +263,7 @@ function positionToScreenCoordinate(x, y) {
   return [x * tileWidth + xBorder, y * tileHeight + yBorder];
 }
 
-function renderInitialLevel() {
+function renderMap() {
   const { game, level, physics } = state;
   const { map } = level;
   const { tileWidth, tileHeight } = config;
@@ -340,7 +349,7 @@ function createPlayer() {
 
   player.life = level.baseLife;
 
-  player.setCircle(player.width / 2);
+  player.setSize(player.width * 0.8, player.height * 0.8, true);
 
   level.player = player;
   return player;
@@ -360,7 +369,8 @@ function removePhysics() {
 
 function destroyLevel(playerOnly) {
   const { level } = state;
-  const { tiles, images, player } = level;
+  const { tiles, images, player, hud } = level;
+  const { hearts, hints } = hud;
 
   if (!playerOnly) {
     Object.keys(level.tiles).forEach((name) => {
@@ -373,8 +383,12 @@ function destroyLevel(playerOnly) {
     });
   }
 
-  level.hud.hearts.forEach((heart) => {
+  hearts.forEach((heart) => {
     heart.destroy();
+  });
+
+  hints.forEach((hint) => {
+    hint.destroy();
   });
 
   player.destroy();
@@ -522,9 +536,9 @@ function setupLevelPhysics(isInitial) {
 
 function renderHud() {
   const { game, level } = state;
-  const { player } = level;
+  const { player, hud, hint } = level;
 
-  level.hud.hearts = _.range(player.life).map((i) => {
+  hud.hearts = _.range(player.life).map((i) => {
     const x = 2 * config.tileWidth;
     const y = 0;
     const heart = game.add.image(x, y, 'spriteHeart');
@@ -532,6 +546,24 @@ function renderHud() {
     heart.y += config.yBorder / 2;
     return heart;
   });
+
+  hud.hints = [];
+  if (hint) {
+    const label = game.add.text(
+      config.width / 2,
+      config.height * 0.25,
+      hint,
+      {
+        fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
+        fontSize: '20px',
+        color: 'rgb(246, 196, 86)',
+      },
+    );
+    label.setStroke('#000000', 6);
+    label.x -= label.width / 2;
+    label.y -= label.height / 2;
+    hud.hints.push(label);
+  }
 }
 
 function respawn() {
@@ -557,7 +589,6 @@ function respawn() {
 function setupLevel() {
   const { levelIndex } = state;
   createLevel(levelIndex);
-  renderInitialLevel();
   renderHud();
   setupLevelPhysics(true);
 }
