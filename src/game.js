@@ -5,6 +5,7 @@ import props from './props';
 
 import levelHello from './assets/maps/hello.map';
 import levelDoubleJump from './assets/maps/doublejump.map';
+import levelDoubleJumpA from './assets/maps/doublejump-a.map';
 import levelBye from './assets/maps/bye.map';
 
 import tileWall from './assets/tiles/wall.png';
@@ -13,6 +14,7 @@ import tileSpikesUp from './assets/tiles/spikes-up.png';
 import tileSpikesDown from './assets/tiles/spikes-down.png';
 import tileSpikesLeft from './assets/tiles/spikes-left.png';
 import tileSpikesRight from './assets/tiles/spikes-right.png';
+import tileEye from './assets/tiles/eye.png';
 
 import spritePlayerDefault from './assets/sprites/player-default.png';
 
@@ -46,6 +48,7 @@ const config = {
   levels: [
     levelHello,
     levelDoubleJump,
+    levelDoubleJumpA,
     levelBye,
   ],
   mapWidth: 30,
@@ -82,6 +85,10 @@ const config = {
       image: 'tileSpikesRight',
       group: 'spikes',
       knockback: 'left',
+    },
+    0: {
+      image: 'tileEye',
+      group: 'ground',
     },
     '@': null, // player
   },
@@ -194,6 +201,8 @@ function preload() {
   game.load.image('tileSpikesDown', tileSpikesDown);
   game.load.image('tileSpikesLeft', tileSpikesLeft);
   game.load.image('tileSpikesRight', tileSpikesRight);
+  game.load.image('tileEye', tileEye);
+
   game.load.image('spritePlayerDefault', spritePlayerDefault);
   game.load.image('spriteHeart', spriteHeart);
 }
