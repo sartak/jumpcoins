@@ -151,6 +151,23 @@ const config = {
       startsMovingLeft: true,
       speed: 30,
     },
+    'B': {
+      image: 'spriteEnemyA',
+      group: 'enemies',
+      object: true,
+      dynamic: true,
+      edgeCareful: true,
+      speed: 30,
+    },
+    'b': {
+      image: 'spriteEnemyA',
+      group: 'enemies',
+      object: true,
+      dynamic: true,
+      edgeCareful: true,
+      startsMovingLeft: true,
+      speed: 30,
+    },
   },
 
   // filled in next
@@ -1357,7 +1374,7 @@ function frameUpdates() {
 }
 
 function updateEnemies() {
-  const { level } = state;
+  const { level, physics } = state;
   const { enemies } = level;
 
   enemies.forEach((enemy) => {
@@ -1371,6 +1388,17 @@ function updateEnemies() {
         enemy.movingLeft = false;
       } else if (!enemy.movingLeft && enemy.body.touching.right) {
         enemy.movingLeft = true;
+      }
+
+      if (enemy.config.edgeCareful) {
+        if (enemy.body.velocity.y > 0) {
+          enemy.movingLeft = !enemy.movingLeft;
+          enemy.setVelocityY(0);
+          enemy.X = enemy.oldX;
+          enemy.Y = enemy.oldY;
+        }
+        enemy.oldX = enemy.X;
+        enemy.oldY = enemy.Y;
       }
 
       if (enemy.movingLeft) {
