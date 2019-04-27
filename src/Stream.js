@@ -72,7 +72,7 @@ export default class Stream extends Component<any> {
     rules.add(debug, 'velocityY.jump', 0, 1000);
     rules.add(debug, 'velocityY.double_jump', 0, 1000);
     rules.add(debug, 'velocityY.wall_jump', 0, 1000);
-    rules.open();
+    rules.add(debug, 'wall_jump_ignore_direction_ms', 0, 2000);
 
     const cheats = gui.addFolder('Cheats');
     cheats.add(debug, 'cheat.hearty');
@@ -81,13 +81,11 @@ export default class Stream extends Component<any> {
     cheats.add(debug, 'winLevel');
     cheats.add(debug, 'restartLevel');
     cheats.add(debug, 'previousLevel');
-    cheats.open();
 
     const level = gui.addFolder('Level');
     level.add(debug, 'level.name').listen();
     level.add(debug, 'level.index').listen();
     level.add(debug, 'level.file').listen();
-    level.open();
 
     const player = gui.addFolder('Player');
     player.add(debug, 'player.life').listen();
@@ -109,7 +107,12 @@ export default class Stream extends Component<any> {
     player.add(debug, 'player.touching.down').listen();
     player.add(debug, 'player.touching.left').listen();
     player.add(debug, 'player.touching.right').listen();
-    player.open();
+
+    const vfx = gui.addFolder('Visual Effects');
+    vfx.add(debug, 'effect.damageBlur.amount', 0, 50.0);
+    vfx.add(debug, 'effect.damageBlur.in_ms', 0, 2000);
+    vfx.add(debug, 'effect.damageBlur.out_ms', 0, 2000);
+    vfx.add(debug, 'damageBlur');
 
     Object.keys(defaultProps).forEach((key) => {
       // eslint-disable-next-line no-underscore-dangle

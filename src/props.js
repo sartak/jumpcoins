@@ -75,9 +75,14 @@ export default {
   'cheat.forbidDoubleJump': false,
   'cheat.forbidWallJump': false,
 
+  'effect.damageBlur.amount': 2.5,
+  'effect.damageBlur.in_ms': 100,
+  'effect.damageBlur.out_ms': 200,
+
   'physics.debug': false,
 
   winLevel: () => window.state.commands.winLevel(),
   restartLevel: () => window.state.commands.restartLevel(),
   previousLevel: () => window.state.commands.previousLevel(),
+  damageBlur: () => window.state.commands.damageBlur(),
 };

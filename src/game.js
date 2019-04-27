@@ -106,7 +106,7 @@ const config = {
       group: 'spikes',
       knockback: 'left',
     },
-    '0': {
+    0: {
       image: 'tileEye',
       group: 'ground',
     },
@@ -163,12 +163,30 @@ const Shader = new Phaser.Class({
       fragShader: `
         precision mediump float;
         uniform vec2      resolution;
-        uniform sampler2D uMainSampler;
+        uniform sampler2D u_texture;
         varying vec2      outTexCoord;
+
+        uniform float blurEffect;
 
         void main( void ) {
           vec2 uv = outTexCoord;
-          vec4 c = texture2D(uMainSampler, uv);
+          vec4 c = texture2D(u_texture, uv);
+
+          if (blurEffect > 0.0) {
+            float b = blurEffect / resolution.x;
+            c *= 0.2270270270;
+
+            c += texture2D(u_texture, vec2(uv.x - 4.0*b, uv.y - 4.0*b)) * 0.0162162162;
+            c += texture2D(u_texture, vec2(uv.x - 3.0*b, uv.y - 3.0*b)) * 0.0540540541;
+            c += texture2D(u_texture, vec2(uv.x - 2.0*b, uv.y - 2.0*b)) * 0.1216216216;
+            c += texture2D(u_texture, vec2(uv.x - 1.0*b, uv.y - 1.0*b)) * 0.1945945946;
+
+            c += texture2D(u_texture, vec2(uv.x + 1.0*b, uv.y + 1.0*b)) * 0.1945945946;
+            c += texture2D(u_texture, vec2(uv.x + 2.0*b, uv.y + 2.0*b)) * 0.1216216216;
+            c += texture2D(u_texture, vec2(uv.x + 3.0*b, uv.y + 3.0*b)) * 0.0540540541;
+            c += texture2D(u_texture, vec2(uv.x + 4.0*b, uv.y + 4.0*b)) * 0.0162162162;
+          }
+
           gl_FragColor = vec4(c.r*c.a, c.g*c.a, c.b*c.a, 1.0);
         }`,
     });
@@ -196,6 +214,7 @@ export default function startGame(debug: any) {
     window.state.commands.winLevel = winLevel;
     window.state.commands.restartLevel = restartLevel;
     window.state.commands.previousLevel = previousLevel;
+    window.state.commands.damageBlur = damageBlur;
 
     Object.keys(props).forEach((key) => {
       debug[key] = props[key];
@@ -537,9 +556,41 @@ function setPlayerInvincible() {
   });
 }
 
+function damageBlur() {
+  const { game, level } = state;
+  const { player } = level;
+
+  if (player.blurTween) {
+    player.blurTween.stop();
+  }
+
+  player.blurTween = game.tweens.addCounter({
+    from: 0,
+    to: 100,
+    duration: prop('effect.damageBlur.in_ms'),
+    onUpdate: () => {
+      state.shader.setFloat1('blurEffect', prop('effect.damageBlur.amount') * (player.blurTween.getValue() / 100.0));
+    },
+    onComplete: () => {
+      player.blurTween = game.tweens.addCounter({
+        from: 100,
+        to: 0,
+        duration: prop('effect.damageBlur.out_ms'),
+        onUpdate: () => {
+          state.shader.setFloat1('blurEffect', prop('effect.damageBlur.amount') * (player.blurTween.getValue() / 100.0));
+        },
+      });
+    },
+  });
+}
+
 function spendLife(isVoluntary) {
   const { level } = state;
-  const { player } = level;
+  const { player, hud } = level;
+
+  if (!isVoluntary) {
+    damageBlur();
+  }
 
   if (prop('cheat.hearty')) {
     return;
@@ -547,7 +598,7 @@ function spendLife(isVoluntary) {
 
   player.life--;
 
-  const heart = level.hud.hearts.pop();
+  const heart = hud.hearts.pop();
 
   // this should never happen, but better to not crash…
   if (heart) {
@@ -702,6 +753,7 @@ function create() {
 
   if (game.game.renderer.type === Phaser.WEBGL) {
     state.shader = game.game.renderer.addPipeline('Shader', new Shader(game.game));
+    state.shader.setFloat1('blurEffect', 0.0);
     state.shader.setFloat2('resolution', config.width, config.height);
     game.cameras.main.setRenderToTexture(state.shader);
   }
