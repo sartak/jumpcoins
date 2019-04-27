@@ -42,5 +42,5 @@ export default {
   'player.velocity.y': 0.01,
 
   winLevel: () => window.state.commands.winLevel(),
-  // explode: () => alert(`${window.state.foo} / ${window.gameConfig.width} / ${window.props.temp}`),
+  restartLevel: () => window.state.commands.restartLevel(),
 };

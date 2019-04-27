@@ -62,6 +62,7 @@ export default class Stream extends Component<any> {
     level.add(debug, 'level.name').listen();
     level.add(debug, 'level.index').listen();
     level.add(debug, 'winLevel');
+    level.add(debug, 'restartLevel');
     level.open();
 
     const player = gui.addFolder('Player');
@@ -70,8 +71,6 @@ export default class Stream extends Component<any> {
     player.add(debug, 'player.velocity.x').listen();
     player.add(debug, 'player.velocity.y').listen();
     player.open();
-
-    // gui.add(debug, 'temp', 0, 100);
 
     Object.keys(defaultProps).forEach((key) => {
       // eslint-disable-next-line no-underscore-dangle

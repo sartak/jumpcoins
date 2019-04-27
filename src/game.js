@@ -125,6 +125,7 @@ export default function startGame(debug: any) {
     window.props = debug;
 
     window.state.commands.winLevel = winLevel;
+    window.state.commands.restartLevel = restartLevel;
 
     Object.keys(props).forEach((key) => {
       debug[key] = props[key];
@@ -324,6 +325,11 @@ function winLevel() {
       setupLevel();
     },
   });
+}
+
+function restartLevel() {
+  state.levelIndex--;
+  winLevel();
 }
 
 function takeDamage() {
