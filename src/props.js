@@ -70,6 +70,7 @@ export default {
   'player.touching.down': false,
   'player.touching.left': false,
   'player.touching.right': false,
+  'player.freebies': 0,
 
   'cheat.hearty': true,
   'cheat.forbidDoubleJump': false,

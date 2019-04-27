@@ -27,7 +27,7 @@ import tileSpikesRight from './assets/tiles/spikes-right.png';
 import tileEye from './assets/tiles/eye.png';
 
 import spritePlayerDefault from './assets/sprites/player-default.png';
-
+import spriteFreebie from './assets/sprites/freebie.png';
 import spriteHeart from './assets/sprites/heart.png';
 
 // YOUR LIFE IS CURRENCY
@@ -62,8 +62,8 @@ const config = {
     levelDoubleJumpA,
     levelDoubleJumpB,
     levelDoubleJumpC,
-    levelDoubleJumpBB,
     levelDoubleJumpD,
+    levelDoubleJumpBB,
 
     levelWallJump,
     levelWallJumpA,
@@ -111,6 +111,11 @@ const config = {
       group: 'ground',
     },
     '@': null, // player
+    '*': {
+      image: 'spriteFreebie',
+      group: 'freebies',
+      object: true,
+    },
   },
 
   // filled in next
@@ -271,6 +276,7 @@ function preload() {
 
   game.load.image('spritePlayerDefault', spritePlayerDefault);
   game.load.image('spriteHeart', spriteHeart);
+  game.load.spritesheet('spriteFreebie', spriteFreebie, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
 }
 
 function parseMap(lines, level) {
@@ -354,7 +360,9 @@ function createLevel(index) {
 
   level.hud = {};
 
-  renderMap();
+  initializeMap();
+
+  createLevelObjects();
 
   createPlayer();
 
@@ -366,7 +374,7 @@ function positionToScreenCoordinate(x, y) {
   return [x * tileWidth + xBorder, y * tileHeight + yBorder];
 }
 
-function renderMap() {
+function initializeMap() {
   const { game, level, physics } = state;
   const { map } = level;
   const { tileWidth, tileHeight } = config;
@@ -375,6 +383,7 @@ function renderMap() {
   const halfHeight = tileHeight / 2;
 
   const images = [];
+  const objectDescriptions = [];
   const tiles = {};
   const toCombine = _.range(config.mapWidth).map(() => []);
 
@@ -392,6 +401,12 @@ function renderMap() {
         toCombine[c].push(tile);
         const image = game.add.image(x, y, tile.image);
         images.push(image);
+      } else if (tile.object) {
+        objectDescriptions.push({
+          x,
+          y,
+          tile,
+        });
       } else {
         if (!tiles[tile.group]) {
           tiles[tile.group] = physics.add.staticGroup();
@@ -440,6 +455,29 @@ function renderMap() {
 
   level.tiles = tiles;
   level.images = images;
+  level.objectDescriptions = objectDescriptions;
+}
+
+function createLevelObjects() {
+  const { level, physics } = state;
+  const { objectDescriptions, tiles } = level;
+
+  const objects = {
+    freebies: [],
+  };
+
+  objectDescriptions.forEach(({ x, y, tile }) => {
+    const { group } = tile;
+    if (!tiles[group]) {
+      tiles[group] = physics.add.staticGroup();
+    }
+
+    const body = tiles[group].create(x, y, tile.image);
+    body.config = tile;
+    objects[group].push(body);
+  });
+
+  level.objects = objects;
 }
 
 function createPlayer() {
@@ -453,6 +491,7 @@ function createPlayer() {
   player.y += player.height / 2;
 
   player.life = level.baseLife;
+  player.freebies = 0;
 
   player.setSize(player.width * 0.8, player.height * 0.8, true);
 
@@ -475,7 +514,7 @@ function removePhysics() {
 function destroyLevel(playerOnly) {
   const { level } = state;
   const { tiles, images, player, hud } = level;
-  const { hearts, hints } = hud;
+  const { hearts, freebies, hints } = hud;
 
   if (!playerOnly) {
     Object.keys(level.tiles).forEach((name) => {
@@ -490,6 +529,10 @@ function destroyLevel(playerOnly) {
 
   hearts.forEach((heart) => {
     heart.destroy();
+  });
+
+  freebies.forEach((freebie) => {
+    freebie.destroy();
   });
 
   hints.forEach((hint) => {
@@ -630,21 +673,32 @@ function spendLife(isVoluntary) {
   const { level } = state;
   const { player, hud } = level;
 
-  if (!isVoluntary) {
+  let spendFreebie = false;
+
+  if (isVoluntary) {
+    if (player.freebies > 0) {
+      spendFreebie = true;
+    }
+  } else {
     damageBlur();
   }
 
-  if (prop('cheat.hearty')) {
-    return;
-  }
+  if (spendFreebie) {
+    player.freebies--;
 
-  player.life--;
+    const freebie = hud.freebies.pop();
+    // this should never happen, but better to not crash…
+    if (freebie) {
+      freebie.destroy();
+    }
+  } else if (!prop('cheat.hearty')) {
+    player.life--;
 
-  const heart = hud.hearts.pop();
-
-  // this should never happen, but better to not crash…
-  if (heart) {
-    heart.destroy();
+    const heart = hud.hearts.pop();
+    // this should never happen, but better to not crash…
+    if (heart) {
+      heart.destroy();
+    }
   }
 
   if (player.life <= 0) {
@@ -652,7 +706,6 @@ function spendLife(isVoluntary) {
     respawn();
   }
 }
-
 
 function takeSpikeDamage(object1, object2) {
   const { game, level } = state;
@@ -690,6 +743,33 @@ function takeSpikeDamage(object1, object2) {
   }
 }
 
+function acquireFreebie(object1, object2) {
+  const { game, level } = state;
+  const { player, hud } = level;
+
+  const freebie = object1.config && object1.config.group === 'freebie' ? object1 : object2;
+
+  freebie.spent = true;
+  freebie.setFrame(1);
+
+  player.freebies++;
+
+  const x = 2 * config.tileWidth;
+  const y = 0;
+  const img = game.add.image(x, y, 'spriteFreebie');
+  hud.freebies.push(img);
+  img.x += img.width / 2 + img.width * (player.freebies + player.life);
+  img.y += config.yBorder / 2;
+}
+
+function checkFreebieSpent(object1, object2) {
+  const { game, level } = state;
+  const { player, hud } = level;
+
+  const freebie = object1.config && object1.config.group === 'freebie' ? object1 : object2;
+  return !freebie.spent;
+}
+
 function setupLevelPhysics(isInitial) {
   const { game, level, physics } = state;
   const { player, tiles } = level;
@@ -697,6 +777,7 @@ function setupLevelPhysics(isInitial) {
   physics.add.collider(player, tiles.ground);
   physics.add.overlap(player, tiles.exit, winLevel);
   physics.add.collider(player, tiles.spikes, takeSpikeDamage);
+  physics.add.overlap(player, tiles.freebies, acquireFreebie, checkFreebieSpent);
 }
 
 function renderHud() {
@@ -711,6 +792,8 @@ function renderHud() {
     heart.y += config.yBorder / 2;
     return heart;
   });
+
+  hud.freebies = [];
 
   hud.hints = [];
   if (hint) {
@@ -744,6 +827,7 @@ function respawn() {
   game.time.addEvent({
     callback: () => {
       destroyLevel(true);
+      createLevelObjects();
       createPlayer();
       renderHud();
       setupLevelPhysics(false);
@@ -1017,6 +1101,8 @@ function renderDebug() {
   listenProp('player.touching.left', player.body.touching.left);
   listenProp('player.touching.right', player.body.touching.right);
 
+  listenProp('player.freebies', player.freebies);
+
   if (state.shader) {
     state.shader.setFloat1('shockwaveScale', prop('effect.shockwave.scale'));
     state.shader.setFloat1('shockwaveRange', prop('effect.shockwave.range'));
@@ -1029,7 +1115,7 @@ function renderDebug() {
 
 function frameUpdates() {
   const { level } = state;
-  const { player } = level;
+  const { player, hud } = level;
 
   if (player.ignoreInput && player.canCancelIgnoreInput) {
     if (player.body.touching.down || player.body.touching.left || player.body.touching.right || player.body.touching.up) {
@@ -1053,6 +1139,21 @@ function frameUpdates() {
 
     if (prop('cheat.forbidWallJump')) {
       player.canWallJump = false;
+    }
+
+    level.objects.freebies.forEach((freebie) => {
+      if (freebie.spent) {
+        freebie.spent = false;
+        freebie.setFrame(0);
+      }
+    });
+
+    if (player.freebies) {
+      player.freebies = 0;
+      hud.freebies.forEach((freebie) => {
+        freebie.destroy();
+      });
+      hud.freebies = [];
     }
   }
 

@@ -107,6 +107,7 @@ export default class Stream extends Component<any> {
     player.add(debug, 'player.touching.down').listen();
     player.add(debug, 'player.touching.left').listen();
     player.add(debug, 'player.touching.right').listen();
+    player.add(debug, 'player.freebies').listen();
 
     const vfx = gui.addFolder('Visual Effects');
     vfx.add(debug, 'effect.damageBlur.amount', 0, 50.0);
