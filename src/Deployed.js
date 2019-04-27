@@ -48,7 +48,7 @@ class GameMetadata extends Component<{}> {
         <p>
           for the theme
           <br />
-          <em>"TBD"</em>
+          <em>"Your life is currency"</em>
         </p>
         <p>
           code at

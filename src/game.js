@@ -3,6 +3,8 @@ import Phaser from 'phaser';
 import _ from 'lodash';
 import props from './props';
 
+// YOUR LIFE IS CURRENCY
+
 const DEBUG = (!process.env.NODE_ENV || process.env.NODE_ENV === 'development');
 
 const config = {
