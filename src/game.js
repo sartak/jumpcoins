@@ -26,9 +26,10 @@ import tileSpikesLeft from './assets/tiles/spikes-left.png';
 import tileSpikesRight from './assets/tiles/spikes-right.png';
 import tileEye from './assets/tiles/eye.png';
 
-import spritePlayerDefault from './assets/sprites/player-default.png';
+import spritePlayer from './assets/sprites/player.png';
 import spriteFreebie from './assets/sprites/freebie.png';
 import spriteHeart from './assets/sprites/heart.png';
+import spriteEnemyA from './assets/sprites/enemy-a.png';
 
 // YOUR LIFE IS CURRENCY
 
@@ -115,6 +116,12 @@ const config = {
       image: 'spriteFreebie',
       group: 'freebies',
       object: true,
+    },
+    'A': {
+      image: 'spriteEnemyA',
+      group: 'enemies',
+      object: true,
+      dynamic: true,
     },
   },
 
@@ -274,7 +281,8 @@ function preload() {
   game.load.image('tileSpikesRight', tileSpikesRight);
   game.load.image('tileEye', tileEye);
 
-  game.load.image('spritePlayerDefault', spritePlayerDefault);
+  game.load.image('spritePlayer', spritePlayer);
+  game.load.image('spriteEnemyA', spriteEnemyA);
   game.load.image('spriteHeart', spriteHeart);
   game.load.spritesheet('spriteFreebie', spriteFreebie, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
 }
@@ -384,7 +392,7 @@ function initializeMap() {
 
   const images = [];
   const objectDescriptions = [];
-  const tiles = {};
+  const statics = {};
   const toCombine = _.range(config.mapWidth).map(() => []);
 
   map.forEach((row, r) => {
@@ -408,11 +416,11 @@ function initializeMap() {
           tile,
         });
       } else {
-        if (!tiles[tile.group]) {
-          tiles[tile.group] = physics.add.staticGroup();
+        if (!statics[tile.group]) {
+          statics[tile.group] = physics.add.staticGroup();
         }
 
-        const body = tiles[tile.group].create(x, y, tile.image);
+        const body = statics[tile.group].create(x, y, tile.image);
         body.config = tile;
       }
     });
@@ -427,14 +435,14 @@ function initializeMap() {
 
     const processGroup = (members) => {
       const [tile] = members;
-      if (!tiles[tile.group]) {
-        tiles[tile.group] = physics.add.staticGroup();
+      if (!statics[tile.group]) {
+        statics[tile.group] = physics.add.staticGroup();
       }
 
       let [x, y] = positionToScreenCoordinate(tile.x, tile.y);
       x += halfWidth;
       y += halfHeight;
-      const body = tiles[tile.group].create(x, y, tile.image);
+      const body = statics[tile.group].create(x, y, tile.image);
       body.setSize(tileWidth, tileHeight * members.length);
       body.config = tile;
     };
@@ -453,30 +461,40 @@ function initializeMap() {
     processGroup(group);
   });
 
-  level.tiles = tiles;
+  level.statics = statics;
   level.images = images;
   level.objectDescriptions = objectDescriptions;
 }
 
 function createLevelObjects() {
   const { level, physics } = state;
-  const { objectDescriptions, tiles } = level;
+  const { objectDescriptions, statics } = level;
 
   const objects = {
     freebies: [],
+    enemies: [],
   };
 
   objectDescriptions.forEach(({ x, y, tile }) => {
-    const { group } = tile;
-    if (!tiles[group]) {
-      tiles[group] = physics.add.staticGroup();
+    const { group, dynamic } = tile;
+
+    let body;
+
+    if (dynamic) {
+      body = physics.add.sprite(x, y, tile.image);
+    } else {
+      if (!statics[group]) {
+        statics[group] = physics.add.staticGroup();
+      }
+
+      body = statics[group].create(x, y, tile.image);
     }
 
-    const body = tiles[group].create(x, y, tile.image);
     body.config = tile;
     objects[group].push(body);
   });
 
+  level.enemies = objects.enemies;
   level.objects = objects;
 }
 
@@ -485,7 +503,7 @@ function createPlayer() {
 
   const location = level.playerLocation;
   const [x, y] = positionToScreenCoordinate(location[0], location[1]);
-  const player = physics.add.sprite(x, y, 'spritePlayerDefault');
+  const player = physics.add.sprite(x, y, 'spritePlayer');
 
   player.x += player.width / 2;
   player.y += player.height / 2;
@@ -513,13 +531,17 @@ function removePhysics() {
 
 function destroyLevel(playerOnly) {
   const { level } = state;
-  const { tiles, images, player, hud } = level;
+  const { statics, images, player, hud } = level;
   const { hearts, freebies, hints } = hud;
 
   if (!playerOnly) {
-    Object.keys(level.tiles).forEach((name) => {
-      const group = level.tiles[name];
+    Object.keys(level.statics).forEach((name) => {
+      const group = level.statics[name];
       destroyGroup(group);
+    });
+
+    level.enemies.forEach((enemy) => {
+      enemy.destroy();
     });
 
     images.forEach((image) => {
@@ -575,6 +597,9 @@ function restartLevel() {
 
 function previousLevel() {
   state.levelIndex -= 2;
+  if (state.levelIndex < 0) {
+    state.levelIndex += config.levels.length;
+  }
   winLevel();
 }
 
@@ -743,6 +768,21 @@ function takeSpikeDamage(object1, object2) {
   }
 }
 
+function takeEnemyDamage(object1, object2) {
+  const { game, level } = state;
+  const { player } = level;
+
+  if (player.invincible) {
+    return;
+  }
+
+  const enemy = object1.config && object1.config.group === 'enemies' ? object1 : object2;
+
+  spendLife(false);
+
+  setPlayerInvincible();
+}
+
 function acquireFreebie(object1, object2) {
   const { game, level } = state;
   const { player, hud } = level;
@@ -772,12 +812,20 @@ function checkFreebieSpent(object1, object2) {
 
 function setupLevelPhysics(isInitial) {
   const { game, level, physics } = state;
-  const { player, tiles } = level;
+  const { player, statics, enemies } = level;
 
-  physics.add.collider(player, tiles.ground);
-  physics.add.overlap(player, tiles.exit, winLevel);
-  physics.add.collider(player, tiles.spikes, takeSpikeDamage);
-  physics.add.overlap(player, tiles.freebies, acquireFreebie, checkFreebieSpent);
+  physics.add.collider(player, statics.ground);
+  physics.add.collider(enemies, statics.ground);
+
+  physics.add.overlap(player, statics.exit, winLevel);
+  physics.add.collider(enemies, statics.exit);
+
+  physics.add.collider(player, statics.spikes, takeSpikeDamage);
+  physics.add.collider(enemies, statics.spikes);
+
+  physics.add.overlap(player, statics.freebies, acquireFreebie, checkFreebieSpent);
+
+  physics.add.collider(player, enemies, takeEnemyDamage);
 }
 
 function renderHud() {
