@@ -23,6 +23,7 @@
 
 {
   "name": "Hello!",
-  "baseLife": 2
+  "baseLife": 2,
+  "hint": "Press [Z] to jump!"
 }
 

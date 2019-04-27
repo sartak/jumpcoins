@@ -23,6 +23,6 @@
 
 {
   "name": "Double Jump",
-  "baseLife": 2,
-  "hint": "Press [UP] and [JUMP] to Double Jump! but…"
+  "baseLife": 3,
+  "hint": "Press [UP] and [JUMP] to double-jump! but…"
 }

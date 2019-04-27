@@ -11,6 +11,9 @@ import levelBye from './assets/maps/bye.map';
 import tileWall from './assets/tiles/wall.png';
 import tileExit from './assets/tiles/exit.png';
 import tileSpikesUp from './assets/tiles/spikes-up.png';
+import tileSpikesDown from './assets/tiles/spikes-down.png';
+import tileSpikesLeft from './assets/tiles/spikes-left.png';
+import tileSpikesRight from './assets/tiles/spikes-right.png';
 
 import spritePlayerDefault from './assets/sprites/player-default.png';
 
@@ -65,6 +68,22 @@ const config = {
     '^': {
       image: 'tileSpikesUp',
       group: 'spikes',
+      knockback: true,
+    },
+    v: {
+      image: 'tileSpikesDown',
+      group: 'spikes',
+      knockback: true,
+    },
+    '<': {
+      image: 'tileSpikesLeft',
+      group: 'spikes',
+      knockback: 'left',
+    },
+    '>': {
+      image: 'tileSpikesRight',
+      group: 'spikes',
+      knockback: 'right',
     },
     '@': null, // player
   },
@@ -90,7 +109,7 @@ const state : any = {
   commands: {},
 };
 
-function prop(name: string) {
+function prop(name: string): any {
   if (DEBUG && name in window.props) {
     return window.props[name];
   }
@@ -174,6 +193,9 @@ function preload() {
   game.load.image('tileWall', tileWall);
   game.load.image('tileExit', tileExit);
   game.load.image('tileSpikesUp', tileSpikesUp);
+  game.load.image('tileSpikesDown', tileSpikesDown);
+  game.load.image('tileSpikesLeft', tileSpikesLeft);
+  game.load.image('tileSpikesRight', tileSpikesRight);
   game.load.image('spritePlayerDefault', spritePlayerDefault);
   game.load.image('spriteHeart', spriteHeart);
 }
@@ -294,7 +316,8 @@ function renderMap() {
           tiles[tile.group] = physics.add.staticGroup();
         }
 
-        tiles[tile.group].create(x, y, tile.image);
+        const body = tiles[tile.group].create(x, y, tile.image);
+        body.config = tile;
       }
     });
   });
@@ -317,6 +340,7 @@ function renderMap() {
       y += halfHeight;
       const body = tiles[tile.group].create(x, y, tile.image);
       body.setSize(tileWidth, tileHeight * members.length);
+      body.config = tile;
     };
 
     let group = [column.shift()];
@@ -495,7 +519,7 @@ function spendLife(isVoluntary) {
 }
 
 
-function takeSpikeDamage() {
+function takeSpikeDamage(object1, object2) {
   const { game, level } = state;
   const { player } = level;
 
@@ -503,26 +527,32 @@ function takeSpikeDamage() {
     return;
   }
 
+  const spikes = object1.config && object1.config.group === 'spikes' ? object1 : object2;
+  const { knockback } = spikes.config;
+
   spendLife(false);
 
   setPlayerInvincible();
 
-  player.ignoreInput = true;
-  player.canCancelIgnoreInput = false;
-
-  game.time.addEvent({
-    delay: prop('min_ignore_input_ms'),
-    callback: () => {
-      player.canCancelIgnoreInput = true;
-    },
-  });
-
-  if (player.facingLeft) {
+  if (knockback === 'left' || (knockback === true && player.facingLeft)) {
     player.setVelocityX(prop('spike_knockback.x'));
-  } else {
+  } else if (knockback === 'right' || (knockback === true && !player.facingLeft)) {
     player.setVelocityX(-prop('spike_knockback.x'));
   }
-  player.setVelocityY(-prop('spike_knockback.y'));
+
+  if (knockback) {
+    player.setVelocityY(-prop('spike_knockback.y'));
+
+    player.ignoreInput = true;
+    player.canCancelIgnoreInput = false;
+
+    game.time.addEvent({
+      delay: prop('min_ignore_input_ms'),
+      callback: () => {
+        player.canCancelIgnoreInput = true;
+      },
+    });
+  }
 }
 
 function setupLevelPhysics(isInitial) {
