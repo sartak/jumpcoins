@@ -41,6 +41,7 @@ export default {
   'gamepad.r_stick.x': 0.01,
   'gamepad.r_stick.y': 0.01,
 
+  'player.life': 0,
   'player.x': 0.01,
   'player.y': 0.01,
   'player.velocity.x': 0.01,

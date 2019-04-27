@@ -13,6 +13,8 @@ import tileSpikesUp from './assets/tiles/spikes-up.png';
 
 import spritePlayerDefault from './assets/sprites/player-default.png';
 
+import spriteHeart from './assets/sprites/heart.png';
+
 // YOUR LIFE IS CURRENCY
 
 const DEBUG = (!process.env.NODE_ENV || process.env.NODE_ENV === 'development');
@@ -63,7 +65,17 @@ const config = {
     },
     '@': null, // player
   },
+
+  // filled in next
+  xBorder: 0,
+  yBorder: 0,
 };
+
+{
+  const { width, height, mapWidth, mapHeight, tileWidth, tileHeight } = config;
+  config.xBorder = (width - (mapWidth * tileWidth)) / 2;
+  config.yBorder = (height - (mapHeight * tileHeight)) / 2;
+}
 
 const state : any = {
   game: null,
@@ -150,6 +162,7 @@ function preload() {
   game.load.image('tileExit', tileExit);
   game.load.image('tileSpikesUp', tileSpikesUp);
   game.load.image('spritePlayerDefault', spritePlayerDefault);
+  game.load.image('spriteHeart', spriteHeart);
 }
 
 function parseMap(lines, level) {
@@ -218,10 +231,12 @@ function createLevel(index) {
     window.level = level;
   }
 
+  state.level = level;
+
   listenProp('level.name', level.name);
   listenProp('level.index', index);
 
-  state.level = level;
+  level.hud = {};
 
   createPlayer();
 
@@ -229,9 +244,7 @@ function createLevel(index) {
 }
 
 function positionToScreenCoordinate(x, y) {
-  const { width, height, mapWidth, mapHeight, tileWidth, tileHeight } = config;
-  const xBorder = (width - (mapWidth * tileWidth)) / 2;
-  const yBorder = (height - (mapHeight * tileHeight)) / 2;
+  const { tileWidth, tileHeight, xBorder, yBorder } = config;
   return [x * tileWidth + xBorder, y * tileHeight + yBorder];
 }
 
@@ -264,7 +277,7 @@ function renderInitialLevel() {
 }
 
 function createPlayer() {
-  const { physics, level } = state;
+  const { game, physics, level } = state;
 
   const location = level.playerLocation;
   const [x, y] = positionToScreenCoordinate(location[0], location[1]);
@@ -272,6 +285,8 @@ function createPlayer() {
 
   player.x += player.width / 2;
   player.y += player.height / 2;
+
+  player.life = level.baseLife;
 
   level.player = player;
   return player;
@@ -289,13 +304,19 @@ function removePhysics() {
   physics.world.colliders.destroy();
 }
 
-function destroyLevel() {
+function destroyLevel(playerOnly) {
   const { level } = state;
   const { tiles, player } = level;
 
-  Object.keys(level.tiles).forEach((name) => {
-    const group = level.tiles[name];
-    destroyGroup(group);
+  if (!playerOnly) {
+    Object.keys(level.tiles).forEach((name) => {
+      const group = level.tiles[name];
+      destroyGroup(group);
+    });
+  }
+
+  level.hud.hearts.forEach((heart) => {
+    heart.destroy();
   });
 
   player.destroy();
@@ -304,18 +325,18 @@ function destroyLevel() {
 function winLevel() {
   const { game, level } = state;
 
-  if (level.cleaningUp) {
+  if (level.isWinning) {
     return;
   }
 
-  level.cleaningUp = true;
+  level.isWinning = true;
 
   removePhysics();
 
   // defer this to avoid crashes while removing during collider callback
   game.time.addEvent({
     callback: () => {
-      destroyLevel();
+      destroyLevel(false);
 
       state.levelIndex++;
       if (state.levelIndex === config.levels.length) {
@@ -379,6 +400,25 @@ function setPlayerInvincible() {
   });
 }
 
+function spendLife(isVoluntary) {
+  const { level } = state;
+  const { player } = level;
+
+  player.life--;
+
+  const heart = level.hud.hearts.pop();
+
+  // this should never happen, but better to not crash…
+  if (heart) {
+    heart.destroy();
+  }
+
+  if (player.life <= 0) {
+    respawn();
+  }
+}
+
+
 function takeSpikeDamage() {
   const { game, level } = state;
   const { player } = level;
@@ -386,6 +426,8 @@ function takeSpikeDamage() {
   if (player.invincible) {
     return;
   }
+
+  spendLife(false);
 
   setPlayerInvincible();
 
@@ -407,7 +449,7 @@ function takeSpikeDamage() {
   player.setVelocityY(-prop('spike_knockback.y'));
 }
 
-function setupInitialLevelPhysics() {
+function setupLevelPhysics(isInitial) {
   const { game, level, physics } = state;
   const { player, tiles } = level;
 
@@ -416,11 +458,46 @@ function setupInitialLevelPhysics() {
   physics.add.collider(player, tiles.spikes, takeSpikeDamage);
 }
 
+function renderHud() {
+  const { game, level } = state;
+  const { player } = level;
+
+  level.hud.hearts = _.range(player.life).map((i) => {
+    const x = 2 * config.tileWidth;
+    const y = 0;
+    const heart = game.add.image(x, y, 'spriteHeart');
+    heart.x += heart.width / 2 + heart.width * i;
+    heart.y += config.yBorder / 2;
+    return heart;
+  });
+}
+
+function respawn() {
+  const { game, level } = state;
+  const { player } = level;
+
+  if (player.isRespawning) {
+    return;
+  }
+
+  player.isRespawning = true;
+
+  game.time.addEvent({
+    callback: () => {
+      destroyLevel(true);
+      createPlayer();
+      renderHud();
+      setupLevelPhysics(false);
+    },
+  });
+}
+
 function setupLevel() {
   const { levelIndex } = state;
   createLevel(levelIndex);
   renderInitialLevel();
-  setupInitialLevelPhysics();
+  renderHud();
+  setupLevelPhysics(true);
 }
 
 function create() {
@@ -541,6 +618,7 @@ function renderDebug() {
   const { level } = state;
   const { player } = level;
 
+  listenProp('player.life', player.life);
   listenProp('player.x', player.x);
   listenProp('player.y', player.y);
   listenProp('player.velocity.x', player.body.velocity.x);

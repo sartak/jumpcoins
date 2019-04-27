@@ -73,6 +73,7 @@ export default class Stream extends Component<any> {
     level.open();
 
     const player = gui.addFolder('Player');
+    player.add(debug, 'player.life').listen();
     player.add(debug, 'player.x').listen();
     player.add(debug, 'player.y').listen();
     player.add(debug, 'player.velocity.x').listen();

@@ -22,7 +22,7 @@
 ##############################
 
 {
-  "name": "Avoid Spikes!"
+  "name": "Avoid Spikes!",
+  "baseLife": 2
 }
-
 
