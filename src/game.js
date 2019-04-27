@@ -297,6 +297,14 @@ function createLevel(index) {
   listenProp('level.name', level.name);
   listenProp('level.index', index);
 
+  const filename = config.levels[index];
+  const match = filename.match(/\/([^/]+)\.\w+\.map$/);
+  if (match) {
+    listenProp('level.file', `${match[1]}.map`);
+  } else {
+    listenProp('level.file', filename);
+  }
+
   level.hud = {};
 
   renderMap();

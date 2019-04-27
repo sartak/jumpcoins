@@ -18,6 +18,7 @@ export default {
 
   'level.name': '',
   'level.index': -1,
+  'level.file': '',
 
   'input.upButtonDown': false,
   'input.downButtonDown': false,

@@ -78,14 +78,15 @@ export default class Stream extends Component<any> {
     cheats.add(debug, 'cheat.hearty');
     cheats.add(debug, 'cheat.forbidDoubleJump');
     cheats.add(debug, 'cheat.forbidWallJump');
+    cheats.add(debug, 'winLevel');
+    cheats.add(debug, 'restartLevel');
+    cheats.add(debug, 'previousLevel');
     cheats.open();
 
     const level = gui.addFolder('Level');
     level.add(debug, 'level.name').listen();
     level.add(debug, 'level.index').listen();
-    level.add(debug, 'winLevel');
-    level.add(debug, 'restartLevel');
-    level.add(debug, 'previousLevel');
+    level.add(debug, 'level.file').listen();
     level.open();
 
     const player = gui.addFolder('Player');
