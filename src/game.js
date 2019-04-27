@@ -832,9 +832,26 @@ function readInput() {
   listenProp('keyboard.left', cursors.left.isDown);
   listenProp('keyboard.right', cursors.right.isDown);
 
+  const rumble = state.rumble;
+  state.rumble = null;
+
   if (game.input.gamepad.total) {
     const pads = game.input.gamepad.gamepads;
     pads.filter(pad => pad).forEach((pad) => {
+      /*
+      if (rumble) {
+        if (pad.vibration && pad.vibration.playEffect) {
+          pad.vibration.playEffect('dual-rumble', {
+            duration: 1000,
+            strongMagnitude: 1.0,
+            weakMagnitude: 1.0,
+          });
+        } else if (pad.vibration && pad.vibration.pulse) {
+          pad.vibration.pulse(1.0, 1000);
+        }
+      }
+      */
+
       const { A, B, X, Y, L1, L2, R1, R2, up, down, left, right, leftStick, rightStick } = pad;
 
       state.upButtonDown = state.upButtonDown || up;
@@ -890,8 +907,10 @@ function processInput() {
 
   if (jumpButtonStarted) {
     if (isStanding) {
+      state.rumble = true;
       player.setVelocityY(-prop('velocityY.jump'));
     } else if (player.canWallJump && ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown))) {
+      state.rumble = true;
       player.setVelocityY(-prop('velocityY.wall_jump'));
       if (player.body.touching.right) {
         player.facingLeft = true;
@@ -916,6 +935,7 @@ function processInput() {
 
       player.isDoubleJumping = false;
     } else if (player.canDoubleJump && upButtonDown) {
+      state.rumble = true;
       player.setVelocityY(-prop('velocityY.double_jump'));
       player.isDoubleJumping = true;
 
