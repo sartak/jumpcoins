@@ -92,6 +92,11 @@ function prop(name: string) {
   if (DEBUG && name in window.props) {
     return window.props[name];
   }
+
+  if (name.match(/^cheat\./)) {
+    return false;
+  }
+
   return props[name];
 }
 
@@ -657,7 +662,7 @@ function readInput() {
 }
 
 function processInput() {
-  const { level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonStarted } = state;
+  const { game, level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonStarted } = state;
   const { player } = level;
 
   if (player.ignoreInput) {
@@ -666,34 +671,79 @@ function processInput() {
 
   const isStanding = player.body.touching.down;
 
-  if (jumpButtonStarted && (isStanding || (player.canDoubleJump && upButtonDown))) {
+  if (jumpButtonStarted) {
     if (isStanding) {
       player.setVelocityY(-prop('velocityY.jump'));
-    } else {
+    } else if (player.canWallJump && ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown))) {
+      player.setVelocityY(-prop('velocityY.wall_jump'));
+      if (player.body.touching.right) {
+        player.facingLeft = true;
+        player.wallJumpDirectionLeft = true;
+      } else {
+        player.facingLeft = false;
+        player.wallJumpDirectionLeft = false;
+      }
+
+      player.isWallJumping = true;
+      player.wallJumpIgnoreDirection = true;
+      player.wallJumpContinuing = false;
+      spendLife(true);
+
+      game.time.addEvent({
+        delay: prop('wall_jump_ignore_direction_ms'),
+        callback: () => {
+          player.wallJumpIgnoreDirection = false;
+          player.wallJumpContinuing = true;
+        },
+      });
+
+      player.isDoubleJumping = false;
+    } else if (player.canDoubleJump && upButtonDown) {
       player.setVelocityY(-prop('velocityY.double_jump'));
-      player.canDoubleJump = false;
       player.isDoubleJumping = true;
+
+      player.isWallJumpingFalse = false;
+      player.wallJumpIgnoreDirection = false;
+      player.wallJumpContinuing = false;
+
       spendLife(true);
     }
   }
 
-  let x = prop('velocityX.walk');
-  if (!isStanding) {
-    if (player.isDoubleJumping) {
-      x = prop('velocityX.double_jump');
-    } else {
-      x = prop('velocityX.jump');
+  if (player.wallJumpContinuing) {
+    if ((player.wallJumpDirectionLeft && !leftButtonDown) || (!player.wallJumpDirectionLeft && !rightButtonDown)) {
+      player.wallJumpContinuing = false;
     }
   }
 
-  if (leftButtonDown) {
-    player.setVelocityX(-x);
-    player.facingLeft = true;
-  } else if (rightButtonDown) {
-    player.setVelocityX(x);
-    player.facingLeft = false;
+  if (player.wallJumpIgnoreDirection || player.wallJumpContinuing) {
+    const x = prop('velocityX.wall_jump');
+    if (player.facingLeft) {
+      player.setVelocityX(-x);
+    } else {
+      player.setVelocityX(x);
+    }
   } else {
-    player.setVelocityX(0);
+    let x = prop('velocityX.walk');
+    if (!isStanding) {
+      if (player.isWallJumping && ((player.wallJumpDirectionLeft && rightButtonDown) || (!player.wallJumpDirectionLeft && leftButtonDown))) {
+        x = prop('velocityX.reversed_wall_jump');
+      } else if (player.isDoubleJumping) {
+        x = prop('velocityX.double_jump');
+      } else {
+        x = prop('velocityX.jump');
+      }
+    }
+
+    if (leftButtonDown) {
+      player.setVelocityX(-x);
+      player.facingLeft = true;
+    } else if (rightButtonDown) {
+      player.setVelocityX(x);
+      player.facingLeft = false;
+    } else {
+      player.setVelocityX(0);
+    }
   }
 }
 
@@ -711,6 +761,11 @@ function renderDebug() {
   listenProp('player.canCancelIgnoreInput', player.canCancelIgnoreInput);
   listenProp('player.canDoubleJump', player.canDoubleJump);
   listenProp('player.isDoubleJumping', player.isDoubleJumping);
+  listenProp('player.canWallJump', player.canWallJump);
+  listenProp('player.isWallJumping', player.isWallJumping);
+  listenProp('player.wallJumpIgnoreDirection', player.wallJumpIgnoreDirection);
+  listenProp('player.wallJumpContinuing', player.wallJumpContinuing);
+  listenProp('player.wallJumpDirectionLeft', player.wallJumpDirectionLeft);
   listenProp('player.touching.up', player.body.touching.up);
   listenProp('player.touching.down', player.body.touching.down);
   listenProp('player.touching.left', player.body.touching.left);
@@ -736,6 +791,14 @@ function frameUpdates() {
       player.canDoubleJump = false;
     }
 
+    player.canWallJump = true;
+    player.isWallJumping = false;
+    player.wallJumpIgnoreDirection = false;
+    player.wallJumpContinuing = false;
+
+    if (prop('cheat.forbidWallJump')) {
+      player.canWallJump = false;
+    }
   }
 }
 

@@ -66,13 +66,17 @@ export default class Stream extends Component<any> {
     rules.add(debug, 'velocityX.walk', 0, 1000);
     rules.add(debug, 'velocityX.jump', 0, 1000);
     rules.add(debug, 'velocityX.double_jump', 0, 1000);
+    rules.add(debug, 'velocityX.wall_jump', 0, 1000);
+    rules.add(debug, 'velocityX.reversed_wall_jump', 0, 1000);
     rules.add(debug, 'velocityY.jump', 0, 1000);
     rules.add(debug, 'velocityY.double_jump', 0, 1000);
+    rules.add(debug, 'velocityY.wall_jump', 0, 1000);
     rules.open();
 
     const cheats = gui.addFolder('Cheats');
     cheats.add(debug, 'cheat.hearty');
     cheats.add(debug, 'cheat.forbidDoubleJump');
+    cheats.add(debug, 'cheat.forbidWallJump');
     cheats.open();
 
     const level = gui.addFolder('Level');
@@ -93,6 +97,11 @@ export default class Stream extends Component<any> {
     player.add(debug, 'player.canCancelIgnoreInput').listen();
     player.add(debug, 'player.canDoubleJump').listen();
     player.add(debug, 'player.isDoubleJumping').listen();
+    player.add(debug, 'player.canWallJump').listen();
+    player.add(debug, 'player.isWallJumping').listen();
+    player.add(debug, 'player.wallJumpIgnoreDirection').listen();
+    player.add(debug, 'player.wallJumpContinuing').listen();
+    player.add(debug, 'player.wallJumpDirectionLeft').listen();
     player.add(debug, 'player.touching.up').listen();
     player.add(debug, 'player.touching.down').listen();
     player.add(debug, 'player.touching.left').listen();
