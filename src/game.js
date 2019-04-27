@@ -6,6 +6,7 @@ import props from './props';
 import levelHello from './assets/maps/hello.map';
 import levelDoubleJump from './assets/maps/doublejump.map';
 import levelDoubleJumpA from './assets/maps/doublejump-a.map';
+import levelDoubleJumpB from './assets/maps/doublejump-b.map';
 import levelBye from './assets/maps/bye.map';
 
 import tileWall from './assets/tiles/wall.png';
@@ -47,8 +48,11 @@ const config = {
   },
   levels: [
     levelHello,
+
     levelDoubleJump,
     levelDoubleJumpA,
+    levelDoubleJumpB,
+
     levelBye,
   ],
   mapWidth: 30,

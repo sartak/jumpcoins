@@ -10,7 +10,7 @@ export default {
   'velocityX.reversed_wall_jump': 100,
   'velocityY.jump': 250,
   'velocityY.double_jump': 300,
-  'velocityY.wall_jump': 150,
+  'velocityY.wall_jump': 175,
   wall_jump_ignore_direction_ms: 400,
 
   time: 0,
