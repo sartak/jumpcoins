@@ -1385,6 +1385,8 @@ function takeSpikeDamage(object1, object2) {
 
 function destroyEnemy(enemy) {
   const { game, level } = state;
+  const { player } = level;
+
   level.livingEnemies--;
   if (level.livingEnemies === 0) {
     save.levels[level.index].badgeKiller = true;
@@ -1411,7 +1413,8 @@ function destroyEnemy(enemy) {
     duration: 1000,
     alpha: 0,
     ease: 'Quad.easeIn',
-    rotation: enemy.movingLeft ? 2 : -2,
+    x: player.x < enemy.x ? (enemy.x + config.tileWidth * 3) : (enemy.x - config.tileWidth * 3),
+    rotation: player.x < enemy.x ? 2 : -2,
   });
 
   game.tweens.add({
