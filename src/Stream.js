@@ -93,6 +93,7 @@ export default class Stream extends Component<any> {
     const player = gui.addFolder('Player');
     player.add(debug, 'player.squish.max', 0, 1);
     player.add(debug, 'player.squish.speed', 0, 1);
+    player.add(debug, 'player.grab.max_y', 0, 1000);
     player.add(debug, 'player.life').listen();
     player.add(debug, 'player.x').listen();
     player.add(debug, 'player.y').listen();

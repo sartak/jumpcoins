@@ -76,6 +76,7 @@ export default {
   'player.freebies': 0,
   'player.squish.max': 0.16,
   'player.squish.speed': 0.2,
+  'player.grab.max_y': 50,
 
   'cheat.hearty': true,
   'cheat.forbidDoubleJump': false,

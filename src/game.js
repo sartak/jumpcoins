@@ -34,6 +34,8 @@ import spriteFreebie from './assets/sprites/freebie.png';
 import spriteHeart from './assets/sprites/heart.png';
 import spriteEnemyA from './assets/sprites/enemy-a.png';
 
+import effectImagePuff from './assets/effects/puff.png';
+
 // YOUR LIFE IS CURRENCY
 
 const DEBUG = (!process.env.NODE_ENV || process.env.NODE_ENV === 'development');
@@ -342,6 +344,8 @@ function preload() {
   game.load.image('spriteEnemyA', spriteEnemyA);
   game.load.image('spriteHeart', spriteHeart);
   game.load.spritesheet('spriteFreebie', spriteFreebie, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
+
+  game.load.image('effectImagePuff', effectImagePuff);
 }
 
 function parseMap(lines, level) {
@@ -1354,6 +1358,43 @@ function renderDebug() {
   }
 }
 
+function manageWallDragPuff(isEnabled, isLeft) {
+  const { game, level } = state;
+  const { player } = level;
+
+  if (isEnabled && !player.wallDragPuff) {
+    const particles = game.add.particles('effectImagePuff');
+    const emitter = particles.createEmitter({
+      speed: 50,
+      x: (player.width * 0.4) * (isLeft ? -1 : 1),
+      y: { min: -player.height * 0.4, max: player.height * 0.5 },
+      scale: { start: 0.25, end: 0.5 },
+      blendMode: 'ADD',
+      quantity: 1,
+      alpha: 0.5,
+      rotate: { min: 0, max: 360 },
+      maxParticles: 12,
+      angle: isLeft ? { min: 280, max: 310 } : { min: 230, max: 260 },
+      lifespan: 200,
+    });
+    emitter.startFollow(player);
+    player.wallDragPuff = { particles, emitter };
+  } else if (isEnabled) {
+    // update
+  } else if (player.wallDragPuff) {
+    const { particles, emitter } = player.wallDragPuff;
+    emitter.stopFollow();
+    emitter.stop();
+    game.time.addEvent({
+      delay: 1000,
+      callback: () => {
+        particles.destroy();
+      },
+    });
+    delete player.wallDragPuff;
+  }
+}
+
 function frameUpdates(dt) {
   const { level } = state;
   const { player, hud } = level;
@@ -1425,6 +1466,33 @@ function frameUpdates(dt) {
       (vy - vx) / (vx + vy),
     ];
   }
+
+  const puffLeft = player.body.touching.left && state.leftButtonDown;
+  let puffEnabled = false;
+  if ((player.body.touching.left && state.leftButtonDown) || (player.body.touching.right && state.rightButtonDown)) {
+    vx = 0.7;
+    vy = -0.7;
+    const max = prop('player.grab.max_y');
+    // we intentionally don't do this for the other direction because of
+    // jumping against walls being a common case
+    if (player.body.velocity.y > max) {
+      player.setVelocityY(max);
+    }
+    if (player.body.velocity.y > 0) {
+      puffEnabled = true;
+    }
+  }
+
+  manageWallDragPuff(puffEnabled, puffLeft);
+
+  if (player.isDoubleJumping) {
+    vy += 0.7;
+    vx -= 0.7;
+  } else if (player.isWallJumping) {
+    vx += 0.7;
+    vy -= 0.7;
+  }
+
   vx *= prop('player.squish.max');
   vy *= prop('player.squish.max');
   vy += 1;
