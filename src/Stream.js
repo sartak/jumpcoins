@@ -109,6 +109,8 @@ export default class Stream extends Component<any> {
     player.add(debug, 'player.wallJumpIgnoreDirection').listen();
     player.add(debug, 'player.wallJumpContinuing').listen();
     player.add(debug, 'player.wallJumpDirectionLeft').listen();
+    player.add(debug, 'player.wallJumpContra').listen();
+    player.add(debug, 'player.wallJumpHeld').listen();
     player.add(debug, 'player.touching.up').listen();
     player.add(debug, 'player.touching.down').listen();
     player.add(debug, 'player.touching.left').listen();

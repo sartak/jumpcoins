@@ -69,6 +69,8 @@ export default {
   'player.wallJumpIgnoreDirection': false,
   'player.wallJumpContinuing': false,
   'player.wallJumpDirectionLeft': false,
+  'player.wallJumpHeld': false,
+  'player.wallJumpContra': false,
   'player.touching.up': false,
   'player.touching.down': false,
   'player.touching.left': false,

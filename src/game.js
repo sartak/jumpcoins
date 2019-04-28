@@ -1263,14 +1263,15 @@ function processInput() {
 
       player.isWallJumping = true;
       player.wallJumpIgnoreDirection = true;
-      player.wallJumpContinuing = false;
+      player.wallJumpContinuing = true;
+      player.wallJumpHeld = true;
+      player.wallJumpContra = false;
       spendLife(true);
 
       game.time.addEvent({
         delay: prop('wall_jump_ignore_direction_ms'),
         callback: () => {
           player.wallJumpIgnoreDirection = false;
-          player.wallJumpContinuing = true;
         },
       });
 
@@ -1280,27 +1281,46 @@ function processInput() {
       player.setVelocityY(-prop('velocityY.double_jump'));
       player.isDoubleJumping = true;
 
-      player.isWallJumpingFalse = false;
+      player.isWallJumping = false;
       player.wallJumpIgnoreDirection = false;
       player.wallJumpContinuing = false;
+      player.wallJumpHeld = false;
+      player.wallJumpContra = false;
 
       spendLife(true);
     }
   }
 
-  if (player.wallJumpContinuing) {
-    if ((player.wallJumpDirectionLeft && !leftButtonDown) || (!player.wallJumpDirectionLeft && !rightButtonDown)) {
-      player.wallJumpContinuing = false;
-    }
+  if (player.isWallJumping && !player.wallJumpIgnoreDirection && ((player.wallJumpDirectionLeft && rightButtonDown) || (!player.wallJumpDirectionLeft && leftButtonDown))) {
+    player.wallJumpContra = true;
   }
 
-  if (player.wallJumpIgnoreDirection || player.wallJumpContinuing) {
+  if (player.wallJumpContra) {
+    player.wallJumpContinuing = false;
+    player.wallJumpHeld = false;
+  }
+
+  if (!player.wallJumpIgnoreDirection && ((player.wallJumpDirectionLeft && !leftButtonDown) || (!player.wallJumpDirectionLeft && !rightButtonDown))) {
+    player.wallJumpHeld = false;
+  }
+
+  if (player.wallJumpIgnoreDirection || player.wallJumpHeld) {
     const x = prop('velocityX.wall_jump');
     if (player.facingLeft) {
       player.setVelocityX(-x);
     } else {
       player.setVelocityX(x);
     }
+  } else if (player.wallJumpContinuing) {
+    // lerp down to the slower speed
+    const x = prop('velocityX.walk');
+    const vx = player.body.velocity.x + 0.1 * (x - player.body.velocity.x);
+    player.setVelocityX(vx);
+  } else if (player.wallJumpContra) {
+    // lerp down to the reverse speed
+    const x = -1 * prop('velocityX.reversed_wall_jump');
+    const vx = player.body.velocity.x + 0.05 * (x - player.body.velocity.x);
+    player.setVelocityX(vx);
   } else {
     let x = prop('velocityX.walk');
     if (!isStanding) {
@@ -1346,6 +1366,8 @@ function renderDebug() {
   listenProp('player.wallJumpIgnoreDirection', player.wallJumpIgnoreDirection);
   listenProp('player.wallJumpContinuing', player.wallJumpContinuing);
   listenProp('player.wallJumpDirectionLeft', player.wallJumpDirectionLeft);
+  listenProp('player.wallJumpHeld', player.wallJumpHeld);
+  listenProp('player.wallJumpContra', player.wallJumpContra);
   listenProp('player.touching.up', player.body.touching.up);
   listenProp('player.touching.down', player.body.touching.down);
   listenProp('player.touching.left', player.body.touching.left);
@@ -1426,6 +1448,8 @@ function frameUpdates(dt) {
     player.isWallJumping = false;
     player.wallJumpIgnoreDirection = false;
     player.wallJumpContinuing = false;
+    player.wallJumpHeld = false;
+    player.wallJumpContra = false;
 
     if (prop('cheat.forbidWallJump')) {
       player.canWallJump = false;
