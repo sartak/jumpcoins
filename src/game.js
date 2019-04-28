@@ -1485,8 +1485,6 @@ function frameUpdates(dt) {
     // jumping against walls being a common case
     if (player.body.velocity.y > max) {
       player.setVelocityY(max);
-    }
-    if (player.body.velocity.y > 0) {
       puffEnabled = true;
     }
   }
