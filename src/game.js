@@ -20,7 +20,6 @@ import levelStairs from './assets/maps/stairs.map';
 import levelBye from './assets/maps/bye.map';
 
 import tileWall from './assets/tiles/wall.png';
-import tileExit from './assets/tiles/exit.png';
 import tileSpikesUp from './assets/tiles/spikes-up.png';
 import tileSpikesDown from './assets/tiles/spikes-down.png';
 import tileSpikesLeft from './assets/tiles/spikes-left.png';
@@ -35,6 +34,8 @@ import spriteHeart from './assets/sprites/heart.png';
 import spriteEnemyA from './assets/sprites/enemy-a.png';
 
 import effectImagePuff from './assets/effects/puff.png';
+import effectImageSpark from './assets/effects/spark.png';
+import effectImageFloodlight from './assets/effects/floodlight.png';
 
 // YOUR LIFE IS CURRENCY
 
@@ -90,8 +91,9 @@ const config = {
       combineVertical: true,
     },
     '+': {
-      image: 'tileExit',
-      group: 'exit',
+      image: 'tileTransparent',
+      group: 'exits',
+      object: true,
     },
     '^': {
       image: 'tileSpikesUp',
@@ -331,7 +333,6 @@ function preload() {
   });
 
   game.load.image('tileWall', tileWall);
-  game.load.image('tileExit', tileExit);
   game.load.image('tileSpikesUp', tileSpikesUp);
   game.load.image('tileSpikesDown', tileSpikesDown);
   game.load.image('tileSpikesLeft', tileSpikesLeft);
@@ -346,6 +347,8 @@ function preload() {
   game.load.spritesheet('spriteFreebie', spriteFreebie, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
 
   game.load.image('effectImagePuff', effectImagePuff);
+  game.load.image('effectImageSpark', effectImageSpark);
+  game.load.image('effectImageFloodlight', effectImageFloodlight);
 }
 
 function parseMap(lines, level) {
@@ -436,6 +439,8 @@ function createLevel(index) {
   createLevelObjects();
 
   createPlayer();
+
+  level.objects.exits.forEach(exit => setupExit(exit));
 
   return level;
 }
@@ -569,6 +574,133 @@ function setupMover(mover) {
   scheduleMover(mover, true);
 }
 
+function setupExit(exit) {
+  const { game, level } = state;
+
+  const speed = {};
+  if (exit.config.x >= config.mapWidth - 2) {
+    speed.speedX = { min: -60, max: -40 };
+    speed.x = exit.x + config.tileWidth / 2;
+    speed.y = { min: exit.y - config.tileHeight / 2, max: exit.y + config.tileHeight / 2 };
+  } else if (exit.config.x <= 1) {
+    speed.speedX = { min: 40, max: 60 };
+    speed.x = exit.x + config.tileWidth / 2;
+    speed.y = { min: exit.y - config.tileHeight / 2, max: exit.y + config.tileHeight / 2 };
+  } else if (exit.config.y >= config.mapHeight - 2) {
+    speed.speedY = { min: -60, max: -40 };
+    speed.x = { min: exit.x - config.tileWidth / 2, max: exit.x + config.tileWidth / 2 };
+    speed.y = exit.y + config.tileHeight / 2;
+  } else if (exit.config.y <= 1) {
+    speed.speedY = { min: 40, max: 60 };
+    speed.x = { min: exit.x - config.tileWidth / 2, max: exit.x + config.tileWidth / 2 };
+    speed.y = exit.y + config.tileHeight / 2;
+  }
+
+  const particles = game.add.particles('effectImageSpark');
+  const emitter = particles.createEmitter({
+    ...speed,
+    tint: [0xF6C456, 0xEC5B55, 0x8EEA83, 0x4397F7, 0xCC4BE4],
+    alpha: { start: 0, end: 1, ease: t => (t < 0.1 ? 10 * t : 1 - (t - 0.1)) },
+    scale: 0.3,
+    blendMode: 'SCREEN',
+    particleBringToTop: true,
+    quantity: 5,
+    frequency: 150,
+    lifespan: 2000,
+  });
+
+  for (let i = 1; i <= 5; i++) {
+    const particle = emitter.emitParticle();
+    const delta = i * 150;
+    particle.update(delta, delta / 1000, []);
+  }
+
+  level.particles.push(particles);
+}
+
+function reactFloodlightsToJump() {
+  const { game, floodlightEmitter, level } = state;
+  const { player } = level;
+
+  const x = player.x;
+  const y = player.y;
+
+  floodlightEmitter.forEachAlive((particle) => {
+    const dx = particle.x - x;
+    const dy = particle.y - y;
+
+    const distance = Math.sqrt(dx*dx + dy*dy);
+    if (distance > 7 * config.tileWidth) {
+      return;
+    }
+
+    if (particle.jumpTween) {
+      particle.jumpTween.stop();
+    } else {
+      particle.originalVelocityX = particle.velocityX;
+      particle.originalVelocityY = particle.velocityY;
+    }
+
+    /*
+    if (particle.moveIn) {
+      dx *= -1;
+      dy *= -1;
+    }
+    particle.moveIn = !particle.moveIn;
+    */
+
+    const distanceMod = 1 - distance / (7 * config.tileWidth);
+    const theta = Math.atan2(dy, dx);
+    const vx = distanceMod * 300 * Math.cos(theta);
+    const vy = distanceMod * 300 * Math.sin(theta);
+    particle.velocityX = vx + particle.originalVelocityX;
+    particle.velocityY = vy + particle.originalVelocityY;
+
+    particle.jumpTween = game.tweens.addCounter({
+      from: 100,
+      to: 0,
+      ease: 'Cubic.easeOut',
+      duration: 3000,
+      onUpdate: () => {
+        const v = particle.jumpTween.getValue() / 100;
+        particle.velocityX = v * vx + particle.originalVelocityX;
+        particle.velocityY = v * vy + particle.originalVelocityY;
+      },
+      onComplete: () => {
+        particle.velocityX = particle.originalVelocityX;
+        particle.velocityY = particle.originalVelocityY;
+      },
+    });
+  });
+}
+
+function setupFloodlights() {
+  const { game, level } = state;
+
+  const particles = game.add.particles('effectImageFloodlight');
+  const emitter = particles.createEmitter({
+    speed: { min: 1, max: 3 },
+    x: { min: 0, max: config.width },
+    y: { min: 0, max: config.height },
+    tint: [0xF6C456, 0xEC5B55, 0x8EEA83, 0x4397F7, 0xCC4BE4],
+    alpha: { start: 0, end: 0.66, ease: t => (t < 0.2 ? 5 * t : 1 - (t - 0.2)) },
+    scale: { min: 0.5, max: 2.0 },
+    blendMode: 'SCREEN',
+    particleBringToTop: true,
+    quantity: 3,
+    frequency: 2000,
+    lifespan: 30000,
+  });
+
+  for (let i = 0; i < 9; i++) {
+    const particle = emitter.emitParticle();
+    particle.update(10000, 10, []);
+  }
+
+  state.floodlightParticles = particles;
+  state.floodlightEmitter = emitter;
+}
+
 function setupEnemy(enemy) {
 }
 
@@ -581,6 +713,7 @@ function createLevelObjects() {
     enemies: [],
     movers: [],
     removeHints: [],
+    exits: [],
   };
 
   objectDescriptions.forEach(({ x, y, tile }) => {
@@ -605,8 +738,8 @@ function createLevelObjects() {
   level.enemies = objects.enemies;
   level.objects = objects;
 
-  level.objects.movers.forEach(mover => setupMover(mover));
-  level.enemies.forEach(enemy => setupEnemy(enemy));
+  objects.movers.forEach(mover => setupMover(mover));
+  objects.enemies.forEach(enemy => setupEnemy(enemy));
 }
 
 function createPlayer() {
@@ -981,8 +1114,8 @@ function setupLevelPhysics(isInitial) {
   physics.add.collider(player, objects.movers);
   physics.add.collider(enemies, objects.movers);
 
-  physics.add.overlap(player, statics.exit, winLevel);
-  physics.add.collider(enemies, statics.exit);
+  physics.add.overlap(player, statics.exits, winLevel);
+  physics.add.collider(enemies, statics.exits);
 
   physics.add.collider(player, statics.spikes, takeSpikeDamage);
   physics.add.collider(enemies, statics.spikes);
@@ -1043,6 +1176,7 @@ function respawn() {
       destroyLevel(true);
       createLevelObjects();
       createPlayer();
+      level.objects.exits.forEach(exit => setupExit(exit));
       renderHud();
       setupLevelPhysics(false);
     },
@@ -1120,6 +1254,8 @@ function create() {
       previousLevel();
     });
   }
+
+  setupFloodlights();
 
   state.levelIndex = 0;
   setupLevel();
@@ -1227,6 +1363,7 @@ function readInput() {
 }
 
 function jumpShake(type) {
+  reactFloodlightsToJump();
   if (type !== JUMP_NORMAL) {
     state.rumble = true;
     state.game.cameras.main.shake(
