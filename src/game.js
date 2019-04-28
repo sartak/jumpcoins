@@ -23,6 +23,7 @@ import levelWallJumpD from './assets/maps/walljump-d.map';
 import levelWallJumpE from './assets/maps/walljump-e.map';
 import levelWallJumpF from './assets/maps/walljump-f.map';
 import levelWallJumpG from './assets/maps/walljump-g.map';
+import levelWallJumpH from './assets/maps/walljump-h.map';
 
 import levelStairs from './assets/maps/stairs.map';
 import levelBye from './assets/maps/bye.map';
@@ -46,6 +47,14 @@ import effectImageSpark from './assets/effects/spark.png';
 import effectImageFloodlight from './assets/effects/floodlight.png';
 import effectBackgroundScreen from './assets/effects/background-screen.png';
 import effectPupil from './assets/effects/pupil.png';
+
+import badgeCompleted from './assets/badges/completed.png';
+import badgeDamageless from './assets/badges/damageless.png';
+import badgeDeathless from './assets/badges/deathless.png';
+import badgeRich from './assets/badges/rich.png';
+import badgeBirdie from './assets/badges/birdie.png';
+import badgeKiller from './assets/badges/killer.png';
+import badgeEmpty from './assets/badges/empty.png';
 
 // YOUR LIFE IS CURRENCY
 
@@ -91,6 +100,7 @@ const config = {
     levelWallJumpD,
     levelWallJumpE,
     levelWallJumpF,
+    levelWallJumpH,
     levelWallJumpG,
     levelWallJumpA,
 
@@ -213,6 +223,49 @@ const config = {
   yBorder: 0,
 };
 
+const SaveStateName = 'ld44_save';
+let save = {
+  created_at: Date.now(),
+  current_level: 0,
+  levels: config.levels.map(levelFile => ({
+    temp_time_ms: 0,
+    total_time_ms: 0,
+    best_time_ms: undefined,
+    damage_taken: 0,
+    jumps: 0,
+    doublejumps: 0,
+    walljumps: 0,
+    deaths: 0,
+    completedBadge: false,
+    deathlessBadge: false,
+    damagelessBadge: false,
+    richBadge: false,
+    birdieBadge: false,
+    killerBadge: false,
+  })),
+};
+
+try {
+  const storedSave = localStorage.getItem(SaveStateName);
+  if (storedSave) {
+    save = JSON.parse(storedSave);
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.log(e);
+}
+
+function saveState() {
+  save.levels[state.level.index].temp_time_ms = (new Date()).getTime() - state.level.startedAt.getTime();
+
+  try {
+    localStorage.setItem(SaveStateName, JSON.stringify(save));
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.log(e);
+  }
+}
+
 const JUMP_NORMAL = 1;
 const JUMP_DOUBLE = 2;
 const JUMP_WALL = 3;
@@ -325,6 +378,7 @@ const Shader = new Phaser.Class({
 if (DEBUG) {
   window.state = state;
   window.config = config;
+  window.save = save;
   window._ = _;
 }
 
@@ -385,6 +439,14 @@ function preload() {
   game.load.image('effectImageFloodlight', effectImageFloodlight);
   game.load.image('effectBackgroundScreen', effectBackgroundScreen);
   game.load.image('effectPupil', effectPupil);
+
+  game.load.image('badgeCompleted', badgeCompleted);
+  game.load.image('badgeDamageless', badgeDamageless);
+  game.load.image('badgeDeathless', badgeDeathless);
+  game.load.image('badgeRich', badgeRich);
+  game.load.image('badgeBirdie', badgeBirdie);
+  game.load.image('badgeKiller', badgeKiller);
+  game.load.image('badgeEmpty', badgeEmpty);
 }
 
 function parseMap(lines, level) {
@@ -448,12 +510,28 @@ function createLevel(index) {
   const { game, debug } = state;
 
   const level = parseLevel(game.cache.text.get(`level-${index}`));
+  level.index = index;
 
   if (DEBUG) {
     window.level = level;
   }
 
+  if (state.level && state.level.index) {
+    save.levels[state.level.index].total_time_ms += (new Date()).getTime() - state.level.startedAt.getTime();
+    save.levels[state.level.index].temp_time_ms = 0;
+  }
+
   state.level = level;
+
+  level.startedAt = new Date();
+
+  if (save.levels[level.index].temp_time_ms) {
+    save.levels[level.index].total_time_ms += save.levels[level.index].temp_time_ms;
+    save.levels[level.index].temp_time_ms = 0;
+  }
+
+  save.current_level = level.index;
+  saveState();
 
   listenProp('level.name', level.name);
   listenProp('level.index', index);
@@ -469,6 +547,8 @@ function createLevel(index) {
   level.hud = {};
   level.timers = [];
   level.particles = [];
+  level.deaths = 0;
+  level.damageTaken = 0;
 
   initializeMap();
 
@@ -901,6 +981,7 @@ function createLevelObjects(isRespawn) {
   }
 
   level.enemies = objects.enemies;
+  level.enemyCount = level.enemies.length;
   level.objects = objects;
 
   objects.movers.forEach(mover => setupMover(mover));
@@ -932,6 +1013,9 @@ function createPlayer() {
   player.setDepth(3);
 
   level.player = player;
+
+  level.spawnedAt = new Date();
+
   return player;
 }
 
@@ -1009,6 +1093,32 @@ function winLevel() {
   }
 
   level.isWinning = true;
+
+  const time_ms = (new Date()).getTime() - level.spawnedAt.getTime();
+
+  if (time_ms < (save.levels[level.index].best_time_ms || Number.MAX_VALUE)) {
+    save.levels[level.index].best_time_ms = time_ms;
+  }
+
+  save.levels[level.index].completedBadge = true;
+
+  if (level.deaths === 0) {
+    save.levels[level.index].deathlessBadge = true;
+  }
+
+  if (level.damageTaken === 0) {
+    save.levels[level.index].damagelessBadge = true;
+  }
+
+  if (level.player.freebies > 0) {
+    save.levels[level.index].birdieBadge = true;
+  }
+
+  if (level.objects.freebies.filter(freebie => !freebie.spent).length === 0) {
+    save.levels[level.index].richBadge = true;
+  }
+
+  saveState();
 
   removePhysics();
 
@@ -1140,6 +1250,8 @@ function spendLife(isVoluntary) {
   const spendFreebie = player.freebies > 0;
 
   if (!isVoluntary) {
+    level.damageTaken++;
+    save.levels[level.index].damage_taken++;
     damageBlur();
   }
 
@@ -1162,9 +1274,13 @@ function spendLife(isVoluntary) {
   }
 
   if (player.life <= 0) {
+    level.deaths++;
+    save.levels[level.index].deaths++;
     deathShockwave();
     respawn();
   }
+
+  saveState();
 }
 
 function takeSpikeDamage(object1, object2) {
@@ -1204,6 +1320,13 @@ function takeSpikeDamage(object1, object2) {
 }
 
 function destroyEnemy(enemy) {
+  const { level } = state;
+  level.livingEnemies--;
+  if (level.livingEnemies === 0) {
+    save.levels[level.index].killerBadge = true;
+    saveState();
+  }
+
   enemy.disableBody(true, true);
 }
 
@@ -1519,7 +1642,7 @@ function create() {
 
   setupBackgroundScreen();
 
-  state.levelIndex = 0;
+  state.levelIndex = save.current_level;
   setupLevel();
 
   if (game.game.renderer.type === Phaser.WEBGL) {
@@ -1663,9 +1786,13 @@ function processInput() {
       jumpShake(JUMP_NORMAL);
       jumpPuff(false);
       jumpPuff(true);
+      level.jumps++;
+      save.levels[level.index].jumps++;
       player.setVelocityY(-prop('velocityY.jump'));
     } else if (player.canWallJump && ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown))) {
       jumpShake(JUMP_WALL);
+      level.walljumps++;
+      save.levels[level.index].walljumps++;
       player.body.setGravityY(-100);
       player.setVelocityY(-prop('velocityY.wall_jump'));
       if (player.body.touching.right) {
@@ -1695,6 +1822,8 @@ function processInput() {
       player.isDoubleJumping = false;
     } else if (player.canDoubleJump && upButtonDown) {
       jumpShake(JUMP_DOUBLE);
+      level.doublejumps++;
+      save.levels[level.index].doublejumps++;
       player.setVelocityY(-prop('velocityY.double_jump'));
       player.isDoubleJumping = true;
 
