@@ -87,8 +87,6 @@ export default class Stream extends Component<any> {
     level.add(debug, 'level.index').listen();
     level.add(debug, 'level.file').listen();
     level.add(debug, 'level.timers').listen();
-    level.add(debug, 'mover.speed', 0, 1000);
-    level.add(debug, 'mover.distance', 0, 20);
 
     const player = gui.addFolder('Player');
     player.add(debug, 'player.squish.max', 0, 1);

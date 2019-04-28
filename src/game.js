@@ -11,6 +11,9 @@ import levelDoubleJumpB from './assets/maps/doublejump-b.map';
 import levelDoubleJumpBB from './assets/maps/doublejump-bb.map';
 import levelDoubleJumpC from './assets/maps/doublejump-c.map';
 import levelDoubleJumpD from './assets/maps/doublejump-d.map';
+import levelDoubleJumpE from './assets/maps/doublejump-e.map';
+import levelDoubleJumpF from './assets/maps/doublejump-f.map';
+import levelDoubleJumpG from './assets/maps/doublejump-g.map';
 
 import levelWallJump from './assets/maps/walljump.map';
 import levelWallJumpA from './assets/maps/walljump-a.map';
@@ -36,6 +39,7 @@ import spriteEnemyA from './assets/sprites/enemy-a.png';
 import effectImagePuff from './assets/effects/puff.png';
 import effectImageSpark from './assets/effects/spark.png';
 import effectImageFloodlight from './assets/effects/floodlight.png';
+import effectBackgroundScreen from './assets/effects/background-screen.png';
 
 // YOUR LIFE IS CURRENCY
 
@@ -66,10 +70,13 @@ const config = {
     levelHello,
 
     levelDoubleJump,
+    levelDoubleJumpF,
     levelDoubleJumpA,
     levelDoubleJumpB,
     levelDoubleJumpC,
+    levelDoubleJumpG,
     levelDoubleJumpD,
+    levelDoubleJumpE,
     levelDoubleJumpBB,
 
     levelWallJump,
@@ -128,6 +135,17 @@ const config = {
       group: 'movers',
       object: true,
       dynamic: true,
+      speed: 40,
+      distance: 3,
+      movingLeft: true,
+    },
+    ']': {
+      image: 'tileWall',
+      group: 'movers',
+      object: true,
+      dynamic: true,
+      speed: 40,
+      distance: 3,
     },
     '@': null, // player
     '*': {
@@ -349,6 +367,7 @@ function preload() {
   game.load.image('effectImagePuff', effectImagePuff);
   game.load.image('effectImageSpark', effectImageSpark);
   game.load.image('effectImageFloodlight', effectImageFloodlight);
+  game.load.image('effectBackgroundScreen', effectBackgroundScreen);
 }
 
 function parseMap(lines, level) {
@@ -537,8 +556,8 @@ function initializeMap() {
 function scheduleMover(mover, isFirst) {
   const { game, level } = state;
 
-  const speed = prop('mover.speed');
-  const distance = config.tileWidth * prop('mover.distance') * (isFirst ? 0.5 : 1);
+  const speed = mover.config.speed;
+  const distance = config.tileWidth * mover.config.distance * (isFirst ? 0.5 : 1);
   const duration = distance / speed;
 
   let timer;
@@ -565,11 +584,15 @@ function setupMover(mover) {
   mover.setImmovable(true);
   mover.body.allowGravity = false;
 
-  const speed = prop('mover.speed');
-
   mover.initialPosition = [mover.x, mover.y];
-  mover.setVelocityX(-speed);
-  mover.movingLeft = true;
+
+  if (mover.config.movingLeft) {
+    mover.setVelocityX(-mover.config.speed);
+    mover.movingLeft = true;
+  } else {
+    mover.setVelocityX(mover.config.speed);
+    mover.movingLeft = false;
+  }
 
   scheduleMover(mover, true);
 }
@@ -593,7 +616,7 @@ function setupExit(exit) {
   } else if (exit.config.y <= 1) {
     speed.speedY = { min: 40, max: 60 };
     speed.x = { min: exit.x - config.tileWidth / 2, max: exit.x + config.tileWidth / 2 };
-    speed.y = exit.y + config.tileHeight / 2;
+    speed.y = exit.y - config.tileHeight / 2;
   }
 
   const particles = game.add.particles('effectImageSpark');
@@ -618,6 +641,57 @@ function setupExit(exit) {
   level.particles.push(particles);
 }
 
+function reactFloodlightsToDie() {
+  const { game, floodlightEmitter, level } = state;
+  const { player } = level;
+
+  const x = player.x;
+  const y = player.y;
+
+  floodlightEmitter.forEachAlive((particle) => {
+    const dx = particle.x - x;
+    const dy = particle.y - y;
+
+    const distance = Math.sqrt(dx*dx + dy*dy);
+
+    if (particle.jumpTween) {
+      particle.jumpTween.stop();
+    } else {
+      particle.originalVelocityX = particle.velocityX;
+      particle.originalVelocityY = particle.velocityY;
+    }
+
+    const theta = Math.atan2(dy, dx);
+    const vx = 200 * Math.cos(theta);
+    const vy = 200 * Math.sin(theta);
+
+    game.time.addEvent({
+      delay: 500 * distance / config.width,
+      callback: () => {
+        particle.velocityX = vx + particle.originalVelocityX;
+        particle.velocityY = vy + particle.originalVelocityY;
+
+        particle.jumpTween = game.tweens.addCounter({
+          from: 100,
+          to: -20,
+          delay: 100,
+          duration: 1000,
+          ease: 'Cubic.easeOut',
+          onUpdate: () => {
+            const v = particle.jumpTween.getValue() / 100;
+            particle.velocityX = v * vx + particle.originalVelocityX;
+            particle.velocityY = v * vy + particle.originalVelocityY;
+          },
+          onComplete: () => {
+            particle.velocityX = particle.originalVelocityX;
+            particle.velocityY = particle.originalVelocityY;
+          },
+        });
+      },
+    });
+  });
+}
+
 function reactFloodlightsToJump() {
   const { game, floodlightEmitter, level } = state;
   const { player } = level;
@@ -630,9 +704,6 @@ function reactFloodlightsToJump() {
     const dy = particle.y - y;
 
     const distance = Math.sqrt(dx*dx + dy*dy);
-    if (distance > 7 * config.tileWidth) {
-      return;
-    }
 
     if (particle.jumpTween) {
       particle.jumpTween.stop();
@@ -649,18 +720,23 @@ function reactFloodlightsToJump() {
     particle.moveIn = !particle.moveIn;
     */
 
-    const distanceMod = 1 - distance / (7 * config.tileWidth);
+    let distanceMod;
+    if (distance < 10 * config.tileWidth) {
+      distanceMod = 1 - distance / (10 * config.tileWidth);
+    } else {
+      distanceMod = -distance / (100 * config.tileWidth);
+    }
+
     const theta = Math.atan2(dy, dx);
-    const vx = distanceMod * 300 * Math.cos(theta);
-    const vy = distanceMod * 300 * Math.sin(theta);
+    const vx = distanceMod * 100 * Math.cos(theta);
+    const vy = distanceMod * 100 * Math.sin(theta);
     particle.velocityX = vx + particle.originalVelocityX;
     particle.velocityY = vy + particle.originalVelocityY;
 
     particle.jumpTween = game.tweens.addCounter({
       from: 100,
       to: 0,
-      ease: 'Cubic.easeOut',
-      duration: 3000,
+      duration: 2000,
       onUpdate: () => {
         const v = particle.jumpTween.getValue() / 100;
         particle.velocityX = v * vx + particle.originalVelocityX;
@@ -679,22 +755,23 @@ function setupFloodlights() {
 
   const particles = game.add.particles('effectImageFloodlight');
   const emitter = particles.createEmitter({
-    speed: { min: 1, max: 3 },
+    speed: { min: 10, max: 20 },
     x: { min: 0, max: config.width },
     y: { min: 0, max: config.height },
     tint: [0xF6C456, 0xEC5B55, 0x8EEA83, 0x4397F7, 0xCC4BE4],
-    alpha: { start: 0, end: 0.66, ease: t => (t < 0.2 ? 5 * t : 1 - (t - 0.2)) },
+    alpha: { start: 0, end: 0.4, ease: t => (t < 0.2 ? 5 * t : 1 - (t - 0.2)) },
     scale: { min: 0.5, max: 2.0 },
     blendMode: 'SCREEN',
     particleBringToTop: true,
     quantity: 3,
     frequency: 2000,
-    lifespan: 30000,
+    lifespan: 50000,
   });
 
-  for (let i = 0; i < 9; i++) {
+  for (let i = 1; i < 100; i += 3) {
     const particle = emitter.emitParticle();
-    particle.update(10000, 10, []);
+    const delta = 10000 + i * 1000;
+    particle.update(delta, delta / 1000, []);
   }
 
   state.floodlightParticles = particles;
@@ -756,6 +833,8 @@ function createPlayer() {
   player.freebies = 0;
 
   player.setSize(player.width * 0.8, player.height * 0.8, true);
+
+  player.framesSinceTouchingDown = 0;
 
   level.player = player;
   return player;
@@ -941,6 +1020,8 @@ function damageBlur() {
 function deathShockwave() {
   const { game, level } = state;
   const { player } = level;
+
+  reactFloodlightsToDie();
 
   if (!state.shader) {
     return;
@@ -1144,9 +1225,11 @@ function renderHud() {
 
   hud.hints = [];
   if (hint) {
+    const x = config.width / 2 + (level.hintXMod || 0);
+    const y = config.height * 0.25 + (level.hintYMod || 0);
     const label = game.add.text(
-      config.width / 2,
-      config.height * 0.25,
+      x,
+      y,
       hint,
       {
         fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
@@ -1257,6 +1340,8 @@ function create() {
 
   setupFloodlights();
 
+  setupBackgroundScreen();
+
   state.levelIndex = 0;
   setupLevel();
 
@@ -1279,6 +1364,12 @@ function create() {
 
     game.cameras.main.setRenderToTexture(state.shader);
   }
+}
+
+function setupBackgroundScreen() {
+  const { game } = state;
+  const backgroundScreen = game.add.image(config.width / 2, config.height / 2, 'effectBackgroundScreen');
+  state.backgroundScreen = backgroundScreen;
 }
 
 function readInput() {
@@ -1381,16 +1472,17 @@ function processInput() {
     return;
   }
 
-  const isStanding = player.body.touching.down;
+  const canJump = player.body.touching.down || (!player.isJumping && player.framesSinceTouchingDown < 3);
 
   if (jumpButtonHeld && !jumpButtonDown) {
     state.jumpButtonHeld = false;
   }
 
   if (jumpButtonStarted) {
+    player.isJumping = true;
     state.jumpButtonHeld = true;
     player.body.setGravityY(0);
-    if (isStanding) {
+    if (canJump) {
       jumpShake(JUMP_NORMAL);
       jumpPuff(false);
       jumpPuff(true);
@@ -1442,6 +1534,8 @@ function processInput() {
   }
 
   if (player.isWallJumping && ((player.wallJumpDirectionLeft && player.body.touching.left) || (!player.wallJumpDirectionLeft && player.body.touching.right))) {
+    player.setVelocityX(0);
+    player.setAccelerationX(0);
     player.isWallJumping = false;
     player.wallJumpIgnoreDirection = false;
     player.wallJumpContinuing = false;
@@ -1481,7 +1575,7 @@ function processInput() {
     player.setVelocityX(vx);
   } else {
     let x = prop('velocityX.walk');
-    if (!isStanding) {
+    if (player.isJumping) {
       if (player.isWallJumping && ((player.wallJumpDirectionLeft && rightButtonDown) || (!player.wallJumpDirectionLeft && leftButtonDown))) {
         x = prop('velocityX.reversed_wall_jump');
       } else if (player.isDoubleJumping) {
@@ -1623,6 +1717,12 @@ function frameUpdates(dt) {
   const { level } = state;
   const { player, hud } = level;
 
+  if (player.body.touching.down) {
+    player.framesSinceTouchingDown = 0;
+  } else {
+    player.framesSinceTouchingDown++;
+  }
+
   if (player.ignoreInput && player.canCancelIgnoreInput) {
     if (player.body.touching.down || player.body.touching.left || player.body.touching.right || player.body.touching.up) {
       player.ignoreInput = false;
@@ -1630,12 +1730,14 @@ function frameUpdates(dt) {
     }
   }
 
-  if (!player.body.touching.down && (player.body.velocity.y > 0 || !state.jumpButtonHeld)) {
-    player.body.setGravityY(config.physics.arcade.gravity.y * 2);
+  if (!player.body.touching.down && !state.isWallJumping && (player.body.velocity.y > -40 || !state.jumpButtonHeld)) {
+    player.body.setGravityY(config.physics.arcade.gravity.y * 4);
   }
 
   if (player.body.touching.down) {
     player.body.setGravityY(0);
+    player.isJumping = false;
+
     player.canDoubleJump = true;
     player.isDoubleJumping = false;
 
@@ -1672,8 +1774,8 @@ function frameUpdates(dt) {
   }
 
   // make sure movers never get out of hand
-  const distance = prop('mover.distance') * config.tileWidth / 2;
   level.objects.movers.forEach((mover) => {
+    const distance = mover.config.distance * config.tileWidth / 2;
     if (mover.x < mover.initialPosition[0] - distance) {
       mover.x = mover.initialPosition[0] - distance;
     }
@@ -1749,8 +1851,8 @@ function updateEnemies() {
     if (!enemy.body.touching.down && enemy.movingLeft === undefined) {
       enemy.setVelocityX(0);
     } else {
-      if (enemy.movingLeft === undefined && enemy.config.startsMovingLeft) {
-        enemy.movingLeft = true;
+      if (enemy.movingLeft === undefined) {
+        enemy.movingLeft = !!enemy.config.startsMovingLeft;
       } else if (enemy.movingLeft && enemy.body.touching.left) {
         enemy.movingLeft = false;
       } else if (!enemy.movingLeft && enemy.body.touching.right) {
@@ -1760,12 +1862,14 @@ function updateEnemies() {
       if (enemy.config.edgeCareful) {
         if (enemy.body.velocity.y > 0) {
           enemy.movingLeft = !enemy.movingLeft;
+          enemy.setAccelerationY(0);
           enemy.setVelocityY(0);
-          enemy.X = enemy.oldX;
-          enemy.Y = enemy.oldY;
+          enemy.x = enemy.oldX;
+          enemy.y = enemy.oldY;
         }
-        enemy.oldX = enemy.X;
-        enemy.oldY = enemy.Y;
+
+        enemy.oldX = enemy.x;
+        enemy.oldY = enemy.y;
       }
 
       if (enemy.movingLeft) {

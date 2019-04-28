@@ -5,15 +5,13 @@ export default {
   'spike_knockback.y': 100,
   'velocityX.walk': 200,
   'velocityX.jump': 200,
-  'velocityX.double_jump': 50,
-  'velocityX.wall_jump': 400,
+  'velocityX.double_jump': 75,
+  'velocityX.wall_jump': 600,
   'velocityX.reversed_wall_jump': 100,
-  'velocityY.jump': 250,
-  'velocityY.double_jump': 300,
+  'velocityY.jump': 260,
+  'velocityY.double_jump': 350,
   'velocityY.wall_jump': 175,
   wall_jump_ignore_direction_ms: 400,
-  'mover.speed': 40,
-  'mover.distance': 3,
 
   time: 0.01,
   frameTime: 0.01,
@@ -80,7 +78,7 @@ export default {
   'player.squish.speed': 0.2,
   'player.grab.max_y': 50,
 
-  'cheat.hearty': true,
+  'cheat.hearty': false,
   'cheat.forbidDoubleJump': false,
   'cheat.forbidWallJump': false,
 
