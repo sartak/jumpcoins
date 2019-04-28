@@ -821,10 +821,16 @@ function setupFreebie(freebie) {
   freebie.bobTween = game.tweens.add({
     targets: freebie,
     duration: 1000,
+    delay: Phaser.Math.Between(0, 500),
     y: freebie.y + 8,
     ease: 'Cubic.easeInOut',
     yoyo: true,
     loop: -1,
+    onUpdate: () => {
+      if (freebie.body) {
+        freebie.refreshBody();
+      }
+    },
   });
 }
 
@@ -1270,7 +1276,7 @@ function setupLevelPhysics(isInitial) {
 
 function renderHud() {
   const { game, level } = state;
-  const { player, hud, hint } = level;
+  const { player, hud } = level;
 
   hud.hearts = _.range(player.life).map((i) => {
     const x = 2 * config.tileWidth;
@@ -1284,9 +1290,28 @@ function renderHud() {
   hud.freebies = [];
 
   hud.hints = [];
-  if (hint) {
+
+  const hintTexts = [];
+  if (level.hint) {
+    hintTexts.push(level.hint);
+  }
+  if (level.hint2) {
+    hintTexts.push(level.hint2);
+  }
+  if (level.hint3) {
+    hintTexts.push(level.hint3);
+  }
+
+  hintTexts.forEach((text, i) => {
     let x = config.width / 2 + (level.hintXMod || 0);
     let y = config.height * 0.25 + (level.hintYMod || 0);
+
+
+    // micromanage end scene
+    y += config.height * 0.05 * i;
+    if (hintTexts.length > 1 && i === 1) {
+      y += config.height * 0.015;
+    }
 
     if (level.hintXPosition) {
       x = config.width * level.hintXPosition;
@@ -1298,10 +1323,10 @@ function renderHud() {
     const label = game.add.text(
       x,
       y,
-      hint,
+      text,
       {
         fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
-        fontSize: '20px',
+        fontSize: i === 0 ? '20px' : '16px',
         color: 'rgb(246, 196, 86)',
       },
     );
@@ -1310,7 +1335,7 @@ function renderHud() {
     label.y -= label.height / 2;
     label.setDepth(6);
     hud.hints.push(label);
-  }
+  });
 }
 
 function respawn() {
