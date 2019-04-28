@@ -1038,7 +1038,7 @@ function createLevelObjects(isRespawn) {
   }
 
   level.enemies = objects.enemies;
-  level.enemyCount = level.enemies.length;
+  level.livingEnemies = level.enemies.length;
   level.objects = objects;
 
   objects.movers.forEach(mover => setupMover(mover));
@@ -1714,6 +1714,24 @@ function renderHud() {
   });
 }
 
+function spawnPlayer(delay) {
+  const { game, level } = state;
+  const { player } = level;
+
+  player.alpha = 0;
+  player.ignoreInput = true;
+
+  game.tweens.add({
+    targets: player,
+    alpha: 1,
+    delay,
+    duration: 500,
+    onComplete: () => {
+      player.ignoreInput = false;
+    },
+  });
+}
+
 function respawn() {
   const { game, level } = state;
   const { player } = level;
@@ -1731,6 +1749,7 @@ function respawn() {
       createPlayer();
       renderHud();
       setupLevelPhysics(false);
+      spawnPlayer(500);
     },
   });
 }
@@ -1741,6 +1760,7 @@ function setupLevel() {
   renderHud();
   setupLevelPhysics(true);
   renderLevelIntro();
+  spawnPlayer(3000);
 }
 
 function renderLevelIntro() {
