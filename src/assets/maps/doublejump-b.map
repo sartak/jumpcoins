@@ -23,6 +23,7 @@
 
 {
   "name": "Leap of faith",
+  "music": "musicWorld1",
   "baseLife": 1,
   "badgeBirdie": true
 }

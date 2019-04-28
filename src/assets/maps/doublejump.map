@@ -23,6 +23,7 @@
 
 {
   "name": "Double Jump!!",
+  "music": "musicWorld1",
   "baseLife": 1,
   "hint": "Hold [UP] then press [JUMP]! But . . .",
   "hintXMod": 60

@@ -22,6 +22,7 @@
 ##############################
 
 {
-  "name": "Even leaper of faith",
+  "name": "Even leapier of faith",
+  "music": "musicWorld1",
   "baseLife": 1
 }

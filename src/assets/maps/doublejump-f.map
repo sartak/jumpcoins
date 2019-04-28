@@ -23,5 +23,6 @@
 
 {
   "name": "Up and away!",
+  "music": "musicWorld1",
   "baseLife": 1
 }

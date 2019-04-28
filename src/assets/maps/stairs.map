@@ -23,6 +23,7 @@
 
 {
   "name": "It's the last one",
+  "music": "musicWorld3",
   "baseLife": 1,
   "badgeBirdie": true
 }

@@ -48,6 +48,7 @@ import effectImageSpark from './assets/effects/spark.png';
 import effectImageFloodlight from './assets/effects/floodlight.png';
 import effectBackgroundScreen from './assets/effects/background-screen.png';
 import effectPupil from './assets/effects/pupil.png';
+import effectBlack from './assets/effects/black.png';
 
 import badgeCompleted from './assets/badges/completed.png';
 import badgeDamageless from './assets/badges/damageless.png';
@@ -56,6 +57,20 @@ import badgeRich from './assets/badges/rich.png';
 import badgeBirdie from './assets/badges/birdie.png';
 import badgeKiller from './assets/badges/killer.png';
 import badgeEmpty from './assets/badges/empty.png';
+
+import musicWorld1 from './assets/music/world1.mp3';
+import musicWorld2 from './assets/music/world2.mp3';
+import musicWorld3 from './assets/music/world3.mp3';
+import musicBye from './assets/music/bye.mp3';
+
+import soundCoin from './assets/sounds/coin.wav';
+import soundJump1 from './assets/sounds/jump1.wav';
+import soundJump2 from './assets/sounds/jump2.wav';
+import soundJump3 from './assets/sounds/jump3.wav';
+import soundDoubleJump from './assets/sounds/doublejump.wav';
+import soundWalljump from './assets/sounds/walljump.wav';
+import soundKill from './assets/sounds/kill.wav';
+import soundWin from './assets/sounds/win.wav';
 
 // YOUR LIFE IS CURRENCY
 
@@ -430,9 +445,9 @@ function preload() {
   game.load.image('tileSemiground', tileSemiground);
   game.load.image('tileTransparent', tileTransparent);
 
-  game.load.image('spritePlayer', spritePlayer);
-  game.load.image('spriteEnemyA', spriteEnemyA);
-  game.load.image('spriteEnemyB', spriteEnemyB);
+  game.load.spritesheet('spritePlayer', spritePlayer, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
+  game.load.spritesheet('spriteEnemyA', spriteEnemyA, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
+  game.load.spritesheet('spriteEnemyB', spriteEnemyB, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
   game.load.image('spriteHeart', spriteHeart);
   game.load.spritesheet('spriteFreebie', spriteFreebie, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
 
@@ -441,6 +456,7 @@ function preload() {
   game.load.image('effectImageFloodlight', effectImageFloodlight);
   game.load.image('effectBackgroundScreen', effectBackgroundScreen);
   game.load.image('effectPupil', effectPupil);
+  game.load.image('effectBlack', effectBlack);
 
   game.load.image('badgeCompleted', badgeCompleted);
   game.load.image('badgeDamageless', badgeDamageless);
@@ -449,6 +465,20 @@ function preload() {
   game.load.image('badgeBirdie', badgeBirdie);
   game.load.image('badgeKiller', badgeKiller);
   game.load.image('badgeEmpty', badgeEmpty);
+
+  game.load.audio('musicWorld1', musicWorld1);
+  game.load.audio('musicWorld2', musicWorld2);
+  game.load.audio('musicWorld3', musicWorld3);
+  game.load.audio('musicBye', musicBye);
+
+  game.load.audio('soundCoin', soundCoin);
+  game.load.audio('soundJump1', soundJump1);
+  game.load.audio('soundJump2', soundJump2);
+  game.load.audio('soundJump3', soundJump3);
+  game.load.audio('soundDoubleJump', soundDoubleJump);
+  game.load.audio('soundWalljump', soundWalljump);
+  game.load.audio('soundKill', soundKill);
+  game.load.audio('soundWin', soundWin);
 }
 
 function parseMap(lines, level) {
@@ -559,6 +589,18 @@ function createLevel(index) {
   createPlayer();
 
   level.objects.exits.forEach(exit => setupExit(exit));
+
+  if (state.currentMusicName !== level.music) {
+    state.currentMusicName = level.music;
+    if (state.currentMusicPlayer) {
+      state.currentMusicPlayer.destroy();
+    }
+
+    const music = game.sound.add(level.music);
+    music.play('', { loop: true });
+    music.setVolume(0.25);
+    state.currentMusicPlayer = music;
+  }
 
   return level;
 }
@@ -901,6 +943,7 @@ function setupFloodlights() {
 }
 
 function setupEnemy(enemy) {
+  enemy.anims.play('spriteEnemyAWalk', true);
 }
 
 function setupFreebie(freebie) {
@@ -1127,28 +1170,33 @@ function winLevel(isProper) {
     save.levels[level.index].badgeBirdie = true;
   }
 
-  if (level.objects.freebies.filter(freebie => !freebie.spent).length === 0) {
-    save.levels[level.index].badgeRich = true;
-  }
-
   saveState();
 
+  playSound('soundWin');
+
   player.ignoreInput = true;
+  player.disableBody(true, false);
 
-  removePhysics();
+  // start animation
 
-  // defer this to avoid crashes while removing during collider callback
   game.time.addEvent({
     delay: 1000,
     callback: () => {
-      destroyLevel(false);
+      removePhysics();
 
-      state.levelIndex++;
-      if (state.levelIndex === config.levels.length) {
-        state.levelIndex = 0;
-      }
+      // defer this to avoid crashes while removing during collider callback
+      game.time.addEvent({
+        callback: () => {
+          destroyLevel(false);
 
-      setupLevel();
+          state.levelIndex++;
+          if (state.levelIndex === config.levels.length) {
+            state.levelIndex = 0;
+          }
+
+          setupLevel();
+        },
+      });
     },
   });
 }
@@ -1336,14 +1384,42 @@ function takeSpikeDamage(object1, object2) {
 }
 
 function destroyEnemy(enemy) {
-  const { level } = state;
+  const { game, level } = state;
   level.livingEnemies--;
   if (level.livingEnemies === 0) {
     save.levels[level.index].badgeKiller = true;
     saveState();
   }
 
-  enemy.disableBody(true, true);
+  playSound('soundKill');
+  enemy.anims.play('spriteEnemyADie', true);
+  enemy.disableBody(true, false);
+  level.enemies = level.enemies.filter(e => e !== enemy);
+
+  game.tweens.add({
+    targets: enemy,
+    duration: 1000,
+    y: enemy.y + config.height,
+    ease: 'Back.easeIn',
+    onComplete: () => {
+      enemy.destroy();
+    },
+  });
+
+  game.tweens.add({
+    targets: enemy,
+    duration: 1000,
+    alpha: 0,
+    ease: 'Quad.easeIn',
+    rotation: enemy.movingLeft ? 2 : -2,
+  });
+
+  game.tweens.add({
+    targets: enemy,
+    duration: 1000,
+    scale: 1.5,
+    ease: 'Quad.easeIn',
+  });
 }
 
 function takeEnemyDamage(object1, object2) {
@@ -1361,6 +1437,18 @@ function takeEnemyDamage(object1, object2) {
   spendLife(false);
 
   setPlayerInvincible();
+}
+
+function playSound(name, variants) {
+  const { game } = state;
+
+  if (variants) {
+    name += Phaser.Math.Between(1, variants);
+  }
+
+  const sound = game.sound.add(name);
+  sound.setVolume(0.5);
+  sound.play();
 }
 
 function acquireFreebie(object1, object2) {
@@ -1383,7 +1471,14 @@ function acquireFreebie(object1, object2) {
     alpha: 0.4,
   });
 
+  playSound('soundCoin');
+
   player.freebies++;
+
+  if (level.objects.freebies.filter(f => !f.spent).length === 0) {
+    save.levels[level.index].badgeRich = true;
+    saveState();
+  }
 
   const img = game.add.image(freebie.x, freebie.y, 'spriteFreebie');
   hud.freebies.push(img);
@@ -1540,7 +1635,7 @@ function renderHud() {
     label.y += 20;
     game.tweens.add({
       targets: label,
-      delay: 1000 + 500 * i,
+      delay: 4000 + 500 * i,
       duration: 500,
       alpha: 1,
       y: label.y - 20,
@@ -1593,68 +1688,151 @@ function renderLevelIntro() {
   const { game, level } = state;
   const { player, hud } = level;
 
+  hud.intro = {};
+
   player.ignoreInput = true;
 
-  const levelName = game.add.text(
-    config.width / 2,
-    config.height / 2,
-    level.name,
-    {
-      fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
-      fontSize: '20px',
-      color: 'rgb(246, 196, 86)',
-    },
-  );
-  levelName.setStroke('#000000', 6);
-  levelName.x -= levelName.width / 2;
-  levelName.y -= levelName.height / 2;
-  levelName.setDepth(7);
+  const background = game.add.image(config.width * 0.5, config.height * 0.55, 'effectBlack');
+  background.setDepth(7);
+  const scaleY = config.height / background.height * 0.20;
+  background.setScale(config.width / background.width, scaleY / 5);
+  background.x = config.width * 1.5;
+  hud.intro.background = background;
 
-  const badgesToRender = [];
-  ['badgeCompleted', 'badgeDeathless', 'badgeDamageless', 'badgeRich', 'badgeBirdie', 'badgeKiller'].forEach((badgeName) => {
-    if ((badgeName === 'badgeBirdie' || badgeName === 'badgeKiller') && !level[badgeName]) {
-      return;
-    }
+  game.tweens.add({
+    targets: background,
+    scaleY,
+    x: config.width * 0.5,
+    ease: 'Cubic.easeIn',
+    duration: 500,
+    onComplete: () => {
+      const levelName = game.add.text(
+        config.width / 2,
+        config.height / 2,
+        level.name,
+        {
+          fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
+          fontSize: '20px',
+          color: 'rgb(246, 196, 86)',
+        },
+      );
+      levelName.setStroke('#000000', 6);
+      levelName.x -= levelName.width / 2;
+      levelName.y -= levelName.height / 2;
+      levelName.setDepth(7);
 
-    let imageName = 'badgeEmpty';
-    if (save.levels[level.index][badgeName]) {
-      imageName = badgeName;
-    }
-    badgesToRender.unshift(imageName);
-  });
+      levelName.alpha = 0;
+      levelName.y += 20;
 
-  const badges = [];
-  badgesToRender.forEach((badgeName, i) => {
-    const badge = game.add.image(config.width * 0.5, config.height * 0.55, badgeName);
-    badge.x -= (i + 0.5) * (config.tileWidth + 20);
-    badge.x += (badgesToRender.length / 2) * (config.tileWidth + 20);
-    badge.setDepth(7);
-    badges.push(badge);
-  });
+      game.tweens.add({
+        targets: levelName,
+        alpha: 1,
+        y: levelName.y - 20,
+        ease: 'Cubic.easeOut',
+        duration: 500,
+      });
+      hud.intro.levelName = levelName;
 
-  hud.intro = {
-    levelName,
-    badges,
-  };
+      if (save.levels[level.index].best_time_ms) {
+        const best_time = save.levels[level.index].best_time_ms;
+        let m = Math.floor(best_time / 1000 / 60);
+        let s = best_time / 1000 - m * 60;
+        if (s < 10) {
+          s = `0${s.toFixed(3)}`;
+        } else {
+          s = s.toFixed(3);
+        }
+        if (m > 99) m = '99+';
 
-  game.time.addEvent({
-    delay: 2000,
-    callback: () => {
-      if (!hud.intro) {
-        return;
+        const bestTime = game.add.text(
+          config.width / 2,
+          config.height / 2 + 60,
+          `Your record: ${m}:${s}`,
+          {
+            fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
+            fontSize: '16px',
+            color: 'rgb(142, 234, 131)',
+          },
+        );
+        bestTime.setStroke('#000000', 6);
+        bestTime.x -= bestTime.width / 2;
+        bestTime.y -= bestTime.height / 2;
+        bestTime.setDepth(7);
+
+        bestTime.alpha = 0;
+        bestTime.y -= 20;
+
+        game.tweens.add({
+          targets: bestTime,
+          alpha: 1,
+          delay: 500,
+          y: bestTime.y + 20,
+          ease: 'Cubic.easeOut',
+          duration: 500,
+        });
+
+        hud.intro.bestTime = bestTime;
       }
 
-      player.ignoreInput = false;
-
-      hud.intro.badges.forEach((badge) => {
-        badge.destroy();
-      });
-      delete hud.intro.badges;
-
-      Object.keys(hud.intro).forEach((key) => {
-        if (key !== 'badges') {
-          hud.intro[key].destroy();
+      const badgesToRender = [];
+      ['badgeCompleted', 'badgeDeathless', 'badgeDamageless', 'badgeRich', 'badgeBirdie', 'badgeKiller'].forEach((badgeName) => {
+        if ((badgeName === 'badgeBirdie' || badgeName === 'badgeKiller') && !level[badgeName]) {
+          return;
         }
+
+        let imageName = 'badgeEmpty';
+        if (save.levels[level.index][badgeName]) {
+          imageName = badgeName;
+        }
+        badgesToRender.unshift(imageName);
+      });
+
+      const badges = [];
+      badgesToRender.forEach((badgeName, i) => {
+        const badge = game.add.image(config.width * 0.5, config.height * 0.5 + 30, badgeName);
+        badge.x -= (i + 0.5) * (config.tileWidth + 20);
+        badge.x += (badgesToRender.length / 2) * (config.tileWidth + 20);
+        badge.setDepth(7);
+        badges.push(badge);
+
+        const x = badge.x;
+        badge.x = config.width * 0.5;
+        badge.alpha = 0;
+        badge.y -= 20;
+
+        game.tweens.add({
+          targets: badge,
+          delay: i * 50,
+          alpha: badgeName === 'badgeEmpty' ? 0.3 : 1,
+          x,
+          y: badge.y + 20,
+          ease: 'Cubic.easeOut',
+          duration: 500,
+        });
+      });
+
+      hud.intro.badges = badges;
+
+      game.time.addEvent({
+        delay: 2000,
+        callback: () => {
+          if (!hud.intro) {
+            return;
+          }
+
+          player.ignoreInput = false;
+
+          hud.intro.badges.forEach((badge) => {
+            badge.destroy();
+          });
+          delete hud.intro.badges;
+
+          Object.keys(hud.intro).forEach((key) => {
+            if (key !== 'badges') {
+              hud.intro[key].destroy();
+            }
+          });
+        },
       });
     },
   });
@@ -1666,6 +1844,40 @@ function create() {
   state.physics = game.physics;
 
   state.cursors = game.input.keyboard.createCursorKeys();
+
+  game.anims.create({
+    key: 'spriteEnemyAWalk',
+    frames: [
+      {
+        key: 'spriteEnemyA',
+        frame: 2,
+      },
+      {
+        key: 'spriteEnemyA',
+        frame: 0,
+      },
+      {
+        key: 'spriteEnemyA',
+        frame: 2,
+      },
+      {
+        key: 'spriteEnemyA',
+        frame: 1,
+      },
+    ],
+    frameRate: 6,
+    repeat: -1,
+  });
+
+  game.anims.create({
+    key: 'spriteEnemyADie',
+    frames: [
+      {
+        key: 'spriteEnemyA',
+        frame: 3,
+      },
+    ],
+  });
 
   ['Z', 'X', 'C'].forEach((code) => {
     state.keys[code] = game.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes[code]);
@@ -1844,6 +2056,7 @@ function processInput() {
       level.jumps++;
       save.levels[level.index].jumps++;
       player.setVelocityY(-prop('velocityY.jump'));
+      playSound('soundJump', 3);
     } else if (player.canWallJump && ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown))) {
       jumpShake(JUMP_WALL);
       level.walljumps++;
@@ -1865,6 +2078,7 @@ function processInput() {
       player.wallJumpContinuing = true;
       player.wallJumpHeld = true;
       player.wallJumpContra = false;
+      playSound('soundWalljump');
       spendLife(true);
 
       game.time.addEvent({
@@ -1892,6 +2106,7 @@ function processInput() {
       jumpPuff(false, true);
 
       spendLife(true);
+      playSound('soundDoubleJump');
     }
   }
 
@@ -2249,6 +2464,8 @@ function updateEnemies() {
       } else if (!enemy.movingLeft && enemy.body.touching.right) {
         enemy.movingLeft = true;
       }
+
+      enemy.setFlipX(!enemy.movingLeft);
 
       if (enemy.config.edgeCareful) {
         if (enemy.body.velocity.y > 0) {
