@@ -23,6 +23,7 @@
 
 {
   "name": "It's the last one",
-  "baseLife": 1
+  "baseLife": 1,
+  "birdieBadge": true
 }
 

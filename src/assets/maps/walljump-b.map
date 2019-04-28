@@ -23,6 +23,7 @@
 
 {
   "name": "The ole one, two, jump!",
-  "baseLife": 1
+  "baseLife": 1,
+  "killerBadge": true
 }
 

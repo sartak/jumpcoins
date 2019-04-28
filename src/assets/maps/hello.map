@@ -24,6 +24,7 @@
 {
   "name": "Hello!",
   "baseLife": 1,
-  "hint": "Press [Z] to jump!"
+  "hint": "Press [Z] to jump!",
+  "birdieBadge": true
 }
 

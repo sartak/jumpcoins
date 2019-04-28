@@ -23,6 +23,7 @@
 
 {
   "name": "It's a sticky situation",
-  "baseLife": 1
+  "baseLife": 1,
+  "birdieBadge": true
 }
 

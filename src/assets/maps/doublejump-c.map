@@ -23,6 +23,8 @@
 
 {
   "name": "Like ein Glöve",
-  "baseLife": 1
+  "baseLife": 1,
+  "birdieBadge": true,
+  "killerBadge": true
 }
 

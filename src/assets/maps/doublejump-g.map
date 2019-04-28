@@ -23,6 +23,7 @@
 
 {
   "name": "Moving on without you",
-  "baseLife": 1
+  "baseLife": 1,
+  "birdieBadge": true
 }
 
