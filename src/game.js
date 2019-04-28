@@ -116,21 +116,25 @@ const config = {
       image: 'tileSpikesUp',
       group: 'spikes',
       knockback: true,
+      animate: [0, 1],
     },
     'v': {
       image: 'tileSpikesDown',
       group: 'spikes',
       knockback: true,
+      animate: [0, -1],
     },
     '<': {
       image: 'tileSpikesLeft',
       group: 'spikes',
       knockback: 'right',
+      animate: [1, 0],
     },
     '>': {
       image: 'tileSpikesRight',
       group: 'spikes',
       knockback: 'left',
+      animate: [-1, 0],
     },
     '0': {
       image: 'tileEye',
@@ -506,6 +510,7 @@ function initializeMap() {
         toCombine[c].push(tile);
         const image = game.add.image(x, y, tile.image);
         images.push(image);
+        image.setDepth(2);
       } else if (tile.object) {
         objectDescriptions.push({
           x,
@@ -561,6 +566,24 @@ function initializeMap() {
   level.statics = statics;
   level.images = images;
   level.objectDescriptions = objectDescriptions;
+
+  if (statics.spikes) {
+    statics.ground.setDepth(2);
+    statics.spikes.children.iterate((child) => {
+      const { animate } = child.config;
+      const offset = (child.config.x + child.config.y) % 2;
+
+      game.tweens.add({
+        targets: child,
+        x: child.x + animate[0] * 4,
+        y: child.y + animate[1] * 4,
+        duration: 500,
+        delay: offset ? 500 : 0,
+        yoyo: true,
+        loop: -1,
+      });
+    });
+  }
 }
 
 function scheduleMover(mover, isFirst) {
@@ -630,6 +653,7 @@ function setupExit(exit) {
   }
 
   const particles = game.add.particles('effectImageSpark');
+  particles.setDepth(4);
   const emitter = particles.createEmitter({
     ...speed,
     tint: [0xF6C456, 0xEC5B55, 0x8EEA83, 0x4397F7, 0xCC4BE4],
@@ -797,7 +821,7 @@ function setupFreebie(freebie) {
   freebie.bobTween = game.tweens.add({
     targets: freebie,
     duration: 1000,
-    y: freebie.y - 8,
+    y: freebie.y + 8,
     ease: 'Cubic.easeInOut',
     yoyo: true,
     loop: -1,
@@ -859,6 +883,8 @@ function createPlayer() {
   player.setSize(player.width * 0.8, player.height * 0.8, true);
 
   player.framesSinceTouchingDown = 0;
+
+  player.setDepth(3);
 
   level.player = player;
   return player;
@@ -1172,6 +1198,7 @@ function acquireFreebie(object1, object2) {
   hud.freebies.push(img);
   const x = 2 * config.tileWidth + img.width / 2 + img.width * (player.freebies + player.life - 1);
   const y = config.yBorder / 2;
+  img.setDepth(5);
 
   game.tweens.add({
     targets: img,
@@ -1281,6 +1308,7 @@ function renderHud() {
     label.setStroke('#000000', 6);
     label.x -= label.width / 2;
     label.y -= label.height / 2;
+    label.setDepth(6);
     hud.hints.push(label);
   }
 }
@@ -1332,6 +1360,7 @@ function renderLevelIntro() {
   levelName.setStroke('#000000', 6);
   levelName.x -= levelName.width / 2;
   levelName.y -= levelName.height / 2;
+  levelName.setDepth(7);
   hud.intro = {
     levelName,
   };
@@ -1691,6 +1720,7 @@ function manageWallDragPuff(isEnabled, isLeft) {
 
   if (isEnabled && !player.wallDragPuff) {
     const particles = game.add.particles('effectImagePuff');
+    particles.setDepth(4);
     const emitter = particles.createEmitter({
       speed: 50,
       x: (player.width * 0.4) * (isLeft ? -1 : 1),
@@ -1730,6 +1760,7 @@ function jumpPuff(isLeft, downward) {
   const { player } = level;
 
   const particles = game.add.particles('effectImagePuff');
+  particles.setDepth(4);
   const emitter = particles.createEmitter({
     speed: 50,
     x: player.x + player.width * (isLeft ? -0.2 : 0.2),
