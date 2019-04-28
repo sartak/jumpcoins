@@ -24,6 +24,6 @@
 {
   "name": "Buy one, get one free",
   "baseLife": 1,
-  "killerBadge": true
+  "badgeKiller": true
 }
 

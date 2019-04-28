@@ -24,7 +24,7 @@
 {
   "name": "Take it and flip it",
   "baseLife": 1,
-  "birdieBadge": true,
-  "killerBadge": true
+  "badgeBirdie": true,
+  "badgeKiller": true
 }
 

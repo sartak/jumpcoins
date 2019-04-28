@@ -24,6 +24,6 @@
 {
   "name": "Catch!",
   "baseLife": 1,
-  "birdieBadge": true
+  "badgeBirdie": true
 }
 

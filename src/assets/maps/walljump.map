@@ -24,7 +24,7 @@
 {
   "name": "Wall jump!!",
   "baseLife": 1,
-  "hint": "Drag into a wall in the air and [JUMP]",
+  "hint": "Press into a wall while in the air, then [JUMP]!",
   "hintYPosition": 0.77
 }
 

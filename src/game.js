@@ -41,6 +41,7 @@ import spritePlayer from './assets/sprites/player.png';
 import spriteFreebie from './assets/sprites/freebie.png';
 import spriteHeart from './assets/sprites/heart.png';
 import spriteEnemyA from './assets/sprites/enemy-a.png';
+import spriteEnemyB from './assets/sprites/enemy-b.png';
 
 import effectImagePuff from './assets/effects/puff.png';
 import effectImageSpark from './assets/effects/spark.png';
@@ -200,7 +201,7 @@ const config = {
       speed: 30,
     },
     'B': {
-      image: 'spriteEnemyA',
+      image: 'spriteEnemyB',
       group: 'enemies',
       object: true,
       dynamic: true,
@@ -208,7 +209,7 @@ const config = {
       speed: 30,
     },
     'b': {
-      image: 'spriteEnemyA',
+      image: 'spriteEnemyB',
       group: 'enemies',
       object: true,
       dynamic: true,
@@ -236,12 +237,12 @@ let save = {
     doublejumps: 0,
     walljumps: 0,
     deaths: 0,
-    completedBadge: false,
-    deathlessBadge: false,
-    damagelessBadge: false,
-    richBadge: false,
-    birdieBadge: false,
-    killerBadge: false,
+    badgeCompleted: false,
+    badgeDeathless: false,
+    badgeDamageless: false,
+    badgeRich: false,
+    badgeBirdie: false,
+    badgeKiller: false,
   })),
 };
 
@@ -431,6 +432,7 @@ function preload() {
 
   game.load.image('spritePlayer', spritePlayer);
   game.load.image('spriteEnemyA', spriteEnemyA);
+  game.load.image('spriteEnemyB', spriteEnemyB);
   game.load.image('spriteHeart', spriteHeart);
   game.load.spritesheet('spriteFreebie', spriteFreebie, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
 
@@ -507,7 +509,7 @@ function parseLevel(levelDefinition) {
 }
 
 function createLevel(index) {
-  const { game, debug } = state;
+  const { game, debug, physics } = state;
 
   const level = parseLevel(game.cache.text.get(`level-${index}`));
   level.index = index;
@@ -1079,14 +1081,25 @@ function destroyLevel(keepStatics) {
   });
 
   Object.keys(hud.intro).forEach((key) => {
-    hud.intro[key].destroy();
+    if (key !== 'badges') {
+      hud.intro[key].destroy();
+    } else {
+      hud.intro.badges.forEach((badge) => {
+        badge.destroy();
+      });
+    }
   });
 
   player.destroy();
 }
 
-function winLevel() {
+function winLevelProperly() {
+  winLevel(true);
+}
+
+function winLevel(isProper) {
   const { game, level } = state;
+  const { player } = level;
 
   if (level.isWinning) {
     return;
@@ -1100,30 +1113,33 @@ function winLevel() {
     save.levels[level.index].best_time_ms = time_ms;
   }
 
-  save.levels[level.index].completedBadge = true;
+  save.levels[level.index].badgeCompleted = true;
 
   if (level.deaths === 0) {
-    save.levels[level.index].deathlessBadge = true;
+    save.levels[level.index].badgeDeathless = true;
   }
 
   if (level.damageTaken === 0) {
-    save.levels[level.index].damagelessBadge = true;
+    save.levels[level.index].badgeDamageless = true;
   }
 
   if (level.player.freebies > 0) {
-    save.levels[level.index].birdieBadge = true;
+    save.levels[level.index].badgeBirdie = true;
   }
 
   if (level.objects.freebies.filter(freebie => !freebie.spent).length === 0) {
-    save.levels[level.index].richBadge = true;
+    save.levels[level.index].badgeRich = true;
   }
 
   saveState();
+
+  player.ignoreInput = true;
 
   removePhysics();
 
   // defer this to avoid crashes while removing during collider callback
   game.time.addEvent({
+    delay: 1000,
     callback: () => {
       destroyLevel(false);
 
@@ -1139,7 +1155,7 @@ function winLevel() {
 
 function restartLevel() {
   state.levelIndex--;
-  winLevel();
+  winLevel(false);
 }
 
 function previousLevel() {
@@ -1147,7 +1163,7 @@ function previousLevel() {
   if (state.levelIndex < 0) {
     state.levelIndex += config.levels.length;
   }
-  winLevel();
+  winLevel(false);
 }
 
 function setPlayerInvincible() {
@@ -1323,7 +1339,7 @@ function destroyEnemy(enemy) {
   const { level } = state;
   level.livingEnemies--;
   if (level.livingEnemies === 0) {
-    save.levels[level.index].killerBadge = true;
+    save.levels[level.index].badgeKiller = true;
     saveState();
   }
 
@@ -1445,7 +1461,7 @@ function setupLevelPhysics(isInitial) {
   physics.add.collider(player, objects.movers);
   physics.add.collider(enemies, objects.movers);
 
-  physics.add.overlap(player, statics.exits, winLevel);
+  physics.add.overlap(player, statics.exits, winLevelProperly);
   physics.add.collider(enemies, statics.exits);
 
   physics.add.collider(player, statics.spikes, takeSpikeDamage);
@@ -1575,7 +1591,9 @@ function setupLevel() {
 
 function renderLevelIntro() {
   const { game, level } = state;
-  const { hud } = level;
+  const { player, hud } = level;
+
+  player.ignoreInput = true;
 
   const levelName = game.add.text(
     config.width / 2,
@@ -1591,15 +1609,52 @@ function renderLevelIntro() {
   levelName.x -= levelName.width / 2;
   levelName.y -= levelName.height / 2;
   levelName.setDepth(7);
+
+  const badgesToRender = [];
+  ['badgeCompleted', 'badgeDeathless', 'badgeDamageless', 'badgeRich', 'badgeBirdie', 'badgeKiller'].forEach((badgeName) => {
+    if ((badgeName === 'badgeBirdie' || badgeName === 'badgeKiller') && !level[badgeName]) {
+      return;
+    }
+
+    let imageName = 'badgeEmpty';
+    if (save.levels[level.index][badgeName]) {
+      imageName = badgeName;
+    }
+    badgesToRender.unshift(imageName);
+  });
+
+  const badges = [];
+  badgesToRender.forEach((badgeName, i) => {
+    const badge = game.add.image(config.width * 0.5, config.height * 0.55, badgeName);
+    badge.x -= (i + 0.5) * (config.tileWidth + 20);
+    badge.x += (badgesToRender.length / 2) * (config.tileWidth + 20);
+    badge.setDepth(7);
+    badges.push(badge);
+  });
+
   hud.intro = {
     levelName,
+    badges,
   };
 
   game.time.addEvent({
     delay: 2000,
     callback: () => {
+      if (!hud.intro) {
+        return;
+      }
+
+      player.ignoreInput = false;
+
+      hud.intro.badges.forEach((badge) => {
+        badge.destroy();
+      });
+      delete hud.intro.badges;
+
       Object.keys(hud.intro).forEach((key) => {
-        hud.intro[key].destroy();
+        if (key !== 'badges') {
+          hud.intro[key].destroy();
+        }
       });
     },
   });
@@ -1626,7 +1681,7 @@ function create() {
     });
 
     game.input.keyboard.on('keydown_W', () => {
-      winLevel();
+      winLevel(false);
     });
 
     game.input.keyboard.on('keydown_R', () => {
