@@ -1291,6 +1291,14 @@ function processInput() {
     }
   }
 
+  if (player.isWallJumping && ((player.wallJumpDirectionLeft && player.body.touching.left) || (!player.wallJumpDirectionLeft && player.body.touching.right))) {
+    player.isWallJumping = false;
+    player.wallJumpIgnoreDirection = false;
+    player.wallJumpContinuing = false;
+    player.wallJumpHeld = false;
+    player.wallJumpContra = false;
+  }
+
   if (player.isWallJumping && !player.wallJumpIgnoreDirection && ((player.wallJumpDirectionLeft && rightButtonDown) || (!player.wallJumpDirectionLeft && leftButtonDown))) {
     player.wallJumpContra = true;
   }
