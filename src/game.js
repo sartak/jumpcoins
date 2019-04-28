@@ -37,7 +37,8 @@ import tileEye from './assets/tiles/eye.png';
 import tileSemiground from './assets/tiles/semiground.png';
 import tileTransparent from './assets/tiles/transparent.png';
 
-import spritePlayer from './assets/sprites/player.png';
+import spritePlayerDefault from './assets/sprites/player-default.png';
+import spritePlayerShielded from './assets/sprites/player-shielded.png';
 import spriteFreebie from './assets/sprites/freebie.png';
 import spriteHeart from './assets/sprites/heart.png';
 import spriteEnemyA from './assets/sprites/enemy-a.png';
@@ -71,6 +72,7 @@ import soundDoubleJump from './assets/sounds/doublejump.wav';
 import soundWalljump from './assets/sounds/walljump.wav';
 import soundKill from './assets/sounds/kill.wav';
 import soundWin from './assets/sounds/win.wav';
+import soundDie from './assets/sounds/die.wav';
 
 // YOUR LIFE IS CURRENCY
 
@@ -206,6 +208,8 @@ const config = {
       object: true,
       dynamic: true,
       speed: 30,
+      walkAnimation: 'spriteEnemyAWalk',
+      killAnimation: 'spriteEnemyADie',
     },
     'a': {
       image: 'spriteEnemyA',
@@ -214,6 +218,8 @@ const config = {
       dynamic: true,
       startsMovingLeft: true,
       speed: 30,
+      walkAnimation: 'spriteEnemyAWalk',
+      killAnimation: 'spriteEnemyADie',
     },
     'B': {
       image: 'spriteEnemyB',
@@ -222,6 +228,8 @@ const config = {
       dynamic: true,
       edgeCareful: true,
       speed: 30,
+      walkAnimation: 'spriteEnemyBWalk',
+      killAnimation: 'spriteEnemyBDie',
     },
     'b': {
       image: 'spriteEnemyB',
@@ -231,6 +239,8 @@ const config = {
       edgeCareful: true,
       startsMovingLeft: true,
       speed: 30,
+      walkAnimation: 'spriteEnemyBWalk',
+      killAnimation: 'spriteEnemyBDie',
     },
   },
 
@@ -445,7 +455,8 @@ function preload() {
   game.load.image('tileSemiground', tileSemiground);
   game.load.image('tileTransparent', tileTransparent);
 
-  game.load.spritesheet('spritePlayer', spritePlayer, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
+  game.load.spritesheet('spritePlayerDefault', spritePlayerDefault, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
+  game.load.spritesheet('spritePlayerShielded', spritePlayerShielded, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
   game.load.spritesheet('spriteEnemyA', spriteEnemyA, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
   game.load.spritesheet('spriteEnemyB', spriteEnemyB, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
   game.load.image('spriteHeart', spriteHeart);
@@ -479,6 +490,7 @@ function preload() {
   game.load.audio('soundWalljump', soundWalljump);
   game.load.audio('soundKill', soundKill);
   game.load.audio('soundWin', soundWin);
+  game.load.audio('soundDie', soundDie);
 }
 
 function parseMap(lines, level) {
@@ -780,7 +792,7 @@ function setupExit(exit) {
   }
 
   const particles = game.add.particles('effectImageSpark');
-  particles.setDepth(4);
+  particles.setDepth(5);
   const emitter = particles.createEmitter({
     ...speed,
     tint: [0xF6C456, 0xEC5B55, 0x8EEA83, 0x4397F7, 0xCC4BE4],
@@ -943,7 +955,7 @@ function setupFloodlights() {
 }
 
 function setupEnemy(enemy) {
-  enemy.anims.play('spriteEnemyAWalk', true);
+  enemy.anims.play(enemy.config.walkAnimation, true);
 }
 
 function setupFreebie(freebie) {
@@ -1043,7 +1055,7 @@ function createPlayer() {
 
   const location = level.playerLocation;
   const [x, y] = positionToScreenCoordinate(location[0], location[1]);
-  const player = physics.add.sprite(x, y, 'spritePlayer');
+  const player = physics.add.sprite(x, y, 'spritePlayerDefault');
 
   player.x += player.width / 2;
   player.y += player.height / 2;
@@ -1055,7 +1067,7 @@ function createPlayer() {
 
   player.framesSinceTouchingDown = 0;
 
-  player.setDepth(3);
+  player.setDepth(4);
 
   level.player = player;
 
@@ -1307,8 +1319,8 @@ function deathShockwave() {
   state.shader.setFloat2('shockwaveCenter', player.x / config.width, player.y / config.height);
 }
 
-function spendLife(isVoluntary) {
-  const { level } = state;
+function spendLife(isVoluntary): bool {
+  const { game, level } = state;
   const { player, hud } = level;
 
   const spendFreebie = player.freebies > 0;
@@ -1319,32 +1331,69 @@ function spendLife(isVoluntary) {
     damageBlur();
   }
 
+  let image;
+
   if (spendFreebie) {
     player.freebies--;
+    image = hud.freebies.pop();
 
-    const freebie = hud.freebies.pop();
-    // this should never happen, but better to not crash…
-    if (freebie) {
-      freebie.destroy();
+    if (player.freebies <= 0) {
+      setPlayerAnimation();
     }
   } else if (!prop('cheat.hearty')) {
     player.life--;
-
-    const heart = hud.hearts.pop();
-    // this should never happen, but better to not crash…
-    if (heart) {
-      heart.destroy();
-    }
+    image = hud.hearts.pop();
   }
+
+  if (!image) {
+    return; // lol flow
+  }
+
+  image.setDepth(3);
+
+  if (image.hudTween) {
+    image.hudTween.stop();
+  }
+
+  image.x = player.x;
+  image.y = player.y;
+
+  game.tweens.add({
+    targets: image,
+    duration: 500,
+    y: image.y - config.tileHeight,
+    ease: 'Cubic.easeOut',
+    onComplete: () => {
+      game.tweens.add({
+        targets: image,
+        duration: 500,
+        y: image.y + config.tileHeight / 2,
+        alpha: 0,
+        ease: 'Cubic.easeIn',
+        onComplete: () => {
+          // this should never happen, but better to not crash…
+          if (image) {
+            image.destroy();
+          }
+        },
+      });
+    },
+  });
 
   if (player.life <= 0) {
     level.deaths++;
     save.levels[level.index].deaths++;
     deathShockwave();
     respawn();
+
+    playSound('soundDie', null, 0.75);
+
+    saveState();
+    return true;
   }
 
   saveState();
+  return false;
 }
 
 function takeSpikeDamage(object1, object2) {
@@ -1394,7 +1443,7 @@ function destroyEnemy(enemy) {
   }
 
   playSound('soundKill');
-  enemy.anims.play('spriteEnemyADie', true);
+  enemy.anims.play(enemy.config.killAnimation, true);
   enemy.disableBody(true, false);
   level.enemies = level.enemies.filter(e => e !== enemy);
 
@@ -1431,18 +1480,18 @@ function takeEnemyDamage(object1, object2) {
 
   const enemy = object1.config && object1.config.group === 'enemies' ? object1 : object2;
 
-  destroyEnemy(enemy);
-
   if (player.invincible) {
+    destroyEnemy(enemy);
     return;
   }
 
-  spendLife(false);
+  const suppressEnemySound = spendLife(false);
+  destroyEnemy(enemy, suppressEnemySound);
 
   setPlayerInvincible();
 }
 
-function playSound(name, variants) {
+function playSound(name, variants, volume) {
   const { game } = state;
 
   if (variants) {
@@ -1450,7 +1499,11 @@ function playSound(name, variants) {
   }
 
   const sound = game.sound.add(name);
-  sound.setVolume(0.5);
+
+  if (volume === undefined) {
+    volume = 0.5;
+  }
+  sound.setVolume(volume);
   sound.play();
 }
 
@@ -1477,6 +1530,9 @@ function acquireFreebie(object1, object2) {
   playSound('soundCoin');
 
   player.freebies++;
+  if (player.freebies === 1) {
+    setPlayerAnimation();
+  }
 
   if (level.objects.freebies.filter(f => !f.spent).length === 0) {
     save.levels[level.index].badgeRich = true;
@@ -1487,9 +1543,9 @@ function acquireFreebie(object1, object2) {
   hud.freebies.push(img);
   const x = 2 * config.tileWidth + img.width / 2 + img.width * (player.freebies + player.life - 1);
   const y = config.yBorder / 2;
-  img.setDepth(5);
+  img.setDepth(6);
 
-  game.tweens.add({
+  img.hudTween = game.tweens.add({
     targets: img,
     duration: 800,
     x,
@@ -1631,7 +1687,7 @@ function renderHud() {
     label.setStroke('#000000', 6);
     label.x -= label.width / 2;
     label.y -= label.height / 2;
-    label.setDepth(6);
+    label.setDepth(7);
     hud.hints.push(label);
 
     label.alpha = 0;
@@ -1696,7 +1752,7 @@ function renderLevelIntro() {
   player.ignoreInput = true;
 
   const background = game.add.image(config.width * 0.5, config.height * 0.55, 'effectBlack');
-  background.setDepth(7);
+  background.setDepth(8);
   const scaleY = config.height / background.height * 0.20;
   background.setScale(config.width / background.width, scaleY / 5);
   background.x = config.width * 1.5;
@@ -1722,7 +1778,7 @@ function renderLevelIntro() {
       levelName.setStroke('#000000', 6);
       levelName.x -= levelName.width / 2;
       levelName.y -= levelName.height / 2;
-      levelName.setDepth(7);
+      levelName.setDepth(8);
 
       levelName.alpha = 0;
       levelName.y += 20;
@@ -1760,7 +1816,7 @@ function renderLevelIntro() {
         bestTime.setStroke('#000000', 6);
         bestTime.x -= bestTime.width / 2;
         bestTime.y -= bestTime.height / 2;
-        bestTime.setDepth(7);
+        bestTime.setDepth(8);
 
         bestTime.alpha = 0;
         bestTime.y -= 20;
@@ -1795,7 +1851,7 @@ function renderLevelIntro() {
         const badge = game.add.image(config.width * 0.5, config.height * 0.5 + 30, badgeName);
         badge.x -= (i + 0.5) * (config.tileWidth + 20);
         badge.x += (badgesToRender.length / 2) * (config.tileWidth + 20);
-        badge.setDepth(7);
+        badge.setDepth(8);
         badges.push(badge);
 
         const x = badge.x;
@@ -1816,8 +1872,29 @@ function renderLevelIntro() {
 
       hud.intro.badges = badges;
 
+      const faders = [...badges, levelName];
+      if (hud.intro.bestTime) {
+        faders.push(hud.intro.bestTime);
+      }
+
+      faders.forEach((fader) => {
+        game.tweens.add({
+          targets: fader,
+          delay: 2000,
+          duration: 500,
+          alpha: 0,
+        });
+      });
+
+      game.tweens.add({
+        targets: hud.intro.background,
+        delay: 2250,
+        duration: 500,
+        scaleY: 0,
+      });
+
       game.time.addEvent({
-        delay: 2000,
+        delay: 2750,
         callback: () => {
           if (!hud.intro) {
             return;
@@ -1878,6 +1955,168 @@ function create() {
       {
         key: 'spriteEnemyA',
         frame: 3,
+      },
+    ],
+  });
+
+  game.anims.create({
+    key: 'spriteEnemyBWalk',
+    frames: [
+      {
+        key: 'spriteEnemyB',
+        frame: 2,
+      },
+      {
+        key: 'spriteEnemyB',
+        frame: 0,
+      },
+      {
+        key: 'spriteEnemyB',
+        frame: 2,
+      },
+      {
+        key: 'spriteEnemyB',
+        frame: 1,
+      },
+    ],
+    frameRate: 6,
+    repeat: -1,
+  });
+
+  game.anims.create({
+    key: 'spriteEnemyBDie',
+    frames: [
+      {
+        key: 'spriteEnemyB',
+        frame: 3,
+      },
+    ],
+  });
+
+  game.anims.create({
+    key: 'spritePlayerDefaultWalk',
+    frames: [
+      {
+        key: 'spritePlayerDefault',
+        frame: 2,
+      },
+      {
+        key: 'spritePlayerDefault',
+        frame: 0,
+      },
+      {
+        key: 'spritePlayerDefault',
+        frame: 2,
+      },
+      {
+        key: 'spritePlayerDefault',
+        frame: 1,
+      },
+    ],
+    frameRate: 6,
+    repeat: -1,
+  });
+
+  game.anims.create({
+    key: 'spritePlayerDefaultNeutral',
+    frames: [
+      {
+        key: 'spritePlayerDefault',
+        frame: 3,
+      },
+    ],
+  });
+
+  game.anims.create({
+    key: 'spritePlayerDefaultJumpUp',
+    frames: [
+      {
+        key: 'spritePlayerDefault',
+        frame: 4,
+      },
+    ],
+  });
+
+  game.anims.create({
+    key: 'spritePlayerDefaultJumpDown',
+    frames: [
+      {
+        key: 'spritePlayerDefault',
+        frame: 5,
+      },
+    ],
+  });
+
+  game.anims.create({
+    key: 'spritePlayerDefaultDrag',
+    frames: [
+      {
+        key: 'spritePlayerDefault',
+        frame: 6,
+      },
+    ],
+  });
+
+  game.anims.create({
+    key: 'spritePlayerShieldedWalk',
+    frames: [
+      {
+        key: 'spritePlayerShielded',
+        frame: 2,
+      },
+      {
+        key: 'spritePlayerShielded',
+        frame: 0,
+      },
+      {
+        key: 'spritePlayerShielded',
+        frame: 2,
+      },
+      {
+        key: 'spritePlayerShielded',
+        frame: 1,
+      },
+    ],
+    frameRate: 6,
+    repeat: -1,
+  });
+
+  game.anims.create({
+    key: 'spritePlayerShieldedNeutral',
+    frames: [
+      {
+        key: 'spritePlayerShielded',
+        frame: 3,
+      },
+    ],
+  });
+
+  game.anims.create({
+    key: 'spritePlayerShieldedJumpUp',
+    frames: [
+      {
+        key: 'spritePlayerShielded',
+        frame: 4,
+      },
+    ],
+  });
+
+  game.anims.create({
+    key: 'spritePlayerShieldedJumpDown',
+    frames: [
+      {
+        key: 'spritePlayerShielded',
+        frame: 5,
+      },
+    ],
+  });
+
+  game.anims.create({
+    key: 'spritePlayerShieldedDrag',
+    frames: [
+      {
+        key: 'spritePlayerShielded',
+        frame: 6,
       },
     ],
   });
@@ -2070,10 +2309,12 @@ function processInput() {
         player.facingLeft = true;
         player.wallJumpDirectionLeft = true;
         jumpPuff(true);
+        player.setFlipX(false);
       } else {
         player.facingLeft = false;
         player.wallJumpDirectionLeft = false;
         jumpPuff(false);
+        player.setFlipX(true);
       }
 
       player.isWallJumping = true;
@@ -2081,8 +2322,10 @@ function processInput() {
       player.wallJumpContinuing = true;
       player.wallJumpHeld = true;
       player.wallJumpContra = false;
-      playSound('soundWalljump');
-      spendLife(true);
+      const suppressSound = spendLife(true);
+      if (!suppressSound) {
+        playSound('soundWalljump');
+      }
 
       game.time.addEvent({
         delay: prop('wall_jump_ignore_direction_ms'),
@@ -2108,8 +2351,10 @@ function processInput() {
       jumpPuff(true, true);
       jumpPuff(false, true);
 
-      spendLife(true);
-      playSound('soundDoubleJump');
+      const suppressSound = spendLife(true);
+      if (!suppressSound) {
+        playSound('soundDoubleJump');
+      }
     }
   }
 
@@ -2229,7 +2474,7 @@ function manageWallDragPuff(isEnabled, isLeft) {
 
   if (isEnabled && !player.wallDragPuff) {
     const particles = game.add.particles('effectImagePuff');
-    particles.setDepth(4);
+    particles.setDepth(5);
     const emitter = particles.createEmitter({
       speed: 50,
       x: (player.width * 0.4) * (isLeft ? -1 : 1),
@@ -2269,7 +2514,7 @@ function jumpPuff(isLeft, downward) {
   const { player } = level;
 
   const particles = game.add.particles('effectImagePuff');
-  particles.setDepth(4);
+  particles.setDepth(5);
   const emitter = particles.createEmitter({
     speed: 50,
     x: player.x + player.width * (isLeft ? -0.2 : 0.2),
@@ -2301,12 +2546,45 @@ function jumpPuff(isLeft, downward) {
   });
 }
 
-function frameUpdates(dt) {
+function setPlayerAnimation(type) {
   const { level } = state;
+  const { player } = level;
+
+  if (type === undefined) {
+    type = player.previousAnimation;
+  }
+  const status = player.freebies > 0 ? 'Shielded' : 'Default';
+  const animation = `spritePlayer${status}${type}`;
+  player.anims.play(animation, animation === player.previousAnimation);
+  player.previousAnimation = type;
+}
+
+function frameUpdates(dt) {
+  const { level, leftButtonDown, rightButtonDown } = state;
   const { player, hud } = level;
 
   if (player.body.velocity.y > 500) {
     player.setVelocityY(500);
+  }
+
+  if (player.body.touching.down) {
+    if (leftButtonDown) {
+      setPlayerAnimation('Walk');
+    } else if (rightButtonDown) {
+      setPlayerAnimation('Walk');
+    } else {
+      setPlayerAnimation('Neutral');
+    }
+  } else if (player.body.velocity.y <= 0) {
+    setPlayerAnimation('JumpUp');
+  } else {
+    setPlayerAnimation('JumpDown');
+  }
+
+  if (!player.wallJumpIgnoreDirection && leftButtonDown) {
+    player.setFlipX(false);
+  } else if (!player.wallJumpIgnoreDirection && rightButtonDown) {
+    player.setFlipX(true);
   }
 
   level.objects.pupils.forEach((pupil) => {
@@ -2421,6 +2699,12 @@ function frameUpdates(dt) {
     if (player.body.velocity.y > max) {
       player.setVelocityY(max);
       puffEnabled = true;
+      setPlayerAnimation('Drag');
+      if (leftButtonDown) {
+        player.setFlipX(true);
+      } else if (rightButtonDown) {
+        player.setFlipX(false);
+      }
     }
   }
 
