@@ -52,7 +52,7 @@ const config = {
   physics: {
     default: 'arcade',
     arcade: {
-      gravity: { y: 300 },
+      gravity: { y: 400 },
       debug: false, // will be populated based on dat.gui just in time
     },
   },
@@ -1237,7 +1237,7 @@ function jumpShake(type) {
 }
 
 function processInput() {
-  const { game, level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonStarted } = state;
+  const { game, level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonStarted, jumpButtonDown, jumpButtonHeld } = state;
   const { player } = level;
 
   if (player.ignoreInput) {
@@ -1246,7 +1246,13 @@ function processInput() {
 
   const isStanding = player.body.touching.down;
 
+  if (jumpButtonHeld && !jumpButtonDown) {
+    state.jumpButtonHeld = false;
+  }
+
   if (jumpButtonStarted) {
+    state.jumpButtonHeld = true;
+    player.body.setGravityY(0);
     if (isStanding) {
       jumpShake(JUMP_NORMAL);
       player.setVelocityY(-prop('velocityY.jump'));
@@ -1444,7 +1450,12 @@ function frameUpdates(dt) {
     }
   }
 
+  if (!player.body.touching.down && (player.body.velocity.y > 0 || !state.jumpButtonHeld)) {
+    player.body.setGravityY(config.physics.arcade.gravity.y * 2);
+  }
+
   if (player.body.touching.down) {
+    player.body.setGravityY(0);
     player.canDoubleJump = true;
     player.isDoubleJumping = false;
 
@@ -1458,6 +1469,7 @@ function frameUpdates(dt) {
     player.wallJumpContinuing = false;
     player.wallJumpHeld = false;
     player.wallJumpContra = false;
+    player.jumpButtonHeld = false;
 
     if (prop('cheat.forbidWallJump')) {
       player.canWallJump = false;
@@ -1591,11 +1603,10 @@ function update(time, dt) {
   listenProp('time', time);
   listenProp('frameTime', dt);
 
-  frameUpdates(dt);
-  updateEnemies();
-
   readInput();
   processInput();
+  frameUpdates(dt);
+  updateEnemies();
 
   if (DEBUG) {
     renderDebug();
