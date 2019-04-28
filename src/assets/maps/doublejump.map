@@ -22,8 +22,8 @@
 ##############################
 
 {
-  "name": "Double Jump",
+  "name": "Double Jump!!",
   "baseLife": 3,
-  "hint": "Press [UP] and [JUMP] to double-jump! but…",
+  "hint": "Hold [UP] and press [JUMP]! But . . .",
   "hintXMod": 60
 }

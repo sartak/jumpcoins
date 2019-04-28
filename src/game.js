@@ -18,6 +18,10 @@ import levelDoubleJumpG from './assets/maps/doublejump-g.map';
 import levelWallJump from './assets/maps/walljump.map';
 import levelWallJumpA from './assets/maps/walljump-a.map';
 import levelWallJumpB from './assets/maps/walljump-b.map';
+import levelWallJumpC from './assets/maps/walljump-c.map';
+import levelWallJumpD from './assets/maps/walljump-d.map';
+import levelWallJumpE from './assets/maps/walljump-e.map';
+import levelWallJumpF from './assets/maps/walljump-f.map';
 
 import levelStairs from './assets/maps/stairs.map';
 import levelBye from './assets/maps/bye.map';
@@ -80,8 +84,12 @@ const config = {
     levelDoubleJumpBB,
 
     levelWallJump,
-    levelWallJumpA,
     levelWallJumpB,
+    levelWallJumpC,
+    levelWallJumpD,
+    levelWallJumpE,
+    levelWallJumpF,
+    levelWallJumpA,
 
     levelStairs,
     levelBye,
@@ -607,7 +615,7 @@ function setupExit(exit) {
     speed.y = { min: exit.y - config.tileHeight / 2, max: exit.y + config.tileHeight / 2 };
   } else if (exit.config.x <= 1) {
     speed.speedX = { min: 40, max: 60 };
-    speed.x = exit.x + config.tileWidth / 2;
+    speed.x = exit.x - config.tileWidth / 2;
     speed.y = { min: exit.y - config.tileHeight / 2, max: exit.y + config.tileHeight / 2 };
   } else if (exit.config.y >= config.mapHeight - 2) {
     speed.speedY = { min: -60, max: -40 };
@@ -673,10 +681,10 @@ function reactFloodlightsToDie() {
 
         particle.jumpTween = game.tweens.addCounter({
           from: 100,
-          to: -20,
+          to: -30,
           delay: 100,
           duration: 1000,
-          ease: 'Cubic.easeOut',
+          ease: 'Quad.easeOut',
           onUpdate: () => {
             const v = particle.jumpTween.getValue() / 100;
             particle.velocityX = v * vx + particle.originalVelocityX;
@@ -764,11 +772,11 @@ function setupFloodlights() {
     blendMode: 'SCREEN',
     particleBringToTop: true,
     quantity: 3,
-    frequency: 2000,
+    frequency: 1500,
     lifespan: 50000,
   });
 
-  for (let i = 1; i < 100; i += 3) {
+  for (let i = 1; i < 30; i += 3) {
     const particle = emitter.emitParticle();
     const delta = 10000 + i * 1000;
     particle.update(delta, delta / 1000, []);
@@ -1113,17 +1121,17 @@ function takeEnemyDamage(object1, object2) {
   const { game, level } = state;
   const { player } = level;
 
+  const enemy = object1.config && object1.config.group === 'enemies' ? object1 : object2;
+
+  destroyEnemy(enemy);
+
   if (player.invincible) {
     return;
   }
 
-  const enemy = object1.config && object1.config.group === 'enemies' ? object1 : object2;
-
   spendLife(false);
 
   setPlayerInvincible();
-
-  destroyEnemy(enemy);
 }
 
 function acquireFreebie(object1, object2) {
@@ -1131,6 +1139,9 @@ function acquireFreebie(object1, object2) {
   const { player, hud } = level;
 
   const freebie = object1.config && object1.config.group === 'freebie' ? object1 : object2;
+  if (freebie.spent) {
+    return false;
+  }
 
   freebie.spent = true;
   freebie.setFrame(1);
@@ -1143,14 +1154,8 @@ function acquireFreebie(object1, object2) {
   hud.freebies.push(img);
   img.x += img.width / 2 + img.width * (player.freebies + player.life);
   img.y += config.yBorder / 2;
-}
 
-function checkFreebieSpent(object1, object2) {
-  const { game, level } = state;
-  const { player, hud } = level;
-
-  const freebie = object1.config && object1.config.group === 'freebie' ? object1 : object2;
-  return !freebie.spent;
+  return false;
 }
 
 function checkSemiground(object1, object2) {
@@ -1158,7 +1163,7 @@ function checkSemiground(object1, object2) {
   const { player, hud } = level;
 
   const semiground = object1.config && object1.config.group === 'semiground' ? object1 : object2;
-  if (player.body.velocity.y < 0 || player.body.y >= semiground.y) {
+  if (player.body.velocity.y < 0 || player.y + player.height / 2 >= semiground.y) {
     return false;
   }
   return true;
@@ -1180,6 +1185,8 @@ function removeHints() {
       level.objects.removeHints = [];
     },
   });
+
+  return false;
 }
 
 function setupLevelPhysics(isInitial) {
@@ -1201,8 +1208,8 @@ function setupLevelPhysics(isInitial) {
   physics.add.collider(player, statics.spikes, takeSpikeDamage);
   physics.add.collider(enemies, statics.spikes);
 
-  physics.add.overlap(player, statics.freebies, acquireFreebie, checkFreebieSpent);
-  physics.add.overlap(player, statics.removeHints, removeHints);
+  physics.add.overlap(player, statics.freebies, null, acquireFreebie);
+  physics.add.overlap(player, statics.removeHints, null, removeHints);
 
   physics.add.collider(player, enemies, takeEnemyDamage);
   physics.add.collider(enemies, enemies);
@@ -1225,8 +1232,16 @@ function renderHud() {
 
   hud.hints = [];
   if (hint) {
-    const x = config.width / 2 + (level.hintXMod || 0);
-    const y = config.height * 0.25 + (level.hintYMod || 0);
+    let x = config.width / 2 + (level.hintXMod || 0);
+    let y = config.height * 0.25 + (level.hintYMod || 0);
+
+    if (level.hintXPosition) {
+      x = config.width * level.hintXPosition;
+    }
+    if (level.hintYPosition) {
+      y = config.height * level.hintYPosition;
+    }
+
     const label = game.add.text(
       x,
       y,
@@ -1489,6 +1504,7 @@ function processInput() {
       player.setVelocityY(-prop('velocityY.jump'));
     } else if (player.canWallJump && ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown))) {
       jumpShake(JUMP_WALL);
+      player.body.setGravityY(-100);
       player.setVelocityY(-prop('velocityY.wall_jump'));
       if (player.body.touching.right) {
         player.facingLeft = true;
@@ -1566,12 +1582,12 @@ function processInput() {
   } else if (player.wallJumpContinuing) {
     // lerp down to the slower speed
     const x = prop('velocityX.walk');
-    const vx = player.body.velocity.x + 0.1 * (x - player.body.velocity.x);
+    const vx = player.body.velocity.x + 0.5 * (x - player.body.velocity.x);
     player.setVelocityX(vx);
   } else if (player.wallJumpContra) {
     // lerp down to the reverse speed
     const x = -1 * prop('velocityX.reversed_wall_jump');
-    const vx = player.body.velocity.x + 0.05 * (x - player.body.velocity.x);
+    const vx = player.body.velocity.x + 0.3 * (x - player.body.velocity.x);
     player.setVelocityX(vx);
   } else {
     let x = prop('velocityX.walk');
