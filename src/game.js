@@ -1278,8 +1278,23 @@ function removeHints() {
   const { game, level } = state;
   const { hud } = level;
 
-  hud.hints.forEach((hint) => {
-    hint.destroy();
+  if (level.removedHints) {
+    return false;
+  }
+  level.removedHints = true;
+
+  hud.hints.forEach((hint, i) => {
+    game.tweens.add({
+      targets: hint,
+      delay: 300 * i,
+      duration: 500,
+      alpha: 0,
+      y: hint.y + 20,
+      ease: 'Cubic.easeIn',
+      onComplete: () => {
+        hint.destroy();
+      },
+    });
   });
 
   game.time.addEvent({
@@ -1381,6 +1396,28 @@ function renderHud() {
     label.y -= label.height / 2;
     label.setDepth(6);
     hud.hints.push(label);
+
+    label.alpha = 0;
+    label.y += 20;
+    game.tweens.add({
+      targets: label,
+      delay: 1000 + 500 * i,
+      duration: 500,
+      alpha: 1,
+      y: label.y - 20,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        game.tweens.add({
+          targets: label,
+          delay: 500,
+          duration: 2000,
+          y: label.y + 8,
+          ease: 'Quad.easeInOut',
+          yoyo: true,
+          loop: -1,
+        });
+      },
+    });
   });
 }
 
