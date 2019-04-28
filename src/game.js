@@ -769,7 +769,7 @@ function setupFloodlights() {
     x: { min: 0, max: config.width },
     y: { min: 0, max: config.height },
     tint: [0xF6C456, 0xEC5B55, 0x8EEA83, 0x4397F7, 0xCC4BE4],
-    alpha: { start: 0, end: 0.4, ease: t => (t < 0.2 ? 5 * t : 1 - (t - 0.2)) },
+    alpha: { start: 0, end: 0.5, ease: t => (t < 0.2 ? 5 * t : 1 - (t - 0.2)) },
     scale: { min: 0.5, max: 2.0 },
     blendMode: 'SCREEN',
     particleBringToTop: true,
@@ -789,6 +789,19 @@ function setupFloodlights() {
 }
 
 function setupEnemy(enemy) {
+}
+
+function setupFreebie(freebie) {
+  const { game } = state;
+
+  freebie.bobTween = game.tweens.add({
+    targets: freebie,
+    duration: 1000,
+    y: freebie.y - 8,
+    ease: 'Cubic.easeInOut',
+    yoyo: true,
+    loop: -1,
+  });
 }
 
 function createLevelObjects() {
@@ -827,6 +840,7 @@ function createLevelObjects() {
 
   objects.movers.forEach(mover => setupMover(mover));
   objects.enemies.forEach(enemy => setupEnemy(enemy));
+  objects.freebies.forEach(freebie => setupFreebie(freebie));
 }
 
 function createPlayer() {
@@ -1045,13 +1059,9 @@ function spendLife(isVoluntary) {
   const { level } = state;
   const { player, hud } = level;
 
-  let spendFreebie = false;
+  const spendFreebie = player.freebies > 0;
 
-  if (isVoluntary) {
-    if (player.freebies > 0) {
-      spendFreebie = true;
-    }
-  } else {
+  if (!isVoluntary) {
     damageBlur();
   }
 
@@ -1146,16 +1156,30 @@ function acquireFreebie(object1, object2) {
   }
 
   freebie.spent = true;
-  freebie.setFrame(1);
+  freebie.bobTween.stop();
+
+  game.tweens.add({
+    targets: freebie,
+    duration: 1000,
+    y: freebie.y - 8,
+    ease: 'Cubic.easeOut',
+    alpha: 0.4,
+  });
 
   player.freebies++;
 
-  const x = 2 * config.tileWidth;
-  const y = 0;
-  const img = game.add.image(x, y, 'spriteFreebie');
+  const img = game.add.image(freebie.x, freebie.y, 'spriteFreebie');
   hud.freebies.push(img);
-  img.x += img.width / 2 + img.width * (player.freebies + player.life);
-  img.y += config.yBorder / 2;
+  const x = 2 * config.tileWidth + img.width / 2 + img.width * (player.freebies + player.life - 1);
+  const y = config.yBorder / 2;
+
+  game.tweens.add({
+    targets: img,
+    duration: 800,
+    x,
+    y,
+    ease: 'Cubic.easeInOut',
+  });
 
   return false;
 }
@@ -1583,12 +1607,18 @@ function processInput() {
     }
   } else if (player.wallJumpContinuing) {
     // lerp down to the slower speed
-    const x = prop('velocityX.walk');
+    let x = prop('velocityX.walk');
+    if (player.wallJumpDirectionLeft) {
+      x *= -1;
+    }
     const vx = player.body.velocity.x + 0.5 * (x - player.body.velocity.x);
     player.setVelocityX(vx);
   } else if (player.wallJumpContra) {
     // lerp down to the reverse speed
-    const x = -1 * prop('velocityX.reversed_wall_jump');
+    let x = prop('velocityX.reversed_wall_jump');
+    if (leftButtonDown) {
+      x *= -1;
+    }
     const vx = player.body.velocity.x + 0.3 * (x - player.body.velocity.x);
     player.setVelocityX(vx);
   } else {
@@ -1735,6 +1765,10 @@ function frameUpdates(dt) {
   const { level } = state;
   const { player, hud } = level;
 
+  if (player.body.velocity.y > 500) {
+    player.setVelocityY(500);
+  }
+
   if (player.body.touching.down) {
     player.framesSinceTouchingDown = 0;
   } else {
@@ -1775,6 +1809,7 @@ function frameUpdates(dt) {
       player.canWallJump = false;
     }
 
+    /*
     level.objects.freebies.forEach((freebie) => {
       if (freebie.spent) {
         freebie.spent = false;
@@ -1789,6 +1824,7 @@ function frameUpdates(dt) {
       });
       hud.freebies = [];
     }
+    */
   }
 
   // make sure movers never get out of hand
