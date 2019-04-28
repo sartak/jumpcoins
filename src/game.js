@@ -429,6 +429,7 @@ function createLevel(index) {
 
   level.hud = {};
   level.timers = [];
+  level.particles = [];
 
   initializeMap();
 
@@ -645,6 +646,10 @@ function destroyLevel(keepStatics) {
 
   level.timers.forEach((timer) => {
     timer.destroy();
+  });
+
+  level.particles.forEach((particle) => {
+    particle.destroy();
   });
 
   if (!keepStatics) {
@@ -1378,6 +1383,8 @@ function manageWallDragPuff(isEnabled, isLeft) {
       lifespan: 200,
     });
     emitter.startFollow(player);
+
+    level.particles.push(particles);
     player.wallDragPuff = { particles, emitter };
   } else if (isEnabled) {
     // update
@@ -1388,6 +1395,7 @@ function manageWallDragPuff(isEnabled, isLeft) {
     game.time.addEvent({
       delay: 1000,
       callback: () => {
+        level.particles = level.particles.filter(p => p !== particles);
         particles.destroy();
       },
     });
