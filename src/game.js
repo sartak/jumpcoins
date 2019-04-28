@@ -45,6 +45,7 @@ import effectImagePuff from './assets/effects/puff.png';
 import effectImageSpark from './assets/effects/spark.png';
 import effectImageFloodlight from './assets/effects/floodlight.png';
 import effectBackgroundScreen from './assets/effects/background-screen.png';
+import effectPupil from './assets/effects/pupil.png';
 
 // YOUR LIFE IS CURRENCY
 
@@ -138,7 +139,8 @@ const config = {
     },
     '0': {
       image: 'tileEye',
-      group: 'ground',
+      group: 'eyes',
+      object: true,
     },
     '_': {
       image: 'tileSemiground',
@@ -382,6 +384,7 @@ function preload() {
   game.load.image('effectImageSpark', effectImageSpark);
   game.load.image('effectImageFloodlight', effectImageFloodlight);
   game.load.image('effectBackgroundScreen', effectBackgroundScreen);
+  game.load.image('effectPupil', effectPupil);
 }
 
 function parseMap(lines, level) {
@@ -469,7 +472,7 @@ function createLevel(index) {
 
   initializeMap();
 
-  createLevelObjects();
+  createLevelObjects(false);
 
   createPlayer();
 
@@ -672,7 +675,10 @@ function setupExit(exit) {
     particle.update(delta, delta / 1000, []);
   }
 
-  level.particles.push(particles);
+  if (!level.exitParticles) {
+    level.exitParticles = [];
+  }
+  level.exitParticles.push(particles);
 }
 
 function reactFloodlightsToDie() {
@@ -834,7 +840,26 @@ function setupFreebie(freebie) {
   });
 }
 
-function createLevelObjects() {
+function setupEye(eye) {
+  const { level, physics } = state;
+  const { statics, objects } = level;
+
+  if (!statics.pupils) {
+    statics.pupils = physics.add.staticGroup();
+  }
+
+  const x = eye.x;
+  const y = eye.y;
+  const pupil = statics.pupils.create(x, y, 'effectPupil');
+
+  pupil.pupilOriginX = x;
+  pupil.pupilOriginY = y;
+  pupil.setDepth(2);
+
+  objects.pupils.push(pupil);
+}
+
+function createLevelObjects(isRespawn) {
   const { level, physics } = state;
   const { objectDescriptions, statics } = level;
 
@@ -844,10 +869,15 @@ function createLevelObjects() {
     movers: [],
     removeHints: [],
     exits: [],
+    eyes: [],
+    pupils: [],
   };
 
   objectDescriptions.forEach(({ x, y, tile }) => {
     const { group, dynamic, glyph, image } = tile;
+    if (isRespawn && (group === 'exits' || group === 'pupils')) {
+      return;
+    }
 
     let body;
 
@@ -865,12 +895,21 @@ function createLevelObjects() {
     objects[group].push(body);
   });
 
+  if (isRespawn) {
+    objects.exits = level.objects.exits;
+    objects.pupils = level.objects.pupils;
+  }
+
   level.enemies = objects.enemies;
   level.objects = objects;
 
   objects.movers.forEach(mover => setupMover(mover));
   objects.enemies.forEach(enemy => setupEnemy(enemy));
   objects.freebies.forEach(freebie => setupFreebie(freebie));
+
+  if (!isRespawn) {
+    objects.eyes.forEach(eye => setupEye(eye));
+  }
 }
 
 function createPlayer() {
@@ -928,9 +967,16 @@ function destroyLevel(keepStatics) {
     images.forEach((image) => {
       image.destroy();
     });
+    level.exitParticles.forEach((particle) => {
+      particle.destroy();
+    });
   }
 
   Object.keys(level.objects).forEach((type) => {
+    if (keepStatics && (type === 'exits' || type === 'pupils')) {
+      return;
+    }
+
     level.objects[type].forEach((object) => {
       object.destroy();
     });
@@ -1351,9 +1397,8 @@ function respawn() {
   game.time.addEvent({
     callback: () => {
       destroyLevel(true);
-      createLevelObjects();
+      createLevelObjects(true);
       createPlayer();
-      level.objects.exits.forEach(exit => setupExit(exit));
       renderHud();
       setupLevelPhysics(false);
     },
@@ -1824,6 +1869,21 @@ function frameUpdates(dt) {
   if (player.body.velocity.y > 500) {
     player.setVelocityY(500);
   }
+
+  level.objects.pupils.forEach((pupil) => {
+    let x = pupil.pupilOriginX;
+    let y = pupil.pupilOriginY;
+
+    const dx = player.x - x;
+    const dy = player.y - y;
+
+    const theta = Math.atan2(dy, dx);
+    x += config.tileWidth / 5 * Math.cos(theta);
+    y += config.tileHeight / 5 * Math.sin(theta);
+
+    pupil.x += 0.05 * (x - pupil.x);
+    pupil.y += 0.05 * (y - pupil.y);
+  });
 
   if (player.body.touching.down) {
     player.framesSinceTouchingDown = 0;
