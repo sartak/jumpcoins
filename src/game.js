@@ -1255,6 +1255,8 @@ function processInput() {
     player.body.setGravityY(0);
     if (isStanding) {
       jumpShake(JUMP_NORMAL);
+      jumpPuff(false);
+      jumpPuff(true);
       player.setVelocityY(-prop('velocityY.jump'));
     } else if (player.canWallJump && ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown))) {
       jumpShake(JUMP_WALL);
@@ -1262,9 +1264,11 @@ function processInput() {
       if (player.body.touching.right) {
         player.facingLeft = true;
         player.wallJumpDirectionLeft = true;
+        jumpPuff(true);
       } else {
         player.facingLeft = false;
         player.wallJumpDirectionLeft = false;
+        jumpPuff(false);
       }
 
       player.isWallJumping = true;
@@ -1292,6 +1296,9 @@ function processInput() {
       player.wallJumpContinuing = false;
       player.wallJumpHeld = false;
       player.wallJumpContra = false;
+
+      jumpPuff(true, true);
+      jumpPuff(false, true);
 
       spendLife(true);
     }
@@ -1437,6 +1444,42 @@ function manageWallDragPuff(isEnabled, isLeft) {
     });
     delete player.wallDragPuff;
   }
+}
+
+function jumpPuff(isLeft, downward) {
+  const { game, level } = state;
+  const { player } = level;
+
+  const particles = game.add.particles('effectImagePuff');
+  const emitter = particles.createEmitter({
+    speed: 50,
+    x: player.x + player.width * (isLeft ? -0.2 : 0.2),
+    y: player.y + player.height * 0.4,
+    scale: { start: 0.7, end: 1 },
+    quantity: 1,
+    alpha: { start: 0.4, end: 0 },
+    rotate: { start: 0, end: isLeft ? 90 : -90 },
+    maxParticles: 2,
+    angle: isLeft ? { min: 180, max: 180 } : { min: 0, max: 0 },
+    lifespan: 500,
+    gravityY: downward ? 200 : -200,
+  });
+
+  level.particles.push(particles);
+
+  game.time.addEvent({
+    delay: 500,
+    callback: () => {
+      emitter.stop();
+      game.time.addEvent({
+        delay: 1000,
+        callback: () => {
+          level.particles = level.particles.filter(p => p !== particles);
+          particles.destroy();
+        },
+      });
+    },
+  });
 }
 
 function frameUpdates(dt) {
