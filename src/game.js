@@ -1271,6 +1271,12 @@ function winLevel(isProper) {
   player.ignoreInput = true;
   player.disableBody(true, false);
 
+  game.tweens.add({
+    targets: player,
+    alpha: 0,
+    duration: 2000,
+  });
+
   // start animation
   renderLevelOutro(() => {
     removePhysics();
