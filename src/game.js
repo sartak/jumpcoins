@@ -416,7 +416,7 @@ function analytics(identifier, progress) {
       identifier = `0${identifier}`;
     }
 
-    window.ga('send', 'event', 'progress', `${identifier} ${progress}`);
+    window.gtag('event', `${identifier} ${progress}`, { 'event_category': 'progress' })
   } catch (e) {
     // eslint-disable-next-line no-console
     console.log(e);
