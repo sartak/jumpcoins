@@ -2630,31 +2630,14 @@ function readInput() {
       }
       */
 
-      const { A, B, X, Y, L1, L2, R1, R2, up, down, left, right, leftStick, rightStick } = pad;
+      const { A, B, X, Y, up, down, left, right, leftStick, rightStick } = pad;
 
       state.upButtonDown = state.upButtonDown || up;
       state.leftButtonDown = state.leftButtonDown || left;
       state.rightButtonDown = state.rightButtonDown || right;
       state.downButtonDown = state.downButtonDown || down;
 
-      state.jumpButtonDown = state.jumpButtonDown || A;
-
-      listenProp('gamepad.A', A);
-      listenProp('gamepad.B', B);
-      listenProp('gamepad.X', X);
-      listenProp('gamepad.Y', Y);
-      listenProp('gamepad.L1', L1 > 0);
-      listenProp('gamepad.L2', L2 > 0);
-      listenProp('gamepad.R1', R1 > 0);
-      listenProp('gamepad.R2', R2 > 0);
-      listenProp('gamepad.up', up);
-      listenProp('gamepad.down', down);
-      listenProp('gamepad.left', left);
-      listenProp('gamepad.right', right);
-      listenProp('gamepad.l_stick.x', leftStick.x);
-      listenProp('gamepad.l_stick.y', leftStick.y);
-      listenProp('gamepad.r_stick.x', rightStick.x);
-      listenProp('gamepad.r_stick.y', rightStick.y);
+      state.jumpButtonDown = state.jumpButtonDown || A || B || X || Y;
     });
   }
 
