@@ -410,6 +410,19 @@ if (DEBUG) {
   window._ = _;
 }
 
+function analytics(identifier, progress) {
+  try {
+    if (identifier < 10) {
+      identifier = `0${identifier}`;
+    }
+
+    window.ga('send', 'event', 'progress', `${identifier} ${progress}`);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.log(e);
+  }
+}
+
 export default function startGame(debug: any) {
   if (DEBUG) {
     window.props = debug;
@@ -433,6 +446,8 @@ export default function startGame(debug: any) {
       debug[key] = props[key];
     });
   }
+
+  analytics(0, 'started game');
 
   return game;
 }
@@ -1228,6 +1243,8 @@ function winLevel(isProper) {
   }
 
   level.isWinning = true;
+
+  analytics(1 + level.index, `finished level ${level.name}`);
 
   const time_ms = (new Date()).getTime() - level.spawnedAt.getTime();
   level.duration_ms = time_ms;
