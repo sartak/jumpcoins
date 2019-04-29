@@ -353,12 +353,6 @@ const Shader = new Phaser.Class({
 
         uniform float shockwaveTime;
         uniform vec2  shockwaveCenter;
-        uniform float shockwaveScale;
-        uniform float shockwaveRange;
-        uniform float shockwaveThickness;
-        uniform float shockwaveSpeed;
-        uniform float shockwaveInner;
-        uniform float shockwaveDropoff;
 
         uniform float blurEffect;
 
@@ -366,6 +360,13 @@ const Shader = new Phaser.Class({
           vec2 uv = outTexCoord;
 
           if (shockwaveTime < 10.0) {
+            float shockwaveScale = 10.0;
+            float shockwaveRange = 0.8;
+            float shockwaveThickness = 0.1;
+            float shockwaveSpeed = 3.0;
+            float shockwaveInner = 0.09;
+            float shockwaveDropoff = 40.0;
+
             float dist = distance(uv, shockwaveCenter);
             float t = shockwaveTime * shockwaveSpeed;
 
@@ -2536,12 +2537,6 @@ function create() {
     state.shockwaveTime = 1000000;
     state.shockwaveIncrement = 0.005;
     state.shader.setFloat1('shockwaveTime', state.shockwaveTime);
-    state.shader.setFloat1('shockwaveScale', prop('effect.shockwave.scale'));
-    state.shader.setFloat1('shockwaveRange', prop('effect.shockwave.range'));
-    state.shader.setFloat1('shockwaveThickness', prop('effect.shockwave.thickness'));
-    state.shader.setFloat1('shockwaveSpeed', prop('effect.shockwave.speed'));
-    state.shader.setFloat1('shockwaveInner', prop('effect.shockwave.inner'));
-    state.shader.setFloat1('shockwaveDropoff', prop('effect.shockwave.dropoff'));
 
     state.shader.setFloat1('blurEffect', 0.0);
 
