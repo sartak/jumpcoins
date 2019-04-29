@@ -964,7 +964,7 @@ function freebieGlow(freebie) {
     const particles = game.add.particles('effectImageFloodlight');
     const emitter = particles.createEmitter({
       tint: 0x4397F7,
-      alpha: { start: 0, end: 0.66, ease: t => (t < 0.2 ? 5 * t : 1 - (t - 0.2)) },
+      alpha: { start: 0, end: 0.4, ease: t => (t < 0.2 ? 5 * t : 1 - (t - 0.2)) },
       scale: { start: 0.4, end: 0.8 },
       blendMode: 'SCREEN',
       particleBringToTop: true,
@@ -984,16 +984,16 @@ function freebieGlow(freebie) {
     const particles = game.add.particles('effectImageSpark');
     particles.setDepth(5);
     const emitter = particles.createEmitter({
-      speed: 10,
+      speed: 5,
       tint: 0x4397F7,
       alpha: { start: 0, end: 1, ease: t => (t < 0.1 ? 10 * t : 1 - (t - 0.1)) },
       scale: 0.1,
       blendMode: 'SCREEN',
       particleBringToTop: true,
       quantity: 1,
-      maxParticles: 2,
+      maxParticles: 6,
       frequency: 150,
-      lifespan: 2000,
+      lifespan: 5000,
     });
 
     freebie.sparkParticles = particles;
@@ -1429,40 +1429,38 @@ function spendLife(isVoluntary): bool {
     image = hud.hearts.pop();
   }
 
-  if (!image) {
-    return; // lol flow
+  if (image) {
+    image.setDepth(3);
+
+    if (image.hudTween) {
+      image.hudTween.stop();
+    }
+
+    image.x = player.x;
+    image.y = player.y;
+
+    game.tweens.add({
+      targets: image,
+      duration: 500,
+      y: image.y - config.tileHeight,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        game.tweens.add({
+          targets: image,
+          duration: 500,
+          y: image.y + config.tileHeight / 2,
+          alpha: 0,
+          ease: 'Cubic.easeIn',
+          onComplete: () => {
+            // this should never happen, but better to not crash…
+            if (image) {
+              image.destroy();
+            }
+          },
+        });
+      },
+    });
   }
-
-  image.setDepth(3);
-
-  if (image.hudTween) {
-    image.hudTween.stop();
-  }
-
-  image.x = player.x;
-  image.y = player.y;
-
-  game.tweens.add({
-    targets: image,
-    duration: 500,
-    y: image.y - config.tileHeight,
-    ease: 'Cubic.easeOut',
-    onComplete: () => {
-      game.tweens.add({
-        targets: image,
-        duration: 500,
-        y: image.y + config.tileHeight / 2,
-        alpha: 0,
-        ease: 'Cubic.easeIn',
-        onComplete: () => {
-          // this should never happen, but better to not crash…
-          if (image) {
-            image.destroy();
-          }
-        },
-      });
-    },
-  });
 
   if (player.life <= 0) {
     level.deaths++;
@@ -2055,7 +2053,7 @@ function renderLevelOutro(callback) {
   background.setScale(0, scaleY);
   hud.outro.background = background;
 
-  const encouragements = ['Great job!!', 'Wowee!', 'Holy toledo!', 'My hero!', 'Whoa!!', "You're on fire!!", "Level clear!!", "Piece of cake!"];
+  const encouragements = ['Great job!!', 'Wowee!', 'Holy toledo!', 'My hero!', 'Whoa!!', "You're on fire!!", 'Level clear!!', 'Piece of cake!'];
   let encouragement = encouragements[Phaser.Math.Between(0, encouragements.length - 1)];
 
   if (level.beatBestTime) {
@@ -2098,7 +2096,6 @@ function renderLevelOutro(callback) {
       if (save.levels[level.index].best_time_ms) {
         const best_time = renderMillisecondDuration(save.levels[level.index].best_time_ms);
         const level_time = renderMillisecondDuration(level.duration_ms);
-        level.earnedBadges.badgeCompleted;
         let timeDescription;
         if (level.earnedBadges.badgeCompleted) {
           timeDescription = `Completed in: ${best_time}`;
