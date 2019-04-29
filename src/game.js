@@ -2542,6 +2542,11 @@ function create() {
 
     game.cameras.main.setRenderToTexture(state.shader);
   }
+
+  if (game.game.renderer.type === Phaser.CANVAS) {
+    // eslint-disable-next-line no-alert
+    alert('It looks like this browser will offer a degraded experience, like background colors being grayscale. For best results, please use Chrome!');
+  }
 }
 
 function setupBackgroundScreen() {
