@@ -1,6 +1,8 @@
+[![Jumpcoins](https://github.com/sartak/jumpcoins/blob/master/src/assets/ld-cover.png?raw=true)](https://jumpcoins.sartak.org/)
+
 # Play Live
 
-[https://ld44.sartak.org/](https://ld44.sartak.org/)
+[https://jumpcoins.sartak.org/](https://jumpcoins.sartak.org/)
 
 # Development
 
