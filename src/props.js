@@ -74,7 +74,7 @@ export default {
   'player.touching.left': false,
   'player.touching.right': false,
   'player.freebies': 0,
-  'player.squish.max': 0.16,
+  'player.squish.max': 0.10,
   'player.squish.speed': 0.2,
   'player.grab.max_y': 50,
 

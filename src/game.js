@@ -957,6 +957,53 @@ function setupFloodlights() {
   state.floodlightEmitter = emitter;
 }
 
+function freebieGlow(freebie) {
+  const { game, level } = state;
+
+  {
+    const particles = game.add.particles('effectImageFloodlight');
+    const emitter = particles.createEmitter({
+      tint: 0x4397F7,
+      alpha: { start: 0, end: 0.66, ease: t => (t < 0.2 ? 5 * t : 1 - (t - 0.2)) },
+      scale: { start: 0.4, end: 0.8 },
+      blendMode: 'SCREEN',
+      particleBringToTop: true,
+      quantity: 1,
+      frequency: 3000,
+      lifespan: 10000,
+    });
+    emitter.startFollow(freebie);
+    level.particles.push(particles);
+    particles.setDepth(4);
+
+    freebie.glowParticles = particles;
+    freebie.glowEmitter = emitter;
+  }
+
+  {
+    const particles = game.add.particles('effectImageSpark');
+    particles.setDepth(5);
+    const emitter = particles.createEmitter({
+      speed: 10,
+      tint: 0x4397F7,
+      alpha: { start: 0, end: 1, ease: t => (t < 0.1 ? 10 * t : 1 - (t - 0.1)) },
+      scale: 0.1,
+      blendMode: 'SCREEN',
+      particleBringToTop: true,
+      quantity: 1,
+      maxParticles: 2,
+      frequency: 150,
+      lifespan: 2000,
+    });
+
+    freebie.sparkParticles = particles;
+    freebie.sparkEmitter = emitter;
+    emitter.startFollow(freebie);
+    level.particles.push(particles);
+    particles.setDepth(5);
+  }
+}
+
 function setupEnemy(enemy) {
   enemy.anims.play(enemy.config.walkAnimation, true);
 }
@@ -978,6 +1025,7 @@ function setupFreebie(freebie) {
       }
     },
   });
+  freebieGlow(freebie);
 }
 
 function setupEye(eye) {
@@ -1553,6 +1601,10 @@ function acquireFreebie(object1, object2) {
 
   freebie.spent = true;
   freebie.bobTween.stop();
+  freebie.glowEmitter.stop();
+  freebie.glowEmitter.stopFollow();
+  freebie.sparkEmitter.stop();
+  freebie.sparkEmitter.stopFollow();
 
   game.tweens.add({
     targets: freebie,
