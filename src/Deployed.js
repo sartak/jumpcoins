@@ -52,8 +52,8 @@ class GameMetadata extends Component<{}> {
         <p>
           code at
           <br />
-          <a className="url" href="https://github.com/sartak/ld44">
-            github.com/sartak/ld44
+          <a className="url" href="https://github.com/sartak/jumpcoins">
+            github.com/sartak/jumpcoins
           </a>
         </p>
       </div>
