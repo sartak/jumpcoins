@@ -21,8 +21,7 @@ class GameMetadata extends Component<{}> {
   render() {
     return (
       <div className="game-metadata">
-        <h1>LD44</h1>
-        <h2>TBD</h2>
+        <h1>Jumpcoins</h1>
         <h3>
           by
           <br />
@@ -41,8 +40,8 @@ class GameMetadata extends Component<{}> {
           the <strong>Ludum Dare 44</strong> compo
         </p>
         <p>
-          <a href="https://ldjam.com/events/ludum-dare/44/TBD">
-            ldjam.com/events/ludum-dare/44/TBD
+          <a href="https://ldjam.com/events/ludum-dare/44/jumpcoins">
+            ldjam.com/events/ludum-dare/44/jumpcoins
           </a>
         </p>
         <p>

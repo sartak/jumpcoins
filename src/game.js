@@ -250,7 +250,7 @@ const config = {
   yBorder: 0,
 };
 
-const SaveStateName = 'ld44_save';
+const SaveStateName = 'jumpcoins_save';
 let save = {
   created_at: Date.now(),
   current_level: 0,

@@ -33,7 +33,7 @@ export default class Engine extends Component<any, State> {
         <div className="teaser">
           click to play
           <br />
-          LD44
+          Jumpcoins
         </div>
       </div>
     );
