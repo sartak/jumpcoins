@@ -1741,7 +1741,7 @@ function setupLevelPhysics(isInitial) {
   physics.add.collider(enemies, enemies);
 }
 
-function renderHud() {
+function renderHud(isRespawn) {
   const { game, level } = state;
   const { player, hud } = level;
 
@@ -1807,7 +1807,7 @@ function renderHud() {
     label.y += 20;
     game.tweens.add({
       targets: label,
-      delay: 4000 + 500 * i,
+      delay: isRespawn ? (4000 + 500 * i) : (500 * i),
       duration: 500,
       alpha: 1,
       y: label.y - 20,
@@ -1860,7 +1860,7 @@ function respawn() {
       destroyLevel(true);
       createLevelObjects(true);
       createPlayer();
-      renderHud();
+      renderHud(true);
       setupLevelPhysics(false);
       spawnPlayer(500);
     },
@@ -1870,7 +1870,7 @@ function respawn() {
 function setupLevel() {
   const { levelIndex } = state;
   createLevel(levelIndex);
-  renderHud();
+  renderHud(false);
   setupLevelPhysics(true);
   renderLevelIntro();
   spawnPlayer(3000);
