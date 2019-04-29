@@ -23,7 +23,7 @@
 
 {
   "name": "Buy one, get one free",
-  "music": "musicWorld1",
+  "music": "musicWorld2",
   "baseLife": 1,
   "badgeKiller": true
 }

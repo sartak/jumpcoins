@@ -73,6 +73,7 @@ import soundWalljump from './assets/sounds/walljump.wav';
 import soundKill from './assets/sounds/kill.wav';
 import soundWin from './assets/sounds/win.wav';
 import soundDie from './assets/sounds/die.wav';
+import soundBadge from './assets/sounds/badge.wav';
 
 // YOUR LIFE IS CURRENCY
 
@@ -491,6 +492,7 @@ function preload() {
   game.load.audio('soundKill', soundKill);
   game.load.audio('soundWin', soundWin);
   game.load.audio('soundDie', soundDie);
+  game.load.audio('soundBadge', soundBadge);
 }
 
 function parseMap(lines, level) {
@@ -593,6 +595,7 @@ function createLevel(index) {
   level.particles = [];
   level.deaths = 0;
   level.damageTaken = 0;
+  level.earnedBadges = {};
 
   initializeMap();
 
@@ -1111,6 +1114,9 @@ function destroyLevel(keepStatics) {
     level.exitParticles.forEach((particle) => {
       particle.destroy();
     });
+
+    state.earnedBadgeKiller = false;
+    state.earnedBadgeRich = false;
   }
 
   Object.keys(level.objects).forEach((type) => {
@@ -1145,6 +1151,18 @@ function destroyLevel(keepStatics) {
     }
   });
 
+  if (hud.outro) {
+    Object.keys(hud.outro).forEach((key) => {
+      if (key !== 'badges') {
+        hud.outro[key].destroy();
+      } else {
+        hud.outro.badges.forEach((badge) => {
+          badge.destroy();
+        });
+      }
+    });
+  }
+
   player.destroy();
 }
 
@@ -1163,23 +1181,39 @@ function winLevel(isProper) {
   level.isWinning = true;
 
   const time_ms = (new Date()).getTime() - level.spawnedAt.getTime();
+  level.duration_ms = time_ms;
 
   if (time_ms < (save.levels[level.index].best_time_ms || Number.MAX_VALUE)) {
+    level.beatBestTime = save.levels[level.index].best_time_ms;
     save.levels[level.index].best_time_ms = time_ms;
   }
 
+  level.earnedBadges.badgeCompleted = !save.levels[level.index].badgeCompleted;
   save.levels[level.index].badgeCompleted = true;
 
   if (level.deaths === 0) {
+    level.earnedBadges.badgeDeathless = !save.levels[level.index].badgeDeathless;
     save.levels[level.index].badgeDeathless = true;
   }
 
   if (level.damageTaken === 0) {
+    level.earnedBadges.badgeDamageless = !save.levels[level.index].badgeDamageless;
     save.levels[level.index].badgeDamageless = true;
   }
 
   if (level.player.freebies > 0) {
+    level.earnedBadges.badgeBirdie = !save.levels[level.index].badgeBirdie;
     save.levels[level.index].badgeBirdie = true;
+  }
+
+  if (state.earnedBadgeKiller) {
+    state.earnedBadgeKiller = false;
+    level.earnedBadges.badgeKiller = true;
+  }
+
+  if (state.earnedBadgeRich) {
+    state.earnedBadgeRich = false;
+    level.earnedBadges.badgeRich = true;
   }
 
   saveState();
@@ -1190,26 +1224,22 @@ function winLevel(isProper) {
   player.disableBody(true, false);
 
   // start animation
+  renderLevelOutro(() => {
+    removePhysics();
 
-  game.time.addEvent({
-    delay: 1000,
-    callback: () => {
-      removePhysics();
+    // defer this to avoid crashes while removing during collider callback
+    game.time.addEvent({
+      callback: () => {
+        destroyLevel(false);
 
-      // defer this to avoid crashes while removing during collider callback
-      game.time.addEvent({
-        callback: () => {
-          destroyLevel(false);
+        state.levelIndex++;
+        if (state.levelIndex === config.levels.length) {
+          state.levelIndex = 0;
+        }
 
-          state.levelIndex++;
-          if (state.levelIndex === config.levels.length) {
-            state.levelIndex = 0;
-          }
-
-          setupLevel();
-        },
-      });
-    },
+        setupLevel();
+      },
+    });
   });
 }
 
@@ -1407,7 +1437,7 @@ function takeSpikeDamage(object1, object2) {
   const spikes = object1.config && object1.config.group === 'spikes' ? object1 : object2;
   const { knockback } = spikes.config;
 
-  spendLife(false);
+  const ignore = spendLife(false);
 
   setPlayerInvincible();
 
@@ -1438,6 +1468,11 @@ function destroyEnemy(enemy) {
 
   level.livingEnemies--;
   if (level.livingEnemies === 0) {
+    level.earnedBadges.badgeKiller = !save.levels[level.index].badgeKiller;
+    if (level.earnedBadges.badgeKiller) {
+      state.earnedBadgeKiller = true;
+    }
+
     save.levels[level.index].badgeKiller = true;
     saveState();
   }
@@ -1535,13 +1570,17 @@ function acquireFreebie(object1, object2) {
   }
 
   if (level.objects.freebies.filter(f => !f.spent).length === 0) {
+    level.earnedBadges.badgeRich = !save.levels[level.index].badgeRich;
+    if (level.earnedBadges.badgeRich) {
+      state.earnedBadgeRich = true;
+    }
     save.levels[level.index].badgeRich = true;
     saveState();
   }
 
   const img = game.add.image(freebie.x, freebie.y, 'spriteFreebie');
   hud.freebies.push(img);
-  const x = 2 * config.tileWidth + img.width / 2 + img.width * (player.freebies + player.life - 1);
+  const x = 2 * config.tileWidth + img.width * (player.freebies + player.life - 1) + state.lifeIsText.width;
   const y = config.yBorder / 2;
   img.setDepth(6);
 
@@ -1636,7 +1675,7 @@ function renderHud() {
     const x = 2 * config.tileWidth;
     const y = 0;
     const heart = game.add.image(x, y, 'spriteHeart');
-    heart.x += heart.width / 2 + heart.width * i;
+    heart.x += state.lifeIsText.width + heart.width * i;
     heart.y += config.yBorder / 2;
     return heart;
   });
@@ -1814,19 +1853,12 @@ function renderLevelIntro() {
 
       if (save.levels[level.index].best_time_ms) {
         const best_time = save.levels[level.index].best_time_ms;
-        let m = Math.floor(best_time / 1000 / 60);
-        let s = best_time / 1000 - m * 60;
-        if (s < 10) {
-          s = `0${s.toFixed(3)}`;
-        } else {
-          s = s.toFixed(3);
-        }
-        if (m > 99) m = '99+';
+        const best_duration = renderMillisecondDuration(best_time);
 
         const bestTime = game.add.text(
           config.width / 2,
           config.height / 2 + 60,
-          `Your record: ${m}:${s}`,
+          `Your personal best: ${best_duration}`,
           {
             fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
             fontSize: '16px',
@@ -1938,6 +1970,273 @@ function renderLevelIntro() {
   });
 }
 
+function renderMillisecondDuration(duration) {
+  let m = Math.floor(duration / 1000 / 60);
+  let s = duration / 1000 - m * 60;
+  if (s < 10) {
+    s = `0${s.toFixed(3)}`;
+  } else {
+    s = s.toFixed(3);
+  }
+  if (m > 99) m = '99+';
+  return `${m}:${s}`;
+}
+
+function renderLevelOutro(callback) {
+  const { game, level } = state;
+  const { player, hud } = level;
+
+  hud.outro = {};
+
+  player.ignoreInput = true;
+
+  const background = game.add.image(config.width * 0.5, config.height * 0.55, 'effectBlack');
+  background.setDepth(8);
+  const scaleX = config.width / background.width;
+  const scaleY = config.height / background.height * 0.20;
+  background.setScale(0, scaleY);
+  hud.outro.background = background;
+
+  const encouragements = ['Great job!!', 'Wowee!', 'Holy toledo!', 'My hero!', 'Whoa!!', "You're on fire!!"];
+  let encouragement = encouragements[Phaser.Math.Between(0, encouragements.length - 1)];
+
+  if (level.beatBestTime) {
+    encouragement = 'You set a new personal best!!';
+  }
+
+  game.tweens.add({
+    targets: background,
+    scaleX,
+    ease: 'Cubic.easeIn',
+    duration: 500,
+    onComplete: () => {
+      const levelName = game.add.text(
+        config.width / 2,
+        config.height / 2,
+        encouragement,
+        {
+          fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
+          fontSize: '20px',
+          color: 'rgb(246, 196, 86)',
+        },
+      );
+      levelName.setStroke('#000000', 6);
+      levelName.x -= levelName.width / 2;
+      levelName.y -= levelName.height / 2;
+      levelName.setDepth(8);
+
+      levelName.alpha = 0;
+      levelName.y += 20;
+
+      game.tweens.add({
+        targets: levelName,
+        alpha: 1,
+        y: levelName.y - 20,
+        ease: 'Cubic.easeOut',
+        duration: 500,
+      });
+      hud.outro.levelName = levelName;
+
+      if (save.levels[level.index].best_time_ms) {
+        const best_time = renderMillisecondDuration(save.levels[level.index].best_time_ms);
+        const level_time = renderMillisecondDuration(level.duration_ms);
+        level.earnedBadges.badgeCompleted;
+        let timeDescription;
+        if (level.earnedBadges.badgeCompleted) {
+          timeDescription = `Completed in: ${best_time}`;
+        } else if (level.beatBestTime) {
+          timeDescription = `Your new time: ${best_time}`;
+        } else {
+          timeDescription = `Completed in: ${level_time} (personal best: ${best_time})`;
+        }
+
+        const bestTime = game.add.text(
+          config.width / 2,
+          config.height / 2 + 60,
+          timeDescription,
+          {
+            fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
+            fontSize: '16px',
+            color: level.beatBestTime ? 'rgb(246, 196, 86)' : 'rgb(142, 234, 131)',
+          },
+        );
+        bestTime.setStroke('#000000', 6);
+        bestTime.x -= bestTime.width / 2;
+        bestTime.y -= bestTime.height / 2;
+        bestTime.setDepth(8);
+
+        bestTime.alpha = 0;
+        bestTime.y -= 20;
+
+        game.tweens.add({
+          targets: bestTime,
+          alpha: 1,
+          delay: 500,
+          y: bestTime.y + 20,
+          ease: 'Cubic.easeOut',
+          duration: 500,
+        });
+
+        hud.outro.bestTime = bestTime;
+      }
+
+      const badgesToRender = [];
+      ['badgeCompleted', 'badgeDeathless', 'badgeDamageless', 'badgeRich', 'badgeBirdie', 'badgeKiller'].forEach((badgeName) => {
+        if ((badgeName === 'badgeBirdie' || badgeName === 'badgeKiller') && !level[badgeName]) {
+          return;
+        }
+
+        let imageName = 'badgeEmpty';
+        if (save.levels[level.index][badgeName]) {
+          imageName = badgeName;
+        }
+        badgesToRender.unshift(imageName);
+      });
+
+      let earnedBadges = 0;
+      const badges = [];
+      badgesToRender.forEach((badgeName, i) => {
+        const badge = game.add.image(config.width * 0.5, config.height * 0.5 + 30, badgeName);
+        badge.x -= (i + 0.5) * (config.tileWidth + 20);
+        badge.x += (badgesToRender.length / 2) * (config.tileWidth + 20);
+        badge.setDepth(8);
+        badges.push(badge);
+
+        const x = badge.x;
+        badge.x = config.width * 0.5;
+        badge.alpha = 0;
+        badge.y -= 20;
+
+        let alpha = 1;
+        if (level.earnedBadges[badgeName]) {
+          alpha = 0;
+        } else if (badgeName === 'badgeEmpty') {
+          alpha = 0.3;
+        }
+
+        game.tweens.add({
+          targets: badge,
+          delay: i * 50,
+          alpha,
+          x,
+          y: badge.y + 20,
+          ease: 'Cubic.easeOut',
+          duration: 500,
+        });
+
+        if (level.earnedBadges[badgeName]) {
+          earnedBadges++;
+          const empty = game.add.image(config.width * 0.5, config.height * 0.5 + 30, 'badgeEmpty');
+          empty.x = badge.x;
+          empty.y = badge.y;
+          empty.setDepth(8);
+          badges.push(empty);
+
+          empty.x = config.width * 0.5;
+          empty.alpha = 0;
+
+          const thisEarnedBadge = earnedBadges;
+
+          game.tweens.add({
+            targets: empty,
+            delay: i * 50,
+            alpha: 0.3,
+            x,
+            y: badge.y + 20,
+            ease: 'Cubic.easeOut',
+            duration: 500,
+            onComplete: () => {
+              game.time.addEvent({
+                delay: 250 + (earnedBadges - thisEarnedBadge) * 500,
+                callback: () => {
+                  playSound('soundBadge');
+                },
+              });
+
+              game.tweens.add({
+                targets: empty,
+                delay: (earnedBadges - thisEarnedBadge) * 500,
+                alpha: 0,
+                duration: 500,
+              });
+              game.tweens.add({
+                targets: badge,
+                delay: (earnedBadges - thisEarnedBadge) * 500,
+                alpha: 1,
+                duration: 500,
+                onComplete: () => {
+                },
+              });
+              game.tweens.add({
+                targets: [empty, badge],
+                ease: 'Cubic.easeOut',
+                duration: 300,
+                delay: 250 + (earnedBadges - thisEarnedBadge) * 500,
+                y: badge.y - 6,
+                onComplete: () => {
+                  game.tweens.add({
+                    targets: [empty, badge],
+                    ease: 'Cubic.easeOut',
+                    duration: 300,
+                    y: badge.y + 6,
+                  });
+                },
+              });
+            },
+          });
+        }
+      });
+
+      hud.outro.badges = badges;
+
+      const faders = [...badges, levelName];
+      if (hud.outro.bestTime) {
+        faders.push(hud.outro.bestTime);
+      }
+
+      faders.forEach((fader) => {
+        game.tweens.add({
+          targets: fader,
+          delay: 4000,
+          duration: 500,
+          alpha: 0,
+        });
+      });
+
+      game.tweens.add({
+        targets: hud.outro.background,
+        delay: 4250,
+        duration: 500,
+        scaleY: 0,
+      });
+
+      game.time.addEvent({
+        delay: 4750,
+        callback: () => {
+          if (!hud.outro) {
+            return;
+          }
+
+          player.ignoreInput = false;
+
+          hud.outro.badges.forEach((badge) => {
+            badge.destroy();
+          });
+          delete hud.outro.badges;
+
+          Object.keys(hud.outro).forEach((key) => {
+            if (key !== 'badges') {
+              hud.outro[key].destroy();
+            }
+          });
+
+          callback();
+        },
+      });
+    },
+  });
+}
+
 function create() {
   const { game } = state;
 
@@ -2042,7 +2341,7 @@ function create() {
     frames: [
       {
         key: 'spritePlayerDefault',
-        frame: 3,
+        frame: 2,
       },
     ],
   });
@@ -2052,7 +2351,7 @@ function create() {
     frames: [
       {
         key: 'spritePlayerDefault',
-        frame: 4,
+        frame: 3,
       },
     ],
   });
@@ -2062,7 +2361,7 @@ function create() {
     frames: [
       {
         key: 'spritePlayerDefault',
-        frame: 5,
+        frame: 4,
       },
     ],
   });
@@ -2072,7 +2371,7 @@ function create() {
     frames: [
       {
         key: 'spritePlayerDefault',
-        frame: 6,
+        frame: 5,
       },
     ],
   });
@@ -2106,7 +2405,7 @@ function create() {
     frames: [
       {
         key: 'spritePlayerShielded',
-        frame: 3,
+        frame: 2,
       },
     ],
   });
@@ -2116,7 +2415,7 @@ function create() {
     frames: [
       {
         key: 'spritePlayerShielded',
-        frame: 4,
+        frame: 3,
       },
     ],
   });
@@ -2126,7 +2425,7 @@ function create() {
     frames: [
       {
         key: 'spritePlayerShielded',
-        frame: 5,
+        frame: 4,
       },
     ],
   });
@@ -2136,7 +2435,7 @@ function create() {
     frames: [
       {
         key: 'spritePlayerShielded',
-        frame: 6,
+        frame: 5,
       },
     ],
   });
@@ -2199,6 +2498,22 @@ function setupBackgroundScreen() {
   const { game } = state;
   const backgroundScreen = game.add.image(config.width / 2, config.height / 2, 'effectBackgroundScreen');
   state.backgroundScreen = backgroundScreen;
+
+  const text = game.add.text(
+    config.xBorder * 2,
+    config.yBorder / 2,
+    'Your life is ',
+    {
+      fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
+      fontSize: '16px',
+      color: 'rgb(200, 200, 200)',
+    },
+  );
+  state.lifeIsText = text;
+
+  text.setStroke('#000000', 6);
+  text.x -= text.width / 2;
+  text.y -= text.height / 2;
 }
 
 function readInput() {
@@ -2575,8 +2890,9 @@ function setPlayerAnimation(type) {
   }
   const status = player.freebies > 0 ? 'Shielded' : 'Default';
   const animation = `spritePlayer${status}${type}`;
-  player.anims.play(animation, animation === player.previousAnimation);
+  player.anims.play(animation, type === player.previousAnimation && status === player.previousStatus);
   player.previousAnimation = type;
+  player.previousStatus = status;
 }
 
 function frameUpdates(dt) {
