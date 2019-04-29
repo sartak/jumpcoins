@@ -1492,6 +1492,10 @@ function spendLife(isVoluntary): bool {
     return true;
   }
 
+  if (!isVoluntary) {
+    playSound('soundKill', null, 0.75);
+  }
+
   saveState();
   return false;
 }
