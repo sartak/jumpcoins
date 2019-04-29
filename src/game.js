@@ -2055,7 +2055,7 @@ function renderLevelOutro(callback) {
   background.setScale(0, scaleY);
   hud.outro.background = background;
 
-  const encouragements = ['Great job!!', 'Wowee!', 'Holy toledo!', 'My hero!', 'Whoa!!', "You're on fire!!"];
+  const encouragements = ['Great job!!', 'Wowee!', 'Holy toledo!', 'My hero!', 'Whoa!!', "You're on fire!!", "Level clear!!", "Piece of cake!"];
   let encouragement = encouragements[Phaser.Math.Between(0, encouragements.length - 1)];
 
   if (level.beatBestTime) {
