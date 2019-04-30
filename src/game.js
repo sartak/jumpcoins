@@ -2632,10 +2632,10 @@ function readInput() {
 
       const { A, B, X, Y, up, down, left, right, leftStick, rightStick } = pad;
 
-      state.upButtonDown = state.upButtonDown || up;
-      state.leftButtonDown = state.leftButtonDown || left;
-      state.rightButtonDown = state.rightButtonDown || right;
-      state.downButtonDown = state.downButtonDown || down;
+      state.upButtonDown = state.upButtonDown || leftStick.y < 0.2 || rightStick.y < -0.2 || up;
+      state.leftButtonDown = state.leftButtonDown || leftStick.x < -0.2 || leftStick.x < -0.2 || left;
+      state.rightButtonDown = state.rightButtonDown || leftStick.x > 0.2 || leftStick.x > 0.2 || right;
+      state.downButtonDown = state.downButtonDown || leftStick.y > 0.2 || leftStick.y > 0.2 || down;
 
       state.jumpButtonDown = state.jumpButtonDown || A || B || X || Y;
     });
