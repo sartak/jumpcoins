@@ -1309,7 +1309,7 @@ function winLevel(isProper) {
           state.levelIndex = 0;
         }
 
-        setupLevel();
+        setupLevel(false);
       },
     });
   });
@@ -1871,10 +1871,10 @@ function respawn() {
   });
 }
 
-function setupLevel() {
+function setupLevel(isInitial) {
   const { levelIndex } = state;
   createLevel(levelIndex);
-  renderHud(false);
+  renderHud(isInitial);
   setupLevelPhysics(true);
   renderLevelIntro();
   spawnPlayer(3000);
@@ -2548,7 +2548,7 @@ function create() {
   setupBackgroundScreen();
 
   state.levelIndex = save.current_level;
-  setupLevel();
+  setupLevel(true);
 
   if (game.game.renderer.type === Phaser.WEBGL) {
     state.shader = game.game.renderer.addPipeline('Shader', new Shader(game.game));
