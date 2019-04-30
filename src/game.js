@@ -2729,7 +2729,7 @@ function processInput() {
       });
 
       player.isDoubleJumping = false;
-    } else if (player.canDoubleJump && upButtonDown) {
+    } else if (player.canDoubleJump) {
       jumpShake(JUMP_DOUBLE);
       level.doublejumps++;
       save.levels[level.index].doublejumps++;
