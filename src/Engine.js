@@ -29,8 +29,7 @@ export default class Engine extends Component<any, State> {
       );
     }
     return (
-      <div style={{ backgroundImage: `url(${cover})` }} className="activate" id="engine" onClick={() => this.activate()}>
-      </div>
+      <div style={{ backgroundImage: `url(${cover})` }} className="activate" id="engine" onClick={() => this.activate()} />
     );
   }
 
