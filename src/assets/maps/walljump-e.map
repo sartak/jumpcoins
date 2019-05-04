@@ -24,6 +24,7 @@
 {
   "name": "Acrobatics",
   "music": "musicWorld3",
-  "baseLife": 1
+  "baseLife": 1,
+  "badgeBirdie": true
 }
 
