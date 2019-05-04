@@ -1133,7 +1133,7 @@ function createPlayer() {
 
   player.setSize(player.width * 0.8, player.height * 0.8, true);
 
-  player.framesSinceTouchingDown = 0;
+  player.touchDownTime = 0;
 
   player.setDepth(4);
 
@@ -2679,7 +2679,7 @@ function jumpShake(type) {
   }
 }
 
-function processInput() {
+function processInput(time, dt) {
   const { game, level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonStarted, jumpButtonDown, jumpButtonHeld } = state;
   const { player } = level;
 
@@ -2687,7 +2687,7 @@ function processInput() {
     return;
   }
 
-  const canJump = player.body.touching.down || (!player.isJumping && player.framesSinceTouchingDown < 3);
+  const canJump = player.body.touching.down || (!player.isJumping && (time - player.touchDownTime) < 60);
 
   if (jumpButtonHeld && !jumpButtonDown) {
     state.jumpButtonHeld = false;
@@ -2969,7 +2969,7 @@ function setPlayerAnimation(type) {
   player.previousStatus = status;
 }
 
-function frameUpdates(dt) {
+function frameUpdates(time, dt) {
   const { level, leftButtonDown, rightButtonDown } = state;
   const { player, hud } = level;
 
@@ -3015,9 +3015,7 @@ function frameUpdates(dt) {
   });
 
   if (player.body.touching.down) {
-    player.framesSinceTouchingDown = 0;
-  } else {
-    player.framesSinceTouchingDown++;
+    player.touchDownTime = time;
   }
 
   if (player.ignoreInput && player.canCancelIgnoreInput) {
@@ -3210,8 +3208,8 @@ function update(time, dt) {
 function physicsStep(time, dt) {
   listenProp('physicsTime', dt);
   readInput();
-  processInput();
-  frameUpdates(dt);
+  processInput(time, dt);
+  frameUpdates(time, dt);
   updateEnemies();
 }
 
