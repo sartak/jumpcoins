@@ -1133,7 +1133,11 @@ function createPlayer() {
 
   player.setSize(player.width * 0.8, player.height * 0.8, true);
 
+  player.leftDownTime = 0;
+  player.rightDownTime = 0;
   player.touchDownTime = 0;
+  player.touchingLeftTime = 0;
+  player.touchingRightTime = 0;
 
   player.setDepth(4);
 
@@ -2604,8 +2608,9 @@ function setupBackgroundScreen() {
   text.y -= text.height / 2;
 }
 
-function readInput() {
-  const { game, keys, cursors, debug } = state;
+function readInput(time, dt) {
+  const { game, level, keys, cursors, debug } = state;
+  const { player } = level;
 
   state.upButtonDown = cursors.up.isDown;
   state.leftButtonDown = cursors.left.isDown;
@@ -2661,6 +2666,15 @@ function readInput() {
     state.jumpButtonStarted = false;
   }
 
+  if (state.rightButtonDown) {
+    player.rightDownTime = time;
+  }
+
+  if (state.leftButtonDown) {
+    player.leftDownTime = time;
+  }
+
+
   listenProp('input.upButtonDown', state.upButtonDown);
   listenProp('input.downButtonDown', state.downButtonDown);
   listenProp('input.leftButtonDown', state.leftButtonDown);
@@ -2706,13 +2720,13 @@ function processInput(time, dt) {
       save.levels[level.index].jumps++;
       player.setVelocityY(-prop('velocityY.jump'));
       playSound('soundJump', 3);
-    } else if (player.canWallJump && ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown))) {
+    } else if (player.canWallJump && ((time - player.touchingLeftTime < 100 && time - player.leftDownTime < 100) || (time - player.touchingRightTime < 100 && time - player.rightDownTime < 100))) {
       jumpShake(JUMP_WALL);
       level.walljumps++;
       save.levels[level.index].walljumps++;
       player.body.setGravityY(-100);
       player.setVelocityY(-prop('velocityY.wall_jump'));
-      if (player.body.touching.right) {
+      if (player.touchingRightTime > player.touchingLeftTime) {
         player.facingLeft = true;
         player.wallJumpDirectionLeft = true;
         jumpPuff(true);
@@ -2993,6 +3007,14 @@ function frameUpdates(time, dt) {
     setPlayerAnimation('JumpDown');
   }
 
+  if (player.body.touching.left) {
+    player.touchingLeftTime = time;
+  }
+
+  if (player.body.touching.right) {
+    player.touchingRightTime = time;
+  }
+
   if (!player.wallJumpIgnoreDirection && leftButtonDown) {
     player.setFlipX(false);
   } else if (!player.wallJumpIgnoreDirection && rightButtonDown) {
@@ -3207,7 +3229,7 @@ function update(time, dt) {
 
 function physicsStep(time, dt) {
   listenProp('physicsTime', dt);
-  readInput();
+  readInput(time, dt);
   processInput(time, dt);
   frameUpdates(time, dt);
   updateEnemies();
