@@ -1699,6 +1699,8 @@ function removeHints() {
   level.removedHints = true;
 
   hud.hints.forEach((hint, i) => {
+    hint.hintShowTween.stop();
+
     game.tweens.add({
       targets: hint,
       delay: 300 * i,
@@ -1710,15 +1712,6 @@ function removeHints() {
         hint.destroy();
       },
     });
-  });
-
-  game.time.addEvent({
-    callback: () => {
-      level.objects.removeHints.forEach((removeHint) => {
-        removeHint.destroy();
-      });
-      level.objects.removeHints = [];
-    },
   });
 
   return false;
@@ -1778,6 +1771,8 @@ function renderHud(isRespawn) {
     hintTexts.push(level.hint3);
   }
 
+  level.removedHints = false;
+
   hintTexts.forEach((text, i) => {
     let x = config.width / 2 + (level.hintXMod || 0);
     let y = config.height * 0.25 + (level.hintYMod || 0);
@@ -1814,15 +1809,15 @@ function renderHud(isRespawn) {
 
     label.alpha = 0;
     label.y += 20;
-    game.tweens.add({
+    label.hintShowTween = game.tweens.add({
       targets: label,
-      delay: isRespawn ? (4000 + 500 * i) : (500 * i),
+      delay: isRespawn ? (1000 + 500 * i) : (4000 + 500 * i),
       duration: 500,
       alpha: 1,
       y: label.y - 20,
       ease: 'Cubic.easeOut',
       onComplete: () => {
-        game.tweens.add({
+        label.hintShowTween = game.tweens.add({
           targets: label,
           delay: 500,
           duration: 2000,
@@ -1879,7 +1874,7 @@ function respawn() {
 function setupLevel(isInitial) {
   const { levelIndex } = state;
   createLevel(levelIndex);
-  renderHud(isInitial);
+  renderHud(!isInitial);
   setupLevelPhysics(true);
   renderLevelIntro();
   spawnPlayer(3000);
