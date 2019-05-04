@@ -15,7 +15,7 @@ function Debug() {
 export default class Stream extends Component<any> {
   debug = new Debug();
 
-  gui = new dat.GUI({ autoPlace: false });
+  gui = new dat.GUI({ autoPlace: false, width: 400 });
 
   constructor(props: any) {
     super(props);
@@ -25,6 +25,10 @@ export default class Stream extends Component<any> {
     const engine = gui.addFolder('Engine');
     engine.add(debug, 'time').listen();
     engine.add(debug, 'frameTime').listen();
+    engine.add(debug, 'actualFps').listen();
+    engine.add(debug, 'targetFps').listen();
+    engine.add(debug, 'physicsTime').listen();
+    engine.add(debug, 'physicsFps').listen();
     engine.add(debug, 'physics.debug');
 
     const input = gui.addFolder('Input');
@@ -100,6 +104,8 @@ export default class Stream extends Component<any> {
     player.add(debug, 'player.invincible').listen();
     player.add(debug, 'player.ignoreInput').listen();
     player.add(debug, 'player.canCancelIgnoreInput').listen();
+    player.add(debug, 'player.isJumping').listen();
+    player.add(debug, 'player.hasLiftedOff').listen();
     player.add(debug, 'player.canDoubleJump').listen();
     player.add(debug, 'player.isDoubleJumping').listen();
     player.add(debug, 'player.canWallJump').listen();
@@ -114,6 +120,7 @@ export default class Stream extends Component<any> {
     player.add(debug, 'player.touching.left').listen();
     player.add(debug, 'player.touching.right').listen();
     player.add(debug, 'player.freebies').listen();
+    player.add(debug, 'player.animation').listen();
 
     const vfx = gui.addFolder('Visual Effects');
     vfx.add(debug, 'effect.damageBlur.amount', 0, 50.0);
@@ -186,6 +193,7 @@ class Debugger extends Component<any> {
         <ul>
           <li><a target="_blank" rel="noopener noreferrer" href="https://labs.phaser.io/">labs</a></li>
           <li><a target="_blank" rel="noopener noreferrer" href="https://photonstorm.github.io/phaser3-docs/">phaser docs</a></li>
+          <li><a target="_blank" rel="noopener noreferrer" href="https://github.com/photonstorm/phaser/tree/v3.15.1">phaser code</a></li>
           <li><a target="_blank" rel="noopener noreferrer" href="https://lodash.com/docs/4.17.11">lodash</a></li>
           <li><a target="_blank" rel="noopener noreferrer" href="https://sfbgames.com/chiptone/">chiptone</a></li>
           <li><a target="_blank" rel="noopener noreferrer" href="https://pernyblom.github.io/abundant-music/index.html">abundant</a></li>

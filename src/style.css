@@ -92,3 +92,20 @@ body {
 .debugger .dg.main > .close-button {
   display: none;
 }
+
+.debugger .dg .property-name {
+  width: 60%;
+}
+
+.debugger .dg .c {
+  width: 40%;
+}
+
+.debugger .dg li:not(.folder):nth-child(even) {
+  background: #202020;
+}
+
+.debugger .dg .cr.function:hover,
+.debugger .dg .cr.boolean:hover {
+  background: #3c3c3c !important;
+}

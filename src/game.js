@@ -2845,6 +2845,8 @@ function renderDebug() {
   listenProp('player.invincible', player.invincible);
   listenProp('player.ignoreInput', player.ignoreInput);
   listenProp('player.canCancelIgnoreInput', player.canCancelIgnoreInput);
+  listenProp('player.isJumping', player.isJumping);
+  listenProp('player.hasLiftedOff', player.hasLiftedOff);
   listenProp('player.canDoubleJump', player.canDoubleJump);
   listenProp('player.isDoubleJumping', player.isDoubleJumping);
   listenProp('player.canWallJump', player.canWallJump);
@@ -3181,10 +3183,15 @@ function updateEnemies() {
 }
 
 function update(time, dt) {
-  const { game, keys, cursors, debug } = state;
+  const { game, physics, level, keys, cursors, debug } = state;
+  const { player } = level;
 
   listenProp('time', time);
   listenProp('frameTime', dt);
+  listenProp('actualFps', game.game.loop.actualFps);
+  listenProp('targetFps', game.game.loop.targetFps);
+  listenProp('physicsFps', physics.world.fps);
+  listenProp('player.animation', player.previousAnimation);
 
   if (state.shader) {
     state.shockwaveTime += dt / 3333;
@@ -3197,6 +3204,7 @@ function update(time, dt) {
 }
 
 function physicsStep(dt) {
+  listenProp('physicsTime', dt);
   readInput();
   processInput();
   frameUpdates(dt);

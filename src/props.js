@@ -15,6 +15,10 @@ export default {
 
   time: 0.01,
   frameTime: 0.01,
+  actualFps: 0.01,
+  targetFps: 0.01,
+  physicsTime: 0.01,
+  physicsFps: 0.01,
 
   'level.name': '',
   'level.index': -1,
@@ -60,6 +64,8 @@ export default {
   'player.invincible': false,
   'player.ignoreInput': false,
   'player.canCancelIgnoreInput': false,
+  'player.isJumping': false,
+  'player.hasLiftedOff': false,
   'player.canDoubleJump': false,
   'player.isDoubleJumping': false,
   'player.canWallJump': false,
@@ -77,6 +83,7 @@ export default {
   'player.squish.max': 0.10,
   'player.squish.speed': 0.2,
   'player.grab.max_y': 50,
+  'player.animation': '',
 
   'cheat.hearty': false,
   'cheat.forbidDoubleJump': false,
