@@ -2319,6 +2319,15 @@ function create() {
 
   state.physics = game.physics;
 
+  // there's no event for physics step, so interject one {
+  const world = state.physics.world;
+  const originalStep = world.step;
+  world.step = (delta) => {
+    originalStep.call(world, delta);
+    physicsStep(delta * 1000);
+  };
+  // }
+
   state.cursors = game.input.keyboard.createCursorKeys();
 
   game.anims.create({
@@ -2556,7 +2565,6 @@ function create() {
     state.shader.setFloat2('resolution', config.width, config.height);
 
     state.shockwaveTime = 1000000;
-    state.shockwaveIncrement = 0.005;
     state.shader.setFloat1('shockwaveTime', state.shockwaveTime);
 
     state.shader.setFloat1('blurEffect', 0.0);
@@ -2973,6 +2981,8 @@ function frameUpdates(dt) {
     }
   } else if (player.body.velocity.y <= 0) {
     setPlayerAnimation('JumpUp');
+  } else if ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown)) {
+    setPlayerAnimation('Drag');
   } else {
     setPlayerAnimation('JumpDown');
   }
@@ -3095,7 +3105,7 @@ function frameUpdates(dt) {
     const max = prop('player.grab.max_y');
     // we intentionally don't do this for the other direction because of
     // jumping against walls being a common case
-    if (player.body.velocity.y > max) {
+    if (player.body.velocity.y >= max) {
       player.setVelocityY(max);
       puffEnabled = true;
       setPlayerAnimation('Drag');
@@ -3127,11 +3137,6 @@ function frameUpdates(dt) {
   const scaleY = player.scaleY + prop('player.squish.speed') * (vx - player.scaleY) * dt / 16.667;
 
   player.setScale(scaleX, scaleY); // intentionally flipped
-
-  if (state.shader) {
-    state.shockwaveTime += state.shockwaveIncrement;
-    state.shader.setFloat1('shockwaveTime', state.shockwaveTime);
-  }
 }
 
 function updateEnemies() {
@@ -3181,14 +3186,21 @@ function update(time, dt) {
   listenProp('time', time);
   listenProp('frameTime', dt);
 
-  readInput();
-  processInput();
-  frameUpdates(dt);
-  updateEnemies();
+  if (state.shader) {
+    state.shockwaveTime += dt / 3333;
+    state.shader.setFloat1('shockwaveTime', state.shockwaveTime);
+  }
 
   if (DEBUG) {
     renderDebug();
   }
+}
+
+function physicsStep(dt) {
+  readInput();
+  processInput();
+  frameUpdates(dt);
+  updateEnemies();
 }
 
 let didAlert = false;
