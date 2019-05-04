@@ -2683,6 +2683,7 @@ function processInput() {
 
   if (jumpButtonStarted) {
     player.isJumping = true;
+    player.hasLiftedOff = false;
     state.jumpButtonHeld = true;
     player.body.setGravityY(0);
     if (canJump) {
@@ -3014,9 +3015,10 @@ function frameUpdates(dt) {
     player.body.setGravityY(config.physics.arcade.gravity.y * 4);
   }
 
-  if (player.body.touching.down) {
+  if (player.body.touching.down && player.hasLiftedOff) {
     player.body.setGravityY(0);
     player.isJumping = false;
+    player.hasLiftedOff = false;
 
     player.canDoubleJump = true;
     player.isDoubleJumping = false;
@@ -3053,6 +3055,8 @@ function frameUpdates(dt) {
       hud.freebies = [];
     }
     */
+  } else if (!player.body.touching.down) {
+    player.hasLiftedOff = true;
   }
 
   // make sure movers never get out of hand
