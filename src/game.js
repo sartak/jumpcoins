@@ -93,6 +93,7 @@ const config = {
     arcade: {
       gravity: { y: 400 },
       debug: false, // will be populated based on dat.gui just in time
+      fps: 60,
     },
   },
   scene: {
@@ -2322,9 +2323,12 @@ function create() {
   // there's no event for physics step, so interject one {
   const world = state.physics.world;
   const originalStep = world.step;
+  let physicsTime = 0;
   world.step = (delta) => {
     originalStep.call(world, delta);
-    physicsStep(delta * 1000);
+    const dt = delta * 1000;
+    physicsTime += dt;
+    physicsStep(physicsTime, dt);
   };
   // }
 
@@ -3203,7 +3207,7 @@ function update(time, dt) {
   }
 }
 
-function physicsStep(dt) {
+function physicsStep(time, dt) {
   listenProp('physicsTime', dt);
   readInput();
   processInput();
