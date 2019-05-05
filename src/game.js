@@ -424,12 +424,13 @@ function analytics(identifier, progress) {
   }
 }
 
-export default function startGame(debug: any) {
+export default function startGame(debug: any, volume: number) {
   if (DEBUG) {
     window.props = debug;
   }
 
   config.physics.arcade.debug = prop('physics.debug');
+  state.volume = volume;
 
   const game = new Phaser.Game(config);
 
@@ -622,6 +623,7 @@ function createLevel(index) {
 
   level.objects.exits.forEach(exit => setupExit(exit));
 
+  level.sounds = [];
   if (state.currentMusicName !== level.music) {
     state.currentMusicName = level.music;
     if (state.currentMusicPlayer) {
@@ -630,7 +632,7 @@ function createLevel(index) {
 
     const music = game.sound.add(level.music);
     music.play('', { loop: true });
-    music.setVolume(0.25);
+    music.setVolume(0.66 * state.volume);
     state.currentMusicPlayer = music;
   }
 
@@ -1491,14 +1493,14 @@ function spendLife(isVoluntary): bool {
     deathShockwave();
     respawn();
 
-    playSound('soundDie', null, 0.75);
+    playSound('soundDie', null, 0.9);
 
     saveState();
     return true;
   }
 
   if (!isVoluntary) {
-    playSound('soundKill', null, 0.75);
+    playSound('soundKill', null, 0.9);
   }
 
   saveState();
@@ -1605,8 +1607,22 @@ function takeEnemyDamage(object1, object2) {
   setPlayerInvincible();
 }
 
+export function changeVolume(volume: number) {
+  const { level } = state;
+
+  state.volume = volume;
+
+  if (state.currentMusicPlayer) {
+    state.currentMusicPlayer.setVolume(0.66 * volume);
+  }
+
+  if (level && level.sounds) {
+    level.sounds.forEach(sound => sound.setVolume(sound.requestedVolume * volume));
+  }
+}
+
 function playSound(name, variants, volume) {
-  const { game } = state;
+  const { game, level } = state;
 
   if (variants) {
     name += Phaser.Math.Between(1, variants);
@@ -1615,9 +1631,18 @@ function playSound(name, variants, volume) {
   const sound = game.sound.add(name);
 
   if (volume === undefined) {
-    volume = 0.5;
+    volume = 0.66;
   }
-  sound.setVolume(volume);
+
+  sound.requestedVolume = volume;
+
+  sound.setVolume(volume * state.volume);
+
+  level.sounds.push(sound);
+  sound.on('ended', () => {
+    level.sounds = level.sounds.filter(s => s !== sound);
+  });
+
   sound.play();
 }
 
