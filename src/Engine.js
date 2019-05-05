@@ -93,9 +93,12 @@ export default class Engine extends Component<any, State> {
 
   enterFullscreen() {
     const body = document.querySelector('body');
-    if (body) {
+    const engine = document.querySelector('#engine');
+    if (body && engine) {
       body.classList.add('scaled');
       body.classList.remove('natural');
+
+      engine.style.overflow = ""
 
       const resizeHandler = () => {
         const scale = 0.95 * Math.min(window.innerWidth / 800, window.innerHeight / 600);
