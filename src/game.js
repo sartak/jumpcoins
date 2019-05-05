@@ -2331,6 +2331,8 @@ function create() {
   };
   // }
 
+  game.sound.pauseOnBlur = false;
+
   state.cursors = game.input.keyboard.createCursorKeys();
 
   game.anims.create({
