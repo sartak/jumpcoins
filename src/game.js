@@ -2563,7 +2563,7 @@ function create() {
   if (config.debug) {
     game.input.keyboard.on('keydown_Q', () => {
       game.scene.stop();
-      const engine = document.querySelector('#engine canvas');
+      const engine = document.querySelector('#engine-container');
       if (engine) {
         engine.remove();
       }

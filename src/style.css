@@ -31,40 +31,56 @@ body {
   font-size: 0.8em;
 }
 
-#engine {
+#engine-container {
   width: 800px;
   height: 600px;
   box-shadow: 0 13px 27px -5px rgba(50, 50, 93, 0.9),
     0 8px 16px -8px rgba(0, 0, 0, 0.95), 0 -6px 16px -6px rgba(0, 0, 0, 0.5);
 }
 
-#engine,
-#engine canvas {
+#engine-container,
+#engine-container canvas {
   border-radius: 16px;
 }
 
-.deployed #engine {
+.deployed #engine-container {
   margin-top: 32px;
   margin-left: auto;
   margin-right: auto;
 }
 
-.stream #engine {
+.stream #engine-container {
   position: fixed;
   top: 16px;
   left: 16px;
 }
 
-.deployed #engine.activate {
+.deployed #engine-container.activate {
   position: relative;
 }
 
-#engine.activate {
+#engine-container.activate {
   background-size: 800px 600px;
   background-repeat: no-repeat;
 
   cursor: pointer;
   font-size: 2em;
+  color: white;
+}
+
+#engine-container #controls {
+  position: absolute;
+  bottom: 2px;
+  right: 40px;
+  height: 32px;
+}
+
+#engine-container #controls .volume {
+  display: inline-flex;
+  margin-left: 16px;
+  height: 32px;
+  line-height: 32px;
+  vertical-align: middle;
   color: white;
 }
 

@@ -37,18 +37,31 @@ export default class Engine extends Component<any, State> {
     const { activated } = this.state;
     if (activated) {
       return (
-        <div
-          id="engine"
-          ref={(container) => {
-            this.gameContainerRef = container;
-            startGame(this.props.debugger, this.state.volume);
-          }}
-        />
+        <div id="engine-container">
+          <div
+            id="engine"
+            ref={(container) => {
+              if (this.gameContainerRef) {
+                return;
+              }
+
+              this.gameContainerRef = container;
+              startGame(this.props.debugger, this.state.volume);
+            }}
+          />
+          <div id="controls">
+            <div className="volume">
+              <span style={{ fontSize: 20, transform: `scale(${0.5 + this.state.volume / 2})` }}>♫</span>
+              &nbsp;&nbsp;
+              <input type="range" min="0" max="100" value={this.state.volume * 100} onChange={e => this.setVolume(e.target.value / 100)} />
+            </div>
+          </div>
+        </div>
       );
     }
 
     return (
-      <div style={{ backgroundImage: `url(${cover})` }} className="activate" id="engine" onClick={() => this.activate()} />
+      <div style={{ backgroundImage: `url(${cover})` }} className="activate" id="engine-container" onClick={() => this.activate()} />
     );
   }
 
