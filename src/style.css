@@ -87,6 +87,8 @@ body.natural .stream #engine-container {
   bottom: 2px;
   right: 40px;
   height: 32px;
+  user-select: none;
+  cursor: default;
 }
 
 body.scaled #engine-container #controls {
@@ -108,6 +110,10 @@ body.scaled.mouseMoved #engine-container #controls {
   display: inline-flex;
   vertical-align: middle;
   color: white;
+}
+
+#engine-container #controls .volume input {
+  cursor: pointer;
 }
 
 #engine-container #controls div + div {
@@ -187,4 +193,101 @@ body.scaled .debugger {
 .debugger .dg .cr.function:hover,
 .debugger .dg .cr.boolean:hover {
   background: #3c3c3c !important;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]::-ms-track {
+  width: 100%;
+  cursor: pointer;
+
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  border: 1px solid #000000;
+  height: 16px;
+  width: 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  cursor: pointer;
+  margin-top: -5px;
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+}
+
+input[type="range"]::-moz-range-thumb {
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+  border: 1px solid #000000;
+  height: 16px;
+  width: 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+input[type="range"]::-ms-thumb {
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+  border: 1px solid #000000;
+  height: 16px;
+  width: 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+  background: #303030;
+  border-radius: 1.3px;
+  border: 0.2px solid #010101;
+}
+
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+  background: #303030;
+  border-radius: 1.3px;
+  border: 0.2px solid #010101;
+}
+
+input[type="range"]::-ms-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: transparent;
+  border-color: transparent;
+  border-width: 16px 0;
+  color: transparent;
+}
+input[type="range"]::-ms-fill-lower {
+  background: #303030;
+  border: 0.2px solid #010101;
+  border-radius: 2.6px;
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+}
+input[type="range"]::-ms-fill-upper {
+  background: #303030;
+  border: 0.2px solid #010101;
+  border-radius: 2.6px;
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
 }
