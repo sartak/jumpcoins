@@ -8,6 +8,7 @@ const VolumeName = 'jumpcoins_volume';
 type State = {
   activated: boolean,
   volume: number,
+  scale: ?number,
 };
 
 export default class Engine extends Component<any, State> {
@@ -30,16 +31,19 @@ export default class Engine extends Component<any, State> {
     this.state = {
       activated: false,
       volume,
+      scale: null,
     };
   }
 
   render() {
-    const { activated } = this.state;
+    const { activated, scale } = this.state;
+
     if (activated) {
       return (
         <div id="engine-container">
           <div
             id="engine"
+            style={scale ? { transform: `scale(${scale})` } : {}}
             ref={(container) => {
               if (this.gameContainerRef) {
                 return;
@@ -55,13 +59,18 @@ export default class Engine extends Component<any, State> {
               &nbsp;&nbsp;
               <input type="range" min="0" max="100" value={this.state.volume * 100} onChange={e => this.setVolume(e.target.value / 100)} />
             </div>
+            <div className="fullscreen">
+              <div className="button" onClick={() => this.enterFullscreen()}>
+                <div className="label">⇆</div>
+              </div>
+            </div>
           </div>
         </div>
       );
     }
 
     return (
-      <div style={{ backgroundImage: `url(${cover})` }} className="activate" id="engine-container" onClick={() => this.activate()} />
+      <div style={{ backgroundImage: `url(${cover})` }} className="activate natural" id="engine-container" onClick={() => this.activate()} />
     );
   }
 
@@ -79,6 +88,39 @@ export default class Engine extends Component<any, State> {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.log(e);
+    }
+  }
+
+  enterFullscreen() {
+    const body = document.querySelector('body');
+    if (body) {
+      body.classList.add('scaled');
+      body.classList.remove('natural');
+
+      const resizeHandler = () => {
+        const scale = 0.95 * Math.min(window.innerWidth / 800, window.innerHeight / 600);
+        this.setState({ scale });
+      };
+      resizeHandler();
+
+      let moveTimeout;
+      const moveHandler = () => {
+        if (moveTimeout) {
+          clearTimeout(moveTimeout);
+        } else {
+          body.classList.add('mouseMoved');
+        }
+
+        moveTimeout = setTimeout(() => {
+          body.classList.remove('mouseMoved');
+          moveTimeout = null;
+        }, 3000);
+      };
+
+      moveHandler();
+
+      window.onresize = resizeHandler;
+      window.onmousemove = moveHandler;
     }
   }
 }

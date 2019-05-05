@@ -8,6 +8,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body.scaled {
+  background-color: #000000;
+  overflow: hidden;
+}
+
 .debugger {
   margin-left: 840px;
   font-size: 1.4em;
@@ -31,15 +36,23 @@ body {
   font-size: 0.8em;
 }
 
-#engine-container {
+body.natural #engine-container {
   width: 800px;
   height: 600px;
   box-shadow: 0 13px 27px -5px rgba(50, 50, 93, 0.9),
     0 8px 16px -8px rgba(0, 0, 0, 0.95), 0 -6px 16px -6px rgba(0, 0, 0, 0.5);
 }
 
-#engine-container,
-#engine-container canvas {
+body.scaled #engine-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+}
+
+body.natural #engine-container,
+body.natural #engine-container canvas {
   border-radius: 16px;
 }
 
@@ -49,7 +62,7 @@ body {
   margin-right: auto;
 }
 
-.stream #engine-container {
+body.natural .stream #engine-container {
   position: fixed;
   top: 16px;
   left: 16px;
@@ -75,13 +88,51 @@ body {
   height: 32px;
 }
 
-#engine-container #controls .volume {
+body.scaled #engine-container #controls {
+  opacity: 0;
+  transition: opacity 0.5s linear;
+  position: fixed;
+  bottom: 20px;
+  background: #191919;
+  border-radius: 16px;
+  padding: 8px 16px;
+}
+
+body.scaled.mouseMoved #engine-container #controls {
+  opacity: 1;
+}
+
+#engine-container #controls .volume,
+#engine-container #controls .fullscreen {
   display: inline-flex;
-  margin-left: 16px;
-  height: 32px;
-  line-height: 32px;
   vertical-align: middle;
   color: white;
+}
+
+#engine-container #controls div + div {
+  margin-left: 20px;
+}
+
+#engine-container #controls .fullscreen .button {
+  cursor: pointer;
+  border: 1px solid white;
+  padding: 0px 4px;
+  height: 20px;
+  transition: background-color 0.2s linear;
+  background-color: #000000;
+  border-radius: 4px;
+}
+
+#engine-container #controls .fullscreen .button:hover {
+  background-color: #303030;
+}
+
+#engine-container #controls .fullscreen .label {
+  transform: rotate(-45deg);
+  font-weight: bold;
+  font-size: 18px;
+  width: 14px;
+  line-height: 24px;
 }
 
 .game-metadata {
@@ -103,6 +154,10 @@ body {
   position: absolute;
   width: 800px;
   height: 600px;
+}
+
+body.scaled .debugger {
+  display: none;
 }
 
 .debugger .dg.main > .close-button {
