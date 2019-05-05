@@ -14,6 +14,12 @@ type State = {
 export default class Engine extends Component<any, State> {
   gameContainerRef = null;
 
+  moveTimeout: ?TimeoutID = null;
+
+  resizeHandler = null;
+
+  moveHandler = null;
+
   constructor(props: {}) {
     super(props);
 
@@ -60,9 +66,15 @@ export default class Engine extends Component<any, State> {
               <input type="range" min="0" max="100" value={this.state.volume * 100} onChange={e => this.setVolume(e.target.value / 100)} />
             </div>
             <div className="fullscreen">
-              <div className="button" onClick={() => this.enterFullscreen()}>
-                <div className="label">⇆</div>
-              </div>
+              {scale ? (
+                <div className="button" onClick={() => this.exitFullscreen()}>
+                  <div className="label exit">x</div>
+                </div>
+              ) : (
+                <div className="button" onClick={() => this.enterFullscreen()}>
+                  <div className="label enter">⇆</div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -98,32 +110,53 @@ export default class Engine extends Component<any, State> {
       body.classList.add('scaled');
       body.classList.remove('natural');
 
-      engine.style.overflow = ""
+      engine.style.overflow = '';
 
-      const resizeHandler = () => {
+      this.resizeHandler = () => {
         const scale = 0.95 * Math.min(window.innerWidth / 800, window.innerHeight / 600);
         this.setState({ scale });
       };
-      resizeHandler();
+      this.resizeHandler();
 
-      let moveTimeout;
-      const moveHandler = () => {
-        if (moveTimeout) {
-          clearTimeout(moveTimeout);
+      this.moveHandler = () => {
+        if (this.moveTimeout) {
+          clearTimeout(this.moveTimeout);
         } else {
           body.classList.add('mouseMoved');
         }
 
-        moveTimeout = setTimeout(() => {
+        this.moveTimeout = setTimeout(() => {
           body.classList.remove('mouseMoved');
-          moveTimeout = null;
+          this.moveTimeout = null;
         }, 3000);
       };
 
-      moveHandler();
+      this.moveHandler();
 
-      window.onresize = resizeHandler;
-      window.onmousemove = moveHandler;
+      window.addEventListener('resize', this.resizeHandler);
+      window.addEventListener('mousemove', this.moveHandler);
+    }
+  }
+
+  exitFullscreen() {
+    const body = document.querySelector('body');
+    const engine = document.querySelector('#engine');
+    if (body && engine) {
+      body.classList.add('natural');
+      body.classList.remove('scaled');
+      body.classList.remove('mouseMoved');
+
+      engine.style.overflow = 'hidden';
+
+      this.setState({ scale: null });
+
+      if (this.moveTimeout) {
+        clearTimeout(this.moveTimeout);
+        this.moveTimeout = null;
+      }
+
+      window.removeEventListener('resize', this.resizeHandler);
+      window.removeEventListener('mousemove', this.moveHandler);
     }
   }
 }

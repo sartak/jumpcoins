@@ -128,11 +128,18 @@ body.scaled.mouseMoved #engine-container #controls {
 }
 
 #engine-container #controls .fullscreen .label {
-  transform: rotate(-45deg);
-  font-weight: bold;
   font-size: 18px;
+  width: 100%;
+}
+
+#engine-container #controls .fullscreen .label.enter {
+  transform: rotate(-45deg);
   width: 14px;
   line-height: 24px;
+}
+
+#engine-container #controls .fullscreen .label.exit {
+  line-height: 20px;
 }
 
 .game-metadata {
