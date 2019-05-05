@@ -2563,6 +2563,12 @@ function create() {
   if (config.debug) {
     game.input.keyboard.on('keydown_Q', () => {
       game.scene.stop();
+
+      const music = state.currentMusicPlayer;
+      if (music) {
+        music.destroy();
+      }
+
       const engine = document.querySelector('#engine-container');
       if (engine) {
         engine.remove();
