@@ -3238,6 +3238,13 @@ function update(time, dt) {
   const { game, physics, level, keys, cursors, debug } = state;
   const { player } = level;
 
+  if (prop('throttle')) {
+    let result = 0;
+    for (let i = 0; i < 1000000; i++) {
+      result += Math.sqrt(i + dt);
+    }
+  }
+
   listenProp('time', time);
   listenProp('frameTime', dt);
   listenProp('actualFps', game.game.loop.actualFps);

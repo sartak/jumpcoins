@@ -19,6 +19,7 @@ export default {
   targetFps: 0.01,
   physicsTime: 0.01,
   physicsFps: 0.01,
+  throttle: false,
 
   'level.name': '',
   'level.index': -1,

@@ -30,6 +30,7 @@ export default class Stream extends Component<any> {
     engine.add(debug, 'physicsTime').listen();
     engine.add(debug, 'physicsFps').listen();
     engine.add(debug, 'physics.debug');
+    engine.add(debug, 'throttle');
 
     const input = gui.addFolder('Input');
     input.add(debug, 'input.upButtonDown').listen();
