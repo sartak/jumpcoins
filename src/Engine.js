@@ -20,6 +20,8 @@ export default class Engine extends Component<any, State> {
 
   moveHandler = null;
 
+  fullscreenHandler = null;
+
   constructor(props: {}) {
     super(props);
 
@@ -135,10 +137,36 @@ export default class Engine extends Component<any, State> {
 
       window.addEventListener('resize', this.resizeHandler);
       window.addEventListener('mousemove', this.moveHandler);
+
+      if (!this.fullscreenHandler) {
+        this.fullscreenHandler = () => {
+          const isInFullScreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+
+          if (!isInFullScreen) {
+            this.exitFullscreen(true);
+          }
+        };
+
+        document.addEventListener('webkitfullscreenchange', this.fullscreenHandler, false);
+        document.addEventListener('mozfullscreenchange', this.fullscreenHandler, false);
+        document.addEventListener('fullscreenchange', this.fullscreenHandler, false);
+        document.addEventListener('MSFullscreenChange', this.fullscreenHandler, false);
+      }
+
+
+      if (body.requestFullscreen) {
+        body.requestFullscreen();
+      } else if (body.mozRequestFullScreen) {
+        body.mozRequestFullScreen();
+      } else if (body.webkitRequestFullScreen) {
+        body.webkitRequestFullScreen();
+      } else if (body.msRequestFullscreen) {
+        body.msRequestFullscreen();
+      }
     }
   }
 
-  exitFullscreen() {
+  exitFullscreen(skipBrowserFullscreen: boolean) {
     const body = document.querySelector('body');
     const engine = document.querySelector('#engine');
     if (body && engine) {
@@ -157,6 +185,18 @@ export default class Engine extends Component<any, State> {
 
       window.removeEventListener('resize', this.resizeHandler);
       window.removeEventListener('mousemove', this.moveHandler);
+    }
+
+    if (!skipBrowserFullscreen) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
     }
   }
 }
