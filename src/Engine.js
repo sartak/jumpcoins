@@ -49,6 +49,9 @@ export default class Engine extends Component<any, State> {
     if (activated) {
       return (
         <div id="engine-container">
+          <div id="spinner">
+            <div className="lds-spinner"><div /><div /><div /><div /><div /><div /><div /><div /><div /><div /><div /><div /></div>
+          </div>
           <div
             id="engine"
             style={scale ? { transform: `scale(${scale})` } : {}}

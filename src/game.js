@@ -2614,6 +2614,11 @@ function create() {
     game.cameras.main.setRenderToTexture(state.shader);
   }
 
+  const spinner = document.getElementById('spinner');
+  if (spinner && spinner.parentNode) {
+    spinner.parentNode.removeChild(spinner);
+  }
+
   if (game.game.renderer.type === Phaser.CANVAS) {
     // eslint-disable-next-line no-alert
     alert('It looks like this browser will offer a degraded experience, like background colors being grayscale. For best results, please use Chrome!');
