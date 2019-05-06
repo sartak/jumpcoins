@@ -320,16 +320,22 @@ const state : any = {
   commands: {},
 };
 
-function prop(name: string): any {
-  if (DEBUG && name in window.props) {
-    return window.props[name];
-  }
-
+let prop = (name: string) => {
   if (name.match(/^cheat\./)) {
     return false;
   }
 
   return props[name];
+};
+
+if (DEBUG) {
+  const oldProp = prop;
+  prop = (name: string) => {
+    if (name in window.props) {
+      return window.props[name];
+    }
+    return oldProp(name);
+  };
 }
 
 function listenProp(name: string, value: any) {
