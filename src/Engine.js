@@ -156,7 +156,6 @@ export default class Engine extends Component<any, State> {
         document.addEventListener('MSFullscreenChange', this.fullscreenHandler, false);
       }
 
-
       if (body.requestFullscreen) {
         body.requestFullscreen();
       } else if (body.mozRequestFullScreen) {
