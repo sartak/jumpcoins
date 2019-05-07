@@ -305,6 +305,7 @@ const JUMP_WALL = 3;
 
   Object.keys(config.tileDefinitions).forEach((glyph) => {
     if (config.tileDefinitions[glyph]) {
+      // $FlowFixMe
       config.tileDefinitions.glyph = glyph;
     }
   });
@@ -320,7 +321,7 @@ const state : any = {
   commands: {},
 };
 
-let prop = (name: string) => {
+let prop = (name: string): any => {
   if (name.match(/^cheat\./)) {
     return false;
   }
@@ -330,7 +331,7 @@ let prop = (name: string) => {
 
 if (DEBUG) {
   const oldProp = prop;
-  prop = (name: string) => {
+  prop = (name: string): any => {
     if (name in window.props) {
       return window.props[name];
     }
@@ -417,7 +418,7 @@ if (DEBUG) {
   window._ = _;
 }
 
-function analytics(identifier, progress) {
+function analytics(identifier: any, progress) {
   try {
     if (identifier < 10) {
       identifier = `0${identifier}`;
@@ -1487,6 +1488,7 @@ function spendLife(isVoluntary): bool {
         game.tweens.add({
           targets: image,
           duration: 500,
+          // $FlowFixMe
           y: image.y + config.tileHeight / 2,
           alpha: 0,
           ease: 'Cubic.easeIn',
@@ -1616,7 +1618,7 @@ function takeEnemyDamage(object1, object2) {
   }
 
   const suppressEnemySound = spendLife(false);
-  destroyEnemy(enemy, suppressEnemySound);
+  destroyEnemy(enemy);
 
   setPlayerInvincible();
 }
