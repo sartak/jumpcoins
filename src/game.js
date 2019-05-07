@@ -833,16 +833,20 @@ function setupExit(exit) {
     lifespan: 2000,
   });
 
-  for (let i = 1; i <= 5; i++) {
-    const particle = emitter.emitParticle();
-    const delta = i * 150;
-    particle.update(delta, delta / 1000, []);
+  const maxLifespan = emitter.lifespan.staticValueEmit();
+  const frequency = emitter.frequency;
+  const quantity = emitter.quantity.staticValueEmit();
+  for (let i = maxLifespan; i > 0; i -= frequency) {
+    for (let j = 0; j < quantity; ++j) {
+      const particle = emitter.emitParticle(1);
+      particle.update(i, i / 1000, []);
+    }
   }
 
   if (!level.exitParticles) {
     level.exitParticles = [];
   }
-  level.exitParticles.push(particles);
+  level.exitParticles.push({ particles, emitter });
 }
 
 function reactFloodlightsToDie() {
@@ -972,10 +976,14 @@ function setupFloodlights() {
     lifespan: 50000,
   });
 
-  for (let i = 1; i < 30; i += 3) {
-    const particle = emitter.emitParticle();
-    const delta = 10000 + i * 1000;
-    particle.update(delta, delta / 1000, []);
+  const maxLifespan = emitter.lifespan.staticValueEmit();
+  const frequency = emitter.frequency;
+  const quantity = emitter.quantity.staticValueEmit();
+  for (let i = maxLifespan; i > 0; i -= frequency) {
+    for (let j = 0; j < quantity; ++j) {
+      const particle = emitter.emitParticle(1);
+      particle.update(i, i / 1000, []);
+    }
   }
 
   state.floodlightParticles = particles;
@@ -1188,8 +1196,8 @@ function destroyLevel(keepStatics) {
     images.forEach((image) => {
       image.destroy();
     });
-    level.exitParticles.forEach((particle) => {
-      particle.destroy();
+    level.exitParticles.forEach(({ particles }) => {
+      particles.destroy();
     });
 
     state.earnedBadgeKiller = false;
