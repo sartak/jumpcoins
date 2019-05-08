@@ -264,6 +264,8 @@ function gameKeyProps() {
     props[`input.${commandName}.heldFrames`] = [0, null];
     // props[`input.${commandName}.releasedFrames`] = [0, null];
     props[`input.${commandName}.heldTime`] = [0, null];
+
+    props[`input.${commandName}.ignoreTime`] = [0, null];
   });
 
   return props;
@@ -302,6 +304,12 @@ export const props = {
   'engine.targetFps': [0.01, null, 'game.game.loop.targetFps'],
   'engine.physicsFps': [0.01, null, 'physics.world.fps'],
   'engine.throttle': [false],
+
+  'input.ignore_all.any': [false, null, () => Object.values(state.input.ignore_all).find(o => o)],
+  'input.ignore_all.intro': [false, null],
+  'input.ignore_all.spawn': [false, null],
+  'input.ignore_all.outro': [false, null],
+  'input.ignore_all.knockback': [false, null],
 
   ...gameKeyProps(),
 
@@ -370,7 +378,6 @@ export const props = {
   'player.velocity_x': [0.01, null, 'player.body.velocity.x'],
   'player.velocity_y': [0.01, null, 'player.body.velocity.y'],
   'player.invincible': [false, null],
-  'player.ignoreInput': [false, null],
   'player.canCancelIgnoreInput': [false, null],
   'player.isJumping': [false, null],
   'player.hasLiftedOff': [false, null],
@@ -476,6 +483,7 @@ const state : any = {
     gamepad: {},
     rawCursors: null,
     rawKeys: {},
+    ignore_all: {},
   },
   debug: null,
   level: {},
@@ -1404,7 +1412,7 @@ function winLevelProperly() {
 }
 
 function winLevel(isProper) {
-  const { game, level } = state;
+  const { game, level, input } = state;
   const { player } = level;
 
   if (level.isWinning) {
@@ -1455,7 +1463,6 @@ function winLevel(isProper) {
 
   playSound('soundWin');
 
-  player.ignoreInput = true;
   player.disableBody(true, false);
 
   game.tweens.add({
@@ -1671,17 +1678,20 @@ function spendLife(isVoluntary): bool {
 }
 
 function takeSpikeDamage(object1, object2) {
-  const { game, level } = state;
+  const { game, level, input } = state;
   const { player } = level;
 
   if (player.invincible) {
     return;
   }
 
+  const died = spendLife(false);
+  if (died) {
+    return;
+  }
+
   const spikes = object1.config && object1.config.group === 'spikes' ? object1 : object2;
   const { knockback } = spikes.config;
-
-  const ignore = spendLife(false);
 
   setPlayerInvincible();
 
@@ -1694,7 +1704,7 @@ function takeSpikeDamage(object1, object2) {
   if (knockback) {
     player.setVelocityY(-prop('rules.spike_knockback_y'));
 
-    player.ignoreInput = true;
+    input.ignore_all.knockback = true;
     player.canCancelIgnoreInput = false;
 
     game.time.addEvent({
@@ -2020,11 +2030,11 @@ function renderHud(isRespawn) {
 }
 
 function spawnPlayer(delay) {
-  const { game, level } = state;
+  const { game, level, input } = state;
   const { player } = level;
 
   player.alpha = 0;
-  player.ignoreInput = true;
+  input.ignore_all.spawn = true;
 
   game.tweens.add({
     targets: player,
@@ -2032,7 +2042,7 @@ function spawnPlayer(delay) {
     delay,
     duration: 500,
     onComplete: () => {
-      player.ignoreInput = false;
+      input.ignore_all.spawn = false;
     },
   });
 }
@@ -2069,12 +2079,12 @@ function setupLevel(isInitial) {
 }
 
 function renderLevelIntro() {
-  const { game, level } = state;
+  const { game, level, input } = state;
   const { player, hud } = level;
 
   hud.intro = {};
 
-  player.ignoreInput = true;
+  input.ignore_all.intro = true;
 
   const background = game.add.image(config.width * 0.5, config.height * 0.55, 'effectBlack');
   background.setDepth(8);
@@ -2218,7 +2228,7 @@ function renderLevelIntro() {
             return;
           }
 
-          player.ignoreInput = false;
+          input.ignore_all.intro = false;
 
           hud.intro.badges.forEach((badge) => {
             badge.destroy();
@@ -2249,12 +2259,12 @@ function renderMillisecondDuration(duration) {
 }
 
 function renderLevelOutro(callback) {
-  const { game, level } = state;
+  const { game, level, input } = state;
   const { player, hud } = level;
 
   hud.outro = {};
 
-  player.ignoreInput = true;
+  input.ignore_all.outro = true;
 
   const background = game.add.image(config.width * 0.5, config.height * 0.55, 'effectBlack');
   background.setDepth(8);
@@ -2482,7 +2492,7 @@ function renderLevelOutro(callback) {
             return;
           }
 
-          player.ignoreInput = false;
+          input.ignore_all.outro = false;
 
           hud.outro.badges.forEach((badge) => {
             badge.destroy();
@@ -2732,6 +2742,7 @@ function create() {
       heldTime: 0,
       // releasedFrames: 0,
       // released: false,
+      ignoreTime: 0,
     };
   });
 
@@ -2909,6 +2920,8 @@ function readInput(time, dt) {
     input[commandName].held = !!config.gameKeys[commandName].find(path => _.get(input, path));
   });
 
+  const ignoreAll = Object.values(input.ignore_all).find(o => o);
+
   ['up', 'down', 'left', 'right', ...Object.keys(config.gameKeys)].forEach((commandName) => {
     const command = input[commandName];
 
@@ -2928,6 +2941,15 @@ function readInput(time, dt) {
       // command.releasedFrames++;
       // command.released = command.releasedFrames === 1;
     }
+
+    if (ignoreAll || command.ignoreTime > 0) {
+      command.held = false;
+      command.started = false;
+      command.continued = false;
+      command.released = true;
+
+      command.ignoreTime = Math.max(command.ignoreTime - dt, 0);
+    }
   });
 }
 
@@ -2945,10 +2967,6 @@ function jumpShake(type) {
 function processInput(time, dt) {
   const { game, level, input } = state;
   const { player } = level;
-
-  if (player.ignoreInput) {
-    return;
-  }
 
   const canJump = player.body.touching.down || (!player.isJumping && (time - player.touchDownTime) < prop('rules.jump.grace_period_ms'));
 
@@ -3259,9 +3277,9 @@ function frameUpdates(time, dt) {
     player.touchDownTime = time;
   }
 
-  if (player.ignoreInput && player.canCancelIgnoreInput) {
+  if (input.ignore_all.knockback && player.canCancelIgnoreInput) {
     if (player.body.touching.down || player.body.touching.left || player.body.touching.right || player.body.touching.up) {
-      player.ignoreInput = false;
+      input.ignore_all.knockback = false;
       player.canCancelIgnoreInput = false;
     }
   }
