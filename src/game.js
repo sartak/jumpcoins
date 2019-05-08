@@ -247,7 +247,53 @@ const config = {
   // filled in next
   xBorder: 0,
   yBorder: 0,
+  gameKeys: {
+    jump: ['keyboard.Z', 'gamepad.A', 'gamepad.B', 'gamepad.X', 'gamepad.Y'],
+  },
 };
+
+function gameKeyProps() {
+  const props = {};
+
+  ['up', 'down', 'left', 'right', ...Object.keys(config.gameKeys)].forEach((commandName) => {
+    props[`input.${commandName}.held`] = [false, null];
+    props[`input.${commandName}.started`] = [false, null];
+    props[`input.${commandName}.continued`] = [false, null];
+    // props[`input.${commandName}.released`] = [false, null];
+
+    props[`input.${commandName}.heldFrames`] = [0, null];
+    // props[`input.${commandName}.releasedFrames`] = [0, null];
+    props[`input.${commandName}.heldTime`] = [0, null];
+  });
+
+  return props;
+}
+
+function keysToRead() {
+  const keys = [];
+
+  Object.keys(config.gameKeys).forEach((commandName) => {
+    config.gameKeys[commandName].forEach((inputPath) => {
+      const match = inputPath.match(/^keyboard\.(\w+)$/);
+      if (match) {
+        const key = match[1];
+        keys.push(key);
+      }
+    });
+  });
+
+  return keys;
+}
+
+function readKeyProps() {
+  const props = {};
+
+  keysToRead().forEach((key) => {
+    props[`input.keyboard.${key}`] = [false, null];
+  });
+
+  return props;
+}
 
 export const props = {
   'engine.time': [0.01, null],
@@ -258,15 +304,10 @@ export const props = {
   'engine.physicsFps': [0.01, null],
   'engine.throttle': [false],
 
-  'input.upButtonDown': [false, null],
-  'input.downButtonDown': [false, null],
-  'input.leftButtonDown': [false, null],
-  'input.rightButtonDown': [false, null],
-  'input.jumpButtonDown': [false, null],
+  ...gameKeyProps(),
 
-  'input.keyboard.Z': [false, null],
-  'input.keyboard.X': [false, null],
-  'input.keyboard.C': [false, null],
+  ...readKeyProps(),
+
   'input.keyboard.up': [false, null],
   'input.keyboard.down': [false, null],
   'input.keyboard.left': [false, null],
@@ -428,8 +469,12 @@ const JUMP_WALL = 3;
 const state : any = {
   game: null,
   physics: null,
-  cursors: null,
-  keys: {},
+  input: {
+    keyboard: {},
+    gamepad: {},
+    rawCursors: null,
+    rawKeys: {},
+  },
   debug: null,
   level: {},
   commands: {},
@@ -1262,8 +1307,6 @@ function createPlayer() {
 
   player.setSize(player.width * 0.8, player.height * 0.8, true);
 
-  player.leftDownTime = 0;
-  player.rightDownTime = 0;
   player.touchDownTime = 0;
   player.touchingLeftTime = 0;
   player.touchingRightTime = 0;
@@ -2468,7 +2511,7 @@ function renderLevelOutro(callback) {
 }
 
 function create() {
-  const { game } = state;
+  const { game, input } = state;
 
   state.physics = game.physics;
 
@@ -2485,8 +2528,6 @@ function create() {
   // }
 
   game.sound.pauseOnBlur = false;
-
-  state.cursors = game.input.keyboard.createCursorKeys();
 
   game.anims.create({
     key: 'spriteEnemyAWalk',
@@ -2684,8 +2725,22 @@ function create() {
     ],
   });
 
-  ['Z', 'X', 'C'].forEach((code) => {
-    state.keys[code] = game.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes[code]);
+  input.rawCursors = game.input.keyboard.createCursorKeys();
+
+  keysToRead().forEach((code) => {
+    input.rawKeys[code] = game.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes[code]);
+  });
+
+  ['up', 'down', 'left', 'right', ...Object.keys(config.gameKeys)].forEach((commandName) => {
+    input[commandName] = {
+      held: false,
+      heldFrames: 0,
+      started: false,
+      continued: false,
+      heldTime: 0,
+      // releasedFrames: 0,
+      // released: false,
+    };
   });
 
   if (config.debug) {
@@ -2783,94 +2838,105 @@ function setupBackgroundScreen() {
 }
 
 function readInput(time, dt) {
-  const { game, level, keys, cursors, debug } = state;
+  const { game, level, input, debug } = state;
+  const { keyboard, gamepad, rawKeys, rawCursors } = input;
   const { player } = level;
 
-  state.upButtonDown = cursors.up.isDown;
-  state.leftButtonDown = cursors.left.isDown;
-  state.rightButtonDown = cursors.right.isDown;
-  state.downButtonDown = cursors.down.isDown;
+  Object.keys(rawKeys).forEach((key) => {
+    keyboard[key] = rawKeys[key].isDown;
+  });
 
-  state.jumpButtonDown = keys.Z.isDown;
-
-  listenProp('input.keyboard.Z', keys.Z.isDown);
-  listenProp('input.keyboard.X', keys.X.isDown);
-  listenProp('input.keyboard.C', keys.C.isDown);
-  listenProp('input.keyboard.up', cursors.up.isDown);
-  listenProp('input.keyboard.down', cursors.down.isDown);
-  listenProp('input.keyboard.left', cursors.left.isDown);
-  listenProp('input.keyboard.right', cursors.right.isDown);
+  ['up', 'down', 'left', 'right'].forEach((key) => {
+    keyboard[key] = rawCursors[key].isDown;
+  });
 
   const rumble = state.rumble;
   state.rumble = null;
 
+  gamepad.A = false;
+  gamepad.B = false;
+  gamepad.X = false;
+  gamepad.Y = false;
+  gamepad.L1 = false;
+  gamepad.L2 = false;
+  gamepad.R1 = false;
+  gamepad.R2 = false;
+  gamepad.up = false;
+  gamepad.down = false;
+  gamepad.left = false;
+  gamepad.right = false;
+  gamepad.l_stick_x = 0;
+  gamepad.l_stick_y = 0;
+  gamepad.r_stick_x = 0;
+  gamepad.r_stick_y = 0;
+
   if (game.input.gamepad.total) {
-    const pads = game.input.gamepad.gamepads;
-    pads.filter(pad => pad).forEach((pad) => {
+    const rawPads = game.input.gamepad.gamepads;
+    rawPads.filter(pad => pad).forEach((rawPad) => {
       /*
       if (rumble) {
-        if (pad.vibration && pad.vibration.playEffect) {
-          pad.vibration.playEffect('dual-rumble', {
+        if (rawPad.vibration && rawPad.vibration.playEffect) {
+          rawPad.vibration.playEffect('dual-rumble', {
             duration: 1000,
             strongMagnitude: 1.0,
             weakMagnitude: 1.0,
           });
-        } else if (pad.vibration && pad.vibration.pulse) {
-          pad.vibration.pulse(1.0, 1000);
+        } else if (rawPad.vibration && rawPad.vibration.pulse) {
+          rawPad.vibration.pulse(1.0, 1000);
         }
       }
       */
 
-      const { A, B, X, Y, L1, L2, R1, R2, up, down, left, right, leftStick, rightStick } = pad;
+      const { A, B, X, Y, L1, L2, R1, R2, up, down, left, right, leftStick, rightStick } = rawPad;
 
-      listenProp('input.gamepad.A', A);
-      listenProp('input.gamepad.B', B);
-      listenProp('input.gamepad.X', X);
-      listenProp('input.gamepad.Y', Y);
-      listenProp('input.gamepad.L1', L1 > 0);
-      listenProp('input.gamepad.L2', L2 > 0);
-      listenProp('input.gamepad.R1', R1 > 0);
-      listenProp('input.gamepad.R2', R2 > 0);
-      listenProp('input.gamepad.up', up);
-      listenProp('input.gamepad.down', down);
-      listenProp('input.gamepad.left', left);
-      listenProp('input.gamepad.right', right);
-      listenProp('input.gamepad.l_stick_x', leftStick.x);
-      listenProp('input.gamepad.l_stick_y', leftStick.y);
-      listenProp('input.gamepad.r_stick_x', rightStick.x);
-      listenProp('input.gamepad.r_stick_y', rightStick.y);
-
-      state.upButtonDown = state.upButtonDown || leftStick.y < 0.2 || rightStick.y < -0.2 || up;
-      state.leftButtonDown = state.leftButtonDown || leftStick.x < -0.2 || leftStick.x < -0.2 || left;
-      state.rightButtonDown = state.rightButtonDown || leftStick.x > 0.2 || leftStick.x > 0.2 || right;
-      state.downButtonDown = state.downButtonDown || leftStick.y > 0.2 || leftStick.y > 0.2 || down;
-
-      state.jumpButtonDown = state.jumpButtonDown || A || B || X || Y;
+      gamepad.A = A;
+      gamepad.B = B;
+      gamepad.X = X;
+      gamepad.Y = Y;
+      gamepad.L1 = L1 > 0;
+      gamepad.L2 = L2 > 0;
+      gamepad.R1 = R1 > 0;
+      gamepad.R2 = R2 > 0;
+      gamepad.up = up;
+      gamepad.down = down;
+      gamepad.left = left;
+      gamepad.right = right;
+      gamepad.l_stick_x = leftStick.x;
+      gamepad.l_stick_y = leftStick.y;
+      gamepad.r_stick_x = rightStick.x;
+      gamepad.r_stick_y = rightStick.y;
     });
   }
 
-  if (state.jumpButtonDown) {
-    state.jumpButtonFrames = (state.jumpButtonFrames || 0) + 1;
-    state.jumpButtonStarted = state.jumpButtonFrames === 1;
-  } else {
-    state.jumpButtonFrames = 0;
-    state.jumpButtonStarted = false;
-  }
+  input.up.held = keyboard.up || gamepad.up || gamepad.l_stick_y < -0.2 || gamepad.r_stick_y < -0.2;
+  input.left.held = keyboard.left || gamepad.left || gamepad.l_stick_x < -0.2 || gamepad.r_stick_x < -0.2;
+  input.right.held = keyboard.right || gamepad.right || gamepad.l_stick_x > 0.2 || gamepad.r_stick_x > 0.2;
+  input.down.held = keyboard.down || gamepad.down || gamepad.l_stick_y > 0.2 || gamepad.r_stick_y > 0.2;
 
-  if (state.rightButtonDown) {
-    player.rightDownTime = time;
-  }
+  Object.keys(config.gameKeys).forEach((commandName) => {
+    input[commandName].held = !!config.gameKeys[commandName].find(path => _.get(input, path));
+  });
 
-  if (state.leftButtonDown) {
-    player.leftDownTime = time;
-  }
+  ['up', 'down', 'left', 'right', ...Object.keys(config.gameKeys)].forEach((commandName) => {
+    const command = input[commandName];
 
+    if (command.held) {
+      command.heldFrames++;
+      command.started = command.heldFrames === 1;
+      command.continued = command.heldFrames > 1;
+      command.heldTime = time;
 
-  listenProp('input.upButtonDown', state.upButtonDown);
-  listenProp('input.downButtonDown', state.downButtonDown);
-  listenProp('input.leftButtonDown', state.leftButtonDown);
-  listenProp('input.rightButtonDown', state.rightButtonDown);
-  listenProp('input.jumpButtonDown', state.jumpButtonDown);
+      // command.releasedFrames = 0;
+      // command.released = false;
+    } else {
+      command.heldFrames = 0;
+      command.started = false;
+      command.continued = false;
+
+      // command.releasedFrames++;
+      // command.released = command.releasedFrames === 1;
+    }
+  });
 }
 
 function jumpShake(type) {
@@ -2885,7 +2951,7 @@ function jumpShake(type) {
 }
 
 function processInput(time, dt) {
-  const { game, level, upButtonDown, downButtonDown, leftButtonDown, rightButtonDown, jumpButtonStarted, jumpButtonDown, jumpButtonHeld } = state;
+  const { game, level, input } = state;
   const { player } = level;
 
   if (player.ignoreInput) {
@@ -2894,14 +2960,9 @@ function processInput(time, dt) {
 
   const canJump = player.body.touching.down || (!player.isJumping && (time - player.touchDownTime) < 60);
 
-  if (jumpButtonHeld && !jumpButtonDown) {
-    state.jumpButtonHeld = false;
-  }
-
-  if (jumpButtonStarted) {
+  if (input.jump.started) {
     player.isJumping = true;
     player.hasLiftedOff = false;
-    state.jumpButtonHeld = true;
     player.body.setGravityY(0);
     if (canJump) {
       jumpShake(JUMP_NORMAL);
@@ -2911,7 +2972,7 @@ function processInput(time, dt) {
       save.levels[level.index].jumps++;
       player.setVelocityY(-prop('rules.jump.velocity_y'));
       playSound('soundJump', 3);
-    } else if (player.canWallJump && ((time - player.touchingLeftTime < 100 && time - player.leftDownTime < 100) || (time - player.touchingRightTime < 100 && time - player.rightDownTime < 100))) {
+    } else if (player.canWallJump && ((time - player.touchingLeftTime < 100 && time - input.left.heldTime < 100) || (time - player.touchingRightTime < 100 && time - input.right.heldTime < 100))) {
       jumpShake(JUMP_WALL);
       level.walljumps++;
       save.levels[level.index].walljumps++;
@@ -2980,7 +3041,7 @@ function processInput(time, dt) {
     player.wallJumpContra = false;
   }
 
-  if (player.isWallJumping && !player.wallJumpIgnoreDirection && ((player.wallJumpDirectionLeft && rightButtonDown) || (!player.wallJumpDirectionLeft && leftButtonDown))) {
+  if (player.isWallJumping && !player.wallJumpIgnoreDirection && ((player.wallJumpDirectionLeft && input.right.held) || (!player.wallJumpDirectionLeft && input.left.held))) {
     player.wallJumpContra = true;
   }
 
@@ -2989,7 +3050,7 @@ function processInput(time, dt) {
     player.wallJumpHeld = false;
   }
 
-  if (!player.wallJumpIgnoreDirection && ((player.wallJumpDirectionLeft && !leftButtonDown) || (!player.wallJumpDirectionLeft && !rightButtonDown))) {
+  if (!player.wallJumpIgnoreDirection && ((player.wallJumpDirectionLeft && !input.left.held) || (!player.wallJumpDirectionLeft && !input.right.held))) {
     player.wallJumpHeld = false;
   }
 
@@ -3011,7 +3072,7 @@ function processInput(time, dt) {
   } else if (player.wallJumpContra) {
     // lerp down to the reverse speed
     let x = prop('rules.walljump.reverse_velocity_x');
-    if (leftButtonDown) {
+    if (input.left.held) {
       x *= -1;
     }
     const vx = player.body.velocity.x + 0.3 * (x - player.body.velocity.x);
@@ -3019,7 +3080,7 @@ function processInput(time, dt) {
   } else {
     let x = prop('rules.walk.velocity_x');
     if (player.isJumping) {
-      if (player.isWallJumping && ((player.wallJumpDirectionLeft && rightButtonDown) || (!player.wallJumpDirectionLeft && leftButtonDown))) {
+      if (player.isWallJumping && ((player.wallJumpDirectionLeft && input.right.held) || (!player.wallJumpDirectionLeft && input.left.held))) {
         x = prop('rules.walljump.reverse_velocity_x');
       } else if (player.isDoubleJumping) {
         x = prop('rules.double_jump.velocity_x');
@@ -3028,10 +3089,10 @@ function processInput(time, dt) {
       }
     }
 
-    if (leftButtonDown) {
+    if (input.left.held) {
       player.setVelocityX(-x);
       player.facingLeft = true;
-    } else if (rightButtonDown) {
+    } else if (input.right.held) {
       player.setVelocityX(x);
       player.facingLeft = false;
     } else {
@@ -3175,7 +3236,7 @@ function setPlayerAnimation(type) {
 }
 
 function frameUpdates(time, dt) {
-  const { level, leftButtonDown, rightButtonDown } = state;
+  const { level, input } = state;
   const { player, hud } = level;
 
   if (player.body.velocity.y > 500) {
@@ -3183,16 +3244,16 @@ function frameUpdates(time, dt) {
   }
 
   if (player.body.touching.down) {
-    if (leftButtonDown) {
+    if (input.left.held) {
       setPlayerAnimation('Walk');
-    } else if (rightButtonDown) {
+    } else if (input.right.held) {
       setPlayerAnimation('Walk');
     } else {
       setPlayerAnimation('Neutral');
     }
   } else if (player.body.velocity.y <= 0) {
     setPlayerAnimation('JumpUp');
-  } else if ((player.body.touching.left && leftButtonDown) || (player.body.touching.right && rightButtonDown)) {
+  } else if ((player.body.touching.left && input.left.held) || (player.body.touching.right && input.right.held)) {
     setPlayerAnimation('Drag');
   } else {
     setPlayerAnimation('JumpDown');
@@ -3206,9 +3267,9 @@ function frameUpdates(time, dt) {
     player.touchingRightTime = time;
   }
 
-  if (!player.wallJumpIgnoreDirection && leftButtonDown) {
+  if (!player.wallJumpIgnoreDirection && input.left.held) {
     player.setFlipX(false);
-  } else if (!player.wallJumpIgnoreDirection && rightButtonDown) {
+  } else if (!player.wallJumpIgnoreDirection && input.right.held) {
     player.setFlipX(true);
   }
 
@@ -3238,7 +3299,7 @@ function frameUpdates(time, dt) {
     }
   }
 
-  if (!player.body.touching.down && !state.isWallJumping && (player.body.velocity.y > -40 || !state.jumpButtonHeld)) {
+  if (!player.body.touching.down && !state.isWallJumping && (player.body.velocity.y > -40 || !input.jump.held)) {
     player.body.setGravityY(config.physics.arcade.gravity.y * 4);
   }
 
@@ -3260,7 +3321,6 @@ function frameUpdates(time, dt) {
     player.wallJumpContinuing = false;
     player.wallJumpHeld = false;
     player.wallJumpContra = false;
-    player.jumpButtonHeld = false;
 
     if (prop('rules.walljump.forbid')) {
       player.canWallJump = false;
@@ -3314,9 +3374,9 @@ function frameUpdates(time, dt) {
     ];
   }
 
-  const puffLeft = player.body.touching.left && state.leftButtonDown;
+  const puffLeft = player.body.touching.left && input.left.held;
   let puffEnabled = false;
-  if ((player.body.touching.left && state.leftButtonDown) || (player.body.touching.right && state.rightButtonDown)) {
+  if ((player.body.touching.left && input.left.held) || (player.body.touching.right && input.right.held)) {
     vx = 0.7;
     vy = -0.7;
     const max = prop('rules.walljump.drag_terminal_velocity');
@@ -3326,9 +3386,9 @@ function frameUpdates(time, dt) {
       player.setVelocityY(max);
       puffEnabled = true;
       setPlayerAnimation('Drag');
-      if (leftButtonDown) {
+      if (input.left.held) {
         player.setFlipX(true);
-      } else if (rightButtonDown) {
+      } else if (input.right.held) {
         player.setFlipX(false);
       }
     }
@@ -3398,7 +3458,7 @@ function updateEnemies() {
 }
 
 function update(time, dt) {
-  const { game, physics, level, keys, cursors, debug } = state;
+  const { game, physics, level, debug } = state;
   const { player } = level;
 
   if (prop('engine.throttle')) {
