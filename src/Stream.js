@@ -8,9 +8,11 @@ import { props as defaultProps } from './game';
 
 function Debug() {
   Object.keys(defaultProps).forEach((key) => {
-    this[key] = defaultProps[key];
+    this[key] = defaultProps[key][0];
   });
 }
+
+const sentenceCase = name => name.split(/[-_ ]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
 export default class Stream extends Component<any> {
   debug = new Debug();
@@ -22,145 +24,35 @@ export default class Stream extends Component<any> {
 
     const { gui, debug } = this;
 
-    const engine = gui.addFolder('Engine');
-    engine.add(debug, 'time').listen();
-    engine.add(debug, 'frameTime').listen();
-    engine.add(debug, 'actualFps').listen();
-    engine.add(debug, 'targetFps').listen();
-    engine.add(debug, 'physicsTime').listen();
-    engine.add(debug, 'physicsFps').listen();
-    engine.add(debug, 'physics.debug');
-    engine.add(debug, 'throttle');
-
-    const input = gui.addFolder('Input');
-    input.add(debug, 'input.upButtonDown').listen();
-    input.add(debug, 'input.downButtonDown').listen();
-    input.add(debug, 'input.leftButtonDown').listen();
-    input.add(debug, 'input.rightButtonDown').listen();
-    input.add(debug, 'input.jumpButtonDown').listen();
-
-    input.add(debug, 'keyboard.Z').listen();
-    input.add(debug, 'keyboard.X').listen();
-    input.add(debug, 'keyboard.C').listen();
-    input.add(debug, 'keyboard.up').listen();
-    input.add(debug, 'keyboard.down').listen();
-    input.add(debug, 'keyboard.left').listen();
-    input.add(debug, 'keyboard.right').listen();
-
-    input.add(debug, 'gamepad.A').listen();
-    input.add(debug, 'gamepad.B').listen();
-    input.add(debug, 'gamepad.X').listen();
-    input.add(debug, 'gamepad.Y').listen();
-    input.add(debug, 'gamepad.L1').listen();
-    input.add(debug, 'gamepad.L2').listen();
-    input.add(debug, 'gamepad.R1').listen();
-    input.add(debug, 'gamepad.R2').listen();
-    input.add(debug, 'gamepad.up').listen();
-    input.add(debug, 'gamepad.down').listen();
-    input.add(debug, 'gamepad.left').listen();
-    input.add(debug, 'gamepad.right').listen();
-    input.add(debug, 'gamepad.l_stick.x').listen();
-    input.add(debug, 'gamepad.l_stick.y').listen();
-    input.add(debug, 'gamepad.r_stick.x').listen();
-    input.add(debug, 'gamepad.r_stick.y').listen();
-
-    const rules = gui.addFolder('Rules');
-    rules.add(debug, 'invincibility_ms', 0, 10000);
-    rules.add(debug, 'min_ignore_input_ms', 0, 500);
-    rules.add(debug, 'spike_knockback.x', 0, 500);
-    rules.add(debug, 'spike_knockback.y', 0, 500);
-    rules.add(debug, 'velocityX.walk', 0, 1000);
-    rules.add(debug, 'velocityX.jump', 0, 1000);
-    rules.add(debug, 'velocityX.double_jump', 0, 1000);
-    rules.add(debug, 'velocityX.wall_jump', 0, 1000);
-    rules.add(debug, 'velocityX.reversed_wall_jump', 0, 1000);
-    rules.add(debug, 'velocityY.jump', 0, 1000);
-    rules.add(debug, 'velocityY.double_jump', 0, 1000);
-    rules.add(debug, 'velocityY.wall_jump', 0, 1000);
-    rules.add(debug, 'wall_jump_ignore_direction_ms', 0, 2000);
-
-    const cheats = gui.addFolder('Cheats');
-    cheats.add(debug, 'cheat.hearty');
-    cheats.add(debug, 'cheat.forbidDoubleJump');
-    cheats.add(debug, 'cheat.forbidWallJump');
-    cheats.add(debug, 'winLevel');
-    cheats.add(debug, 'restartLevel');
-    cheats.add(debug, 'previousLevel');
-
-    const level = gui.addFolder('Level');
-    level.add(debug, 'level.name').listen();
-    level.add(debug, 'level.index').listen();
-    level.add(debug, 'level.file').listen();
-    level.add(debug, 'level.timers').listen();
-
-    const player = gui.addFolder('Player');
-    player.add(debug, 'player.squish.max', 0, 1);
-    player.add(debug, 'player.squish.speed', 0, 1);
-    player.add(debug, 'player.grab.max_y', 0, 1000);
-    player.add(debug, 'player.life').listen();
-    player.add(debug, 'player.x').listen();
-    player.add(debug, 'player.y').listen();
-    player.add(debug, 'player.velocity.x').listen();
-    player.add(debug, 'player.velocity.y').listen();
-    player.add(debug, 'player.invincible').listen();
-    player.add(debug, 'player.ignoreInput').listen();
-    player.add(debug, 'player.canCancelIgnoreInput').listen();
-    player.add(debug, 'player.isJumping').listen();
-    player.add(debug, 'player.hasLiftedOff').listen();
-    player.add(debug, 'player.canDoubleJump').listen();
-    player.add(debug, 'player.isDoubleJumping').listen();
-    player.add(debug, 'player.canWallJump').listen();
-    player.add(debug, 'player.isWallJumping').listen();
-    player.add(debug, 'player.wallJumpIgnoreDirection').listen();
-    player.add(debug, 'player.wallJumpContinuing').listen();
-    player.add(debug, 'player.wallJumpDirectionLeft').listen();
-    player.add(debug, 'player.wallJumpContra').listen();
-    player.add(debug, 'player.wallJumpHeld').listen();
-    player.add(debug, 'player.touching.up').listen();
-    player.add(debug, 'player.touching.down').listen();
-    player.add(debug, 'player.touching.left').listen();
-    player.add(debug, 'player.touching.right').listen();
-    player.add(debug, 'player.freebies').listen();
-    player.add(debug, 'player.animation').listen();
-
-    const vfx = gui.addFolder('Visual Effects');
-    vfx.add(debug, 'effect.damageBlur.amount', 0, 50.0);
-    vfx.add(debug, 'effect.damageBlur.in_ms', 0, 2000);
-    vfx.add(debug, 'effect.damageBlur.out_ms', 0, 2000);
-    vfx.add(debug, 'damageBlur');
-
-    vfx.add(debug, 'effect.shockwave.scale', 0, 500.0);
-    vfx.add(debug, 'effect.shockwave.range', 0, 10.0);
-    vfx.add(debug, 'effect.shockwave.thickness', 0, 10.0);
-    vfx.add(debug, 'effect.shockwave.speed', 0, 50.0);
-    vfx.add(debug, 'effect.shockwave.inner', 0, 1.0);
-    vfx.add(debug, 'effect.shockwave.dropoff', 0, 500.0);
-    vfx.add(debug, 'deathShockwave');
-
-    vfx.add(debug, 'effect.jumpshake.amount', 0, 0.1);
-    vfx.add(debug, 'effect.jumpshake.duration_ms', 0, 1000.0);
-    vfx.add(debug, 'jumpShake');
+    const folders = {};
 
     Object.keys(defaultProps).forEach((key) => {
-      // eslint-disable-next-line no-underscore-dangle
-      if (gui.__controllers.filter(controller => controller.property === key).length) {
-        return;
-      }
+      const sections = key.split('.');
+      const [value, ...options] = defaultProps[key];
 
-      let foundController = false;
-      // eslint-disable-next-line no-underscore-dangle
-      Object.keys(gui.__folders).forEach((folderName) => {
-        // eslint-disable-next-line no-underscore-dangle
-        if (gui.__folders[folderName].__controllers.filter(controller => controller.property === key).length) {
-          foundController = true;
+      let folderKey = '';
+      let folder = gui;
+      while (sections.length > 1) {
+        const section = sections.shift();
+        folderKey += `.${section}`;
+
+        if (!folders[folderKey]) {
+          folders[folderKey] = folder.addFolder(sentenceCase(section));
         }
-      });
 
-      if (foundController) {
-        return;
+        folder = folders[folderKey];
       }
 
-      gui.add(debug, key);
+      const propName = sections[0];
+
+      let controller;
+      if (options.length === 1 && options[0] === null) {
+        controller = folder.add(debug, key).listen();
+      } else if (key.match(/color/i)) {
+        controller = folder.addColor(debug, key, ...options);
+      } else {
+        controller = folder.add(debug, key, ...options);
+      }
     });
   }
 

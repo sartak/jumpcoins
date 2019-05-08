@@ -91,7 +91,6 @@ const config = {
     default: 'arcade',
     arcade: {
       gravity: { y: 400 },
-      debug: false, // will be populated based on dat.gui just in time
       fps: 60,
     },
   },
@@ -251,119 +250,119 @@ const config = {
 };
 
 export const props = {
-  invincibility_ms: 2000,
-  min_ignore_input_ms: 50,
-  'spike_knockback.x': 40,
-  'spike_knockback.y': 100,
-  'velocityX.walk': 200,
-  'velocityX.jump': 200,
-  'velocityX.double_jump': 75,
-  'velocityX.wall_jump': 600,
-  'velocityX.reversed_wall_jump': 100,
-  'velocityY.jump': 260,
-  'velocityY.double_jump': 350,
-  'velocityY.wall_jump': 175,
-  wall_jump_ignore_direction_ms: 400,
+  'engine.time': [0.01, null],
+  'engine.frameTime': [0.01, null],
+  'engine.actualFps': [0.01, null],
+  'engine.targetFps': [0.01, null],
+  'engine.physicsTime': [0.01, null],
+  'engine.physicsFps': [0.01, null],
+  'engine.throttle': [false],
 
-  time: 0.01,
-  frameTime: 0.01,
-  actualFps: 0.01,
-  targetFps: 0.01,
-  physicsTime: 0.01,
-  physicsFps: 0.01,
-  throttle: false,
+  'input.upButtonDown': [false, null],
+  'input.downButtonDown': [false, null],
+  'input.leftButtonDown': [false, null],
+  'input.rightButtonDown': [false, null],
+  'input.jumpButtonDown': [false, null],
 
-  'level.name': '',
-  'level.index': -1,
-  'level.file': '',
-  'level.timers': 0,
+  'input.keyboard.Z': [false, null],
+  'input.keyboard.X': [false, null],
+  'input.keyboard.C': [false, null],
+  'input.keyboard.up': [false, null],
+  'input.keyboard.down': [false, null],
+  'input.keyboard.left': [false, null],
+  'input.keyboard.right': [false, null],
 
-  'input.upButtonDown': false,
-  'input.downButtonDown': false,
-  'input.leftButtonDown': false,
-  'input.rightButtonDown': false,
-  'input.jumpButtonDown': false,
+  'input.gamepad.A': [false, null],
+  'input.gamepad.B': [false, null],
+  'input.gamepad.X': [false, null],
+  'input.gamepad.Y': [false, null],
+  'input.gamepad.L1': [false, null],
+  'input.gamepad.L2': [false, null],
+  'input.gamepad.R1': [false, null],
+  'input.gamepad.R2': [false, null],
+  'input.gamepad.up': [false, null],
+  'input.gamepad.down': [false, null],
+  'input.gamepad.left': [false, null],
+  'input.gamepad.right': [false, null],
+  'input.gamepad.l_stick_x': [0.01, null],
+  'input.gamepad.l_stick_y': [0.01, null],
+  'input.gamepad.r_stick_x': [0.01, null],
+  'input.gamepad.r_stick_y': [0.01, null],
 
-  'keyboard.Z': false,
-  'keyboard.X': false,
-  'keyboard.C': false,
-  'keyboard.up': false,
-  'keyboard.down': false,
-  'keyboard.left': false,
-  'keyboard.right': false,
+  'rules.invincibility_ms': [2000, 0, 10000],
+  'rules.knockback_ignore_input_ms': [50, 0, 500],
+  'rules.spike_knockback_x': [40, 0, 500],
+  'rules.spike_knockback_y': [100, 0, 500],
 
-  'gamepad.A': false,
-  'gamepad.B': false,
-  'gamepad.X': false,
-  'gamepad.Y': false,
-  'gamepad.L1': false,
-  'gamepad.L2': false,
-  'gamepad.R1': false,
-  'gamepad.R2': false,
-  'gamepad.up': false,
-  'gamepad.down': false,
-  'gamepad.left': false,
-  'gamepad.right': false,
-  'gamepad.l_stick.x': 0.01,
-  'gamepad.l_stick.y': 0.01,
-  'gamepad.r_stick.x': 0.01,
-  'gamepad.r_stick.y': 0.01,
+  'rules.infinite_coins': [false],
+  'rules.walk.velocity_x': [200, 0, 1000],
 
-  'player.life': 0,
-  'player.x': 0.01,
-  'player.y': 0.01,
-  'player.velocity.x': 0.01,
-  'player.velocity.y': 0.01,
-  'player.invincible': false,
-  'player.ignoreInput': false,
-  'player.canCancelIgnoreInput': false,
-  'player.isJumping': false,
-  'player.hasLiftedOff': false,
-  'player.canDoubleJump': false,
-  'player.isDoubleJumping': false,
-  'player.canWallJump': false,
-  'player.isWallJumping': false,
-  'player.wallJumpIgnoreDirection': false,
-  'player.wallJumpContinuing': false,
-  'player.wallJumpDirectionLeft': false,
-  'player.wallJumpHeld': false,
-  'player.wallJumpContra': false,
-  'player.touching.up': false,
-  'player.touching.down': false,
-  'player.touching.left': false,
-  'player.touching.right': false,
-  'player.freebies': 0,
-  'player.squish.max': 0.10,
-  'player.squish.speed': 0.2,
-  'player.grab.max_y': 50,
-  'player.animation': '',
+  'rules.jump.velocity_x': [200, 0, 1000],
+  'rules.jump.velocity_y': [260, 0, 1000],
 
-  'cheat.hearty': false,
-  'cheat.forbidDoubleJump': false,
-  'cheat.forbidWallJump': false,
+  'rules.double_jump.velocity_x': [75, 0, 1000],
+  'rules.double_jump.velocity_y': [350, 0, 1000],
+  'rules.double_jump.forbid': [false],
 
-  'effect.damageBlur.amount': 2.5,
-  'effect.damageBlur.in_ms': 100,
-  'effect.damageBlur.out_ms': 200,
+  'rules.walljump.velocity_x': [600, 0, 1000],
+  'rules.walljump.reverse_velocity_x': [100, 0, 1000],
+  'rules.walljump.velocity_y': [175, 0, 1000],
+  'rules.walljump.ignore_direction_ms': [400, 0, 1000],
+  'rules.walljump.drag_terminal_velocity': [50, 0, 1000],
+  'rules.walljump.forbid': [false],
 
-  'effect.shockwave.scale': 10.0,
-  'effect.shockwave.range': 0.8,
-  'effect.shockwave.thickness': 0.1,
-  'effect.shockwave.speed': 3.0,
-  'effect.shockwave.inner': 0.09,
-  'effect.shockwave.dropoff': 40.0,
+  'level.name': ['', null],
+  'level.index': [-1, null],
+  'level.file': ['', null],
+  'level.timers': [0, null],
+  'level.win': [() => window.state.commands.winLevel()],
+  'level.restart': [() => window.state.commands.restartLevel()],
+  'level.previous': [() => window.state.commands.previousLevel()],
 
-  'effect.jumpshake.amount': 0.01,
-  'effect.jumpshake.duration_ms': 75,
+  'player.squish_max': [0.10, 0, 1],
+  'player.life': [0, null],
+  'player.freebies': [0, null],
+  'player.x': [0.01, null],
+  'player.y': [0.01, null],
+  'player.velocity_x': [0.01, null],
+  'player.velocity_y': [0.01, null],
+  'player.invincible': [false, null],
+  'player.ignoreInput': [false, null],
+  'player.canCancelIgnoreInput': [false, null],
+  'player.isJumping': [false, null],
+  'player.hasLiftedOff': [false, null],
+  'player.canDoubleJump': [false, null],
+  'player.isDoubleJumping': [false, null],
+  'player.canWallJump': [false, null],
+  'player.isWallJumping': [false, null],
+  'player.wallJumpIgnoreDirection': [false, null],
+  'player.wallJumpContinuing': [false, null],
+  'player.wallJumpDirectionLeft': [false, null],
+  'player.wallJumpHeld': [false, null],
+  'player.wallJumpContra': [false, null],
+  'player.touching_up': [false, null],
+  'player.touching_down': [false, null],
+  'player.touching_left': [false, null],
+  'player.touching_right': [false, null],
+  'player.squish_speed': [0.2, 0, 1],
+  'player.animation': ['', null],
 
-  'physics.debug': false,
+  'effect.damageBlur.amount': [2.5, 0, 50],
+  'effect.damageBlur.in_ms': [100, 0, 2000],
+  'effect.damageBlur.out_ms': [200, 0, 2000],
+  'effect.damageBlur.execute': [() => window.state.commands.damageBlur()],
 
-  winLevel: () => window.state.commands.winLevel(),
-  restartLevel: () => window.state.commands.restartLevel(),
-  previousLevel: () => window.state.commands.previousLevel(),
-  damageBlur: () => window.state.commands.damageBlur(),
-  deathShockwave: () => window.state.commands.deathShockwave(),
-  jumpShake: () => window.state.commands.jumpShake(),
+  'effect.shockwave.scale': [10.0, 0, 500],
+  'effect.shockwave.range': [0.8, 0, 10],
+  'effect.shockwave.thickness': [0.1, 0, 10],
+  'effect.shockwave.speed': [3.0, 0, 50],
+  'effect.shockwave.inner': [0.09, 0, 1],
+  'effect.shockwave.dropoff': [40.0, 0, 500],
+  'effect.shockwave.execute': [() => window.state.commands.shockwave()],
+
+  'effect.jumpShake.amount': [0.01, 0, 0.1],
+  'effect.jumpShake.duration_ms': [75, 0, 1000],
+  'effect.jumpShake.execute': [() => window.state.commands.jumpShake()],
 };
 
 const SaveStateName = 'jumpcoins_save';
@@ -441,16 +440,15 @@ let prop = (name: string): any => {
     return false;
   }
 
-  return props[name];
+  return props[name][0];
 };
 
 if (DEBUG) {
-  const oldProp = prop;
   prop = (name: string): any => {
     if (name in window.props) {
       return window.props[name];
     }
-    return oldProp(name);
+    throw new Error(`Unknown prop "${name}"`);
   };
 }
 
@@ -551,7 +549,6 @@ export default function startGame(debug: any, volume: number) {
     window.props = debug;
   }
 
-  config.physics.arcade.debug = prop('physics.debug');
   state.volume = volume;
 
   const game = new Phaser.Game(config);
@@ -563,11 +560,11 @@ export default function startGame(debug: any, volume: number) {
     window.state.commands.restartLevel = restartLevel;
     window.state.commands.previousLevel = previousLevel;
     window.state.commands.damageBlur = damageBlur;
-    window.state.commands.deathShockwave = deathShockwave;
+    window.state.commands.shockwave = shockwave;
     window.state.commands.jumpShake = jumpShake;
 
     Object.keys(props).forEach((key) => {
-      debug[key] = props[key];
+      debug[key] = props[key][0];
     });
   }
 
@@ -1496,14 +1493,14 @@ function setPlayerInvincible() {
   });
 
   game.time.addEvent({
-    delay: prop('invincibility_ms') * 0.5,
+    delay: prop('rules.invincibility_ms') * 0.5,
     callback: () => {
       player.fastInvincible = true;
     },
   });
 
   game.time.addEvent({
-    delay: prop('invincibility_ms'),
+    delay: prop('rules.invincibility_ms'),
     callback: () => {
       player.invincible = false;
       player.invincibleTween.stop();
@@ -1544,7 +1541,7 @@ function damageBlur() {
   });
 }
 
-function deathShockwave() {
+function shockwave() {
   const { game, level } = state;
   const { player } = level;
 
@@ -1579,7 +1576,7 @@ function spendLife(isVoluntary): bool {
     if (player.freebies <= 0) {
       setPlayerAnimation();
     }
-  } else if (!prop('cheat.hearty')) {
+  } else if (!prop('rules.infinite_coins')) {
     player.life--;
     image = hud.hearts.pop();
   }
@@ -1621,7 +1618,7 @@ function spendLife(isVoluntary): bool {
   if (player.life <= 0) {
     level.deaths++;
     save.levels[level.index].deaths++;
-    deathShockwave();
+    shockwave();
     respawn();
 
     playSound('soundDie', null, 0.9);
@@ -1654,19 +1651,19 @@ function takeSpikeDamage(object1, object2) {
   setPlayerInvincible();
 
   if (knockback === 'left' || (knockback === true && player.facingLeft)) {
-    player.setVelocityX(prop('spike_knockback.x'));
+    player.setVelocityX(prop('rules.spike_knockback_x'));
   } else if (knockback === 'right' || (knockback === true && !player.facingLeft)) {
-    player.setVelocityX(-prop('spike_knockback.x'));
+    player.setVelocityX(-prop('rules.spike_knockback_x'));
   }
 
   if (knockback) {
-    player.setVelocityY(-prop('spike_knockback.y'));
+    player.setVelocityY(-prop('rules.spike_knockback_y'));
 
     player.ignoreInput = true;
     player.canCancelIgnoreInput = false;
 
     game.time.addEvent({
-      delay: prop('min_ignore_input_ms'),
+      delay: prop('rules.knockback_ignore_input_ms'),
       callback: () => {
         player.canCancelIgnoreInput = true;
       },
@@ -2796,13 +2793,13 @@ function readInput(time, dt) {
 
   state.jumpButtonDown = keys.Z.isDown;
 
-  listenProp('keyboard.Z', keys.Z.isDown);
-  listenProp('keyboard.X', keys.X.isDown);
-  listenProp('keyboard.C', keys.C.isDown);
-  listenProp('keyboard.up', cursors.up.isDown);
-  listenProp('keyboard.down', cursors.down.isDown);
-  listenProp('keyboard.left', cursors.left.isDown);
-  listenProp('keyboard.right', cursors.right.isDown);
+  listenProp('input.keyboard.Z', keys.Z.isDown);
+  listenProp('input.keyboard.X', keys.X.isDown);
+  listenProp('input.keyboard.C', keys.C.isDown);
+  listenProp('input.keyboard.up', cursors.up.isDown);
+  listenProp('input.keyboard.down', cursors.down.isDown);
+  listenProp('input.keyboard.left', cursors.left.isDown);
+  listenProp('input.keyboard.right', cursors.right.isDown);
 
   const rumble = state.rumble;
   state.rumble = null;
@@ -2824,7 +2821,24 @@ function readInput(time, dt) {
       }
       */
 
-      const { A, B, X, Y, up, down, left, right, leftStick, rightStick } = pad;
+      const { A, B, X, Y, L1, L2, R1, R2, up, down, left, right, leftStick, rightStick } = pad;
+
+      listenProp('input.gamepad.A', A);
+      listenProp('input.gamepad.B', B);
+      listenProp('input.gamepad.X', X);
+      listenProp('input.gamepad.Y', Y);
+      listenProp('input.gamepad.L1', L1 > 0);
+      listenProp('input.gamepad.L2', L2 > 0);
+      listenProp('input.gamepad.R1', R1 > 0);
+      listenProp('input.gamepad.R2', R2 > 0);
+      listenProp('input.gamepad.up', up);
+      listenProp('input.gamepad.down', down);
+      listenProp('input.gamepad.left', left);
+      listenProp('input.gamepad.right', right);
+      listenProp('input.gamepad.l_stick_x', leftStick.x);
+      listenProp('input.gamepad.l_stick_y', leftStick.y);
+      listenProp('input.gamepad.r_stick_x', rightStick.x);
+      listenProp('input.gamepad.r_stick_y', rightStick.y);
 
       state.upButtonDown = state.upButtonDown || leftStick.y < 0.2 || rightStick.y < -0.2 || up;
       state.leftButtonDown = state.leftButtonDown || leftStick.x < -0.2 || leftStick.x < -0.2 || left;
@@ -2864,8 +2878,8 @@ function jumpShake(type) {
   if (type !== JUMP_NORMAL) {
     state.rumble = true;
     state.game.cameras.main.shake(
-      prop('effect.jumpshake.duration_ms'),
-      prop('effect.jumpshake.amount'),
+      prop('effect.jumpShake.duration_ms'),
+      prop('effect.jumpShake.amount'),
     );
   }
 }
@@ -2895,14 +2909,14 @@ function processInput(time, dt) {
       jumpPuff(true);
       level.jumps++;
       save.levels[level.index].jumps++;
-      player.setVelocityY(-prop('velocityY.jump'));
+      player.setVelocityY(-prop('rules.jump.velocity_y'));
       playSound('soundJump', 3);
     } else if (player.canWallJump && ((time - player.touchingLeftTime < 100 && time - player.leftDownTime < 100) || (time - player.touchingRightTime < 100 && time - player.rightDownTime < 100))) {
       jumpShake(JUMP_WALL);
       level.walljumps++;
       save.levels[level.index].walljumps++;
       player.body.setGravityY(-100);
-      player.setVelocityY(-prop('velocityY.wall_jump'));
+      player.setVelocityY(-prop('rules.walljump.velocity_y'));
       if (player.touchingRightTime > player.touchingLeftTime) {
         player.facingLeft = true;
         player.wallJumpDirectionLeft = true;
@@ -2926,7 +2940,7 @@ function processInput(time, dt) {
       }
 
       game.time.addEvent({
-        delay: prop('wall_jump_ignore_direction_ms'),
+        delay: prop('rules.walljump.ignore_direction_ms'),
         callback: () => {
           player.wallJumpIgnoreDirection = false;
         },
@@ -2937,7 +2951,7 @@ function processInput(time, dt) {
       jumpShake(JUMP_DOUBLE);
       level.doublejumps++;
       save.levels[level.index].doublejumps++;
-      player.setVelocityY(-prop('velocityY.double_jump'));
+      player.setVelocityY(-prop('rules.double_jump.velocity_y'));
       player.isDoubleJumping = true;
 
       player.isWallJumping = false;
@@ -2980,7 +2994,7 @@ function processInput(time, dt) {
   }
 
   if (player.wallJumpIgnoreDirection || player.wallJumpHeld) {
-    const x = prop('velocityX.wall_jump');
+    const x = prop('rules.walljump.velocity_x');
     if (player.facingLeft) {
       player.setVelocityX(-x);
     } else {
@@ -2988,7 +3002,7 @@ function processInput(time, dt) {
     }
   } else if (player.wallJumpContinuing) {
     // lerp down to the slower speed
-    let x = prop('velocityX.walk');
+    let x = prop('rules.walk.velocity_x');
     if (player.wallJumpDirectionLeft) {
       x *= -1;
     }
@@ -2996,21 +3010,21 @@ function processInput(time, dt) {
     player.setVelocityX(vx);
   } else if (player.wallJumpContra) {
     // lerp down to the reverse speed
-    let x = prop('velocityX.reversed_wall_jump');
+    let x = prop('rules.walljump.reverse_velocity_x');
     if (leftButtonDown) {
       x *= -1;
     }
     const vx = player.body.velocity.x + 0.3 * (x - player.body.velocity.x);
     player.setVelocityX(vx);
   } else {
-    let x = prop('velocityX.walk');
+    let x = prop('rules.walk.velocity_x');
     if (player.isJumping) {
       if (player.isWallJumping && ((player.wallJumpDirectionLeft && rightButtonDown) || (!player.wallJumpDirectionLeft && leftButtonDown))) {
-        x = prop('velocityX.reversed_wall_jump');
+        x = prop('rules.walljump.reverse_velocity_x');
       } else if (player.isDoubleJumping) {
-        x = prop('velocityX.double_jump');
+        x = prop('rules.double_jump.velocity_x');
       } else {
-        x = prop('velocityX.jump');
+        x = prop('rules.jump.velocity_x');
       }
     }
 
@@ -3035,8 +3049,8 @@ function renderDebug() {
   listenProp('player.life', player.life);
   listenProp('player.x', player.x);
   listenProp('player.y', player.y);
-  listenProp('player.velocity.x', player.body.velocity.x);
-  listenProp('player.velocity.y', player.body.velocity.y);
+  listenProp('player.velocity_x', player.body.velocity.x);
+  listenProp('player.velocity_y', player.body.velocity.y);
   listenProp('player.invincible', player.invincible);
   listenProp('player.ignoreInput', player.ignoreInput);
   listenProp('player.canCancelIgnoreInput', player.canCancelIgnoreInput);
@@ -3051,10 +3065,10 @@ function renderDebug() {
   listenProp('player.wallJumpDirectionLeft', player.wallJumpDirectionLeft);
   listenProp('player.wallJumpHeld', player.wallJumpHeld);
   listenProp('player.wallJumpContra', player.wallJumpContra);
-  listenProp('player.touching.up', player.body.touching.up);
-  listenProp('player.touching.down', player.body.touching.down);
-  listenProp('player.touching.left', player.body.touching.left);
-  listenProp('player.touching.right', player.body.touching.right);
+  listenProp('player.touching_up', player.body.touching.up);
+  listenProp('player.touching_down', player.body.touching.down);
+  listenProp('player.touching_left', player.body.touching.left);
+  listenProp('player.touching_right', player.body.touching.right);
 
   listenProp('player.freebies', player.freebies);
 
@@ -3236,7 +3250,7 @@ function frameUpdates(time, dt) {
     player.canDoubleJump = true;
     player.isDoubleJumping = false;
 
-    if (prop('cheat.forbidDoubleJump')) {
+    if (prop('rules.double_jump.forbid')) {
       player.canDoubleJump = false;
     }
 
@@ -3248,7 +3262,7 @@ function frameUpdates(time, dt) {
     player.wallJumpContra = false;
     player.jumpButtonHeld = false;
 
-    if (prop('cheat.forbidWallJump')) {
+    if (prop('rules.walljump.forbid')) {
       player.canWallJump = false;
     }
 
@@ -3305,7 +3319,7 @@ function frameUpdates(time, dt) {
   if ((player.body.touching.left && state.leftButtonDown) || (player.body.touching.right && state.rightButtonDown)) {
     vx = 0.7;
     vy = -0.7;
-    const max = prop('player.grab.max_y');
+    const max = prop('rules.walljump.drag_terminal_velocity');
     // we intentionally don't do this for the other direction because of
     // jumping against walls being a common case
     if (player.body.velocity.y >= max) {
@@ -3330,14 +3344,14 @@ function frameUpdates(time, dt) {
     vy -= 0.7;
   }
 
-  vx *= prop('player.squish.max');
-  vy *= prop('player.squish.max');
+  vx *= prop('player.squish_max');
+  vy *= prop('player.squish_max');
   vy += 1;
   vx += 1;
 
   // intentionally flipped for vx, vy
-  const scaleX = player.scaleX + prop('player.squish.speed') * (vy - player.scaleX) * dt / 16.667;
-  const scaleY = player.scaleY + prop('player.squish.speed') * (vx - player.scaleY) * dt / 16.667;
+  const scaleX = player.scaleX + prop('player.squish_speed') * (vy - player.scaleX) * dt / 16.667;
+  const scaleY = player.scaleY + prop('player.squish_speed') * (vx - player.scaleY) * dt / 16.667;
 
   player.setScale(scaleX, scaleY); // intentionally flipped
 }
@@ -3387,18 +3401,18 @@ function update(time, dt) {
   const { game, physics, level, keys, cursors, debug } = state;
   const { player } = level;
 
-  if (prop('throttle')) {
+  if (prop('engine.throttle')) {
     let result = 0;
     for (let i = 0; i < 1000000; i++) {
       result += Math.sqrt(i + dt);
     }
   }
 
-  listenProp('time', time);
-  listenProp('frameTime', dt);
-  listenProp('actualFps', game.game.loop.actualFps);
-  listenProp('targetFps', game.game.loop.targetFps);
-  listenProp('physicsFps', physics.world.fps);
+  listenProp('engine.time', time);
+  listenProp('engine.frameTime', dt);
+  listenProp('engine.actualFps', game.game.loop.actualFps);
+  listenProp('engine.targetFps', game.game.loop.targetFps);
+  listenProp('engine.physicsFps', physics.world.fps);
   listenProp('player.animation', player.previousAnimation);
 
   if (state.shader) {
@@ -3412,7 +3426,7 @@ function update(time, dt) {
 }
 
 function physicsStep(time, dt) {
-  listenProp('physicsTime', dt);
+  listenProp('engine.physicsTime', dt);
   readInput(time, dt);
   processInput(time, dt);
   frameUpdates(time, dt);
