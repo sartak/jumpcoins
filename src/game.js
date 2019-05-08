@@ -248,14 +248,57 @@ const config = {
   xBorder: 0,
   yBorder: 0,
   gameKeys: {
-    jump: ['keyboard.Z', 'gamepad.A', 'gamepad.B', 'gamepad.X', 'gamepad.Y'],
+    up: {
+      input: ['keyboard.up', 'gamepad.up', 'keyboard.W'],
+    },
+    down: {
+      input: ['keyboard.down', 'gamepad.down', 'keyboard.S'],
+    },
+    left: {
+      input: ['keyboard.left', 'gamepad.left', 'keyboard.A'],
+    },
+    right: {
+      input: ['keyboard.right', 'gamepad.right', 'keyboard.D'],
+    },
+    jump: {
+      input: ['keyboard.Z', 'gamepad.A', 'gamepad.B', 'gamepad.X', 'gamepad.Y'],
+    },
+    win: {
+      input: ['keyboard.W'],
+      execute: () => winLevel(false),
+      debug: true,
+    },
+    quit: {
+      input: ['keyboard.Q'],
+      execute: forceQuit,
+      debug: true,
+      unsuppressable: true,
+    },
+    restart: {
+      input: ['keyboard.R'],
+      execute: restartLevel,
+      debug: true,
+    },
+    previous: {
+      input: ['keyboard.P'],
+      execute: previousLevel,
+      debug: true,
+    },
   },
 };
+
+if (!DEBUG) {
+  Object.keys(config.gameKeys).forEach((key) => {
+    if (config.gameKeys[key].debug) {
+      delete config.gameKeys[key];
+    }
+  });
+}
 
 function gameKeyProps() {
   const props = {};
 
-  ['up', 'down', 'left', 'right', ...Object.keys(config.gameKeys)].forEach((commandName) => {
+  Object.keys(config.gameKeys).forEach((commandName) => {
     props[`input.${commandName}.held`] = [false, null];
     props[`input.${commandName}.started`] = [false, null];
     props[`input.${commandName}.continued`] = [false, null];
@@ -275,11 +318,18 @@ function keysToRead() {
   const keys = [];
 
   Object.keys(config.gameKeys).forEach((commandName) => {
-    config.gameKeys[commandName].forEach((inputPath) => {
+    const keyConfig = config.gameKeys[commandName];
+    if (!keyConfig.input) {
+      return;
+    }
+
+    keyConfig.input.forEach((inputPath) => {
       const match = inputPath.match(/^keyboard\.(\w+)$/);
       if (match) {
         const key = match[1];
-        keys.push(key);
+        if (key !== 'up' && key !== 'down' && key !== 'right' && key !== 'left') {
+          keys.push(key);
+        }
       }
     });
   });
@@ -290,7 +340,7 @@ function keysToRead() {
 function readKeyProps() {
   const props = {};
 
-  keysToRead().forEach((key) => {
+  keysToRead().sort().forEach((key) => {
     props[`input.keyboard.${key}`] = [false, null];
   });
 
@@ -1494,6 +1544,38 @@ function previousLevel() {
     state.levelIndex += config.levels.length;
   }
   winLevel(false);
+}
+
+function forceQuit() {
+  const { phaser, currentMusicPlayer } = state;
+  phaser.scene.stop();
+
+  if (currentMusicPlayer) {
+    currentMusicPlayer.destroy();
+  }
+
+  const engine = document.querySelector('#engine-container');
+  if (engine) {
+    engine.remove();
+  }
+
+  const debug = document.querySelector('#debug-container');
+  if (debug) {
+    debug.remove();
+  }
+
+  const isInFullScreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+  if (isInFullScreen) {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      document.mozCancelFullScreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+  }
 }
 
 function setPlayerInvincible() {
@@ -2724,7 +2806,7 @@ function create() {
     input.rawKeys[code] = phaser.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes[code]);
   });
 
-  ['up', 'down', 'left', 'right', ...Object.keys(config.gameKeys)].forEach((commandName) => {
+  Object.keys(config.gameKeys).forEach((commandName) => {
     input[commandName] = {
       held: false,
       heldFrames: 0,
@@ -2736,47 +2818,6 @@ function create() {
       ignoreTime: 0,
     };
   });
-
-  if (config.debug) {
-    phaser.input.keyboard.on('keydown_Q', () => {
-      phaser.scene.stop();
-
-      const music = state.currentMusicPlayer;
-      if (music) {
-        music.destroy();
-      }
-
-      const engine = document.querySelector('#engine-container');
-      if (engine) {
-        engine.remove();
-      }
-
-      const isInFullScreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-      if (isInFullScreen) {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-          document.mozCancelFullScreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
-      }
-    });
-
-    phaser.input.keyboard.on('keydown_W', () => {
-      winLevel(false);
-    });
-
-    phaser.input.keyboard.on('keydown_R', () => {
-      restartLevel();
-    });
-
-    game.input.keyboard.on('keydown_P', () => {
-      previousLevel();
-    });
-  }
 
   setupFloodlights();
 
@@ -2902,18 +2943,34 @@ function readInput(time, dt) {
     });
   }
 
-  input.up.held = keyboard.up || gamepad.up || gamepad.l_stick_y < -0.2 || gamepad.r_stick_y < -0.2;
-  input.left.held = keyboard.left || gamepad.left || gamepad.l_stick_x < -0.2 || gamepad.r_stick_x < -0.2;
-  input.right.held = keyboard.right || gamepad.right || gamepad.l_stick_x > 0.2 || gamepad.r_stick_x > 0.2;
-  input.down.held = keyboard.down || gamepad.down || gamepad.l_stick_y > 0.2 || gamepad.r_stick_y > 0.2;
-
   Object.keys(config.gameKeys).forEach((commandName) => {
-    input[commandName].held = !!config.gameKeys[commandName].find(path => _.get(input, path));
+    const keyConfig = config.gameKeys[commandName];
+    if (keyConfig.input) {
+      input[commandName].held = !!keyConfig.input.find(path => _.get(input, path));
+    }
   });
+
+  if (input.up) {
+    input.up.held = input.up.held || gamepad.l_stick_y < -0.2 || gamepad.r_stick_y < -0.2;
+  }
+
+  if (input.left) {
+    input.left.held = input.left.held || gamepad.l_stick_x < -0.2 || gamepad.r_stick_x < -0.2;
+  }
+
+  if (input.right) {
+    input.right.held = input.right.held || gamepad.l_stick_x > 0.2 || gamepad.r_stick_x > 0.2;
+  }
+
+  if (input.down) {
+    input.down.held = input.down.held || gamepad.l_stick_y > 0.2 || gamepad.r_stick_y > 0.2;
+  }
+
 
   const ignoreAll = Object.values(input.ignore_all).find(o => o);
 
-  ['up', 'down', 'left', 'right', ...Object.keys(config.gameKeys)].forEach((commandName) => {
+  Object.keys(config.gameKeys).forEach((commandName) => {
+    const keyConfig = config.gameKeys[commandName];
     const command = input[commandName];
 
     if (command.held) {
@@ -2933,13 +2990,17 @@ function readInput(time, dt) {
       // command.released = command.releasedFrames === 1;
     }
 
-    if (ignoreAll || command.ignoreTime > 0) {
+    if ((ignoreAll && !keyConfig.unsuppressable) || command.ignoreTime > 0) {
       command.held = false;
       command.started = false;
       command.continued = false;
       command.released = true;
 
       command.ignoreTime = Math.max(command.ignoreTime - dt, 0);
+    }
+
+    if (command.started && keyConfig.execute) {
+      keyConfig.execute();
     }
   });
 }
