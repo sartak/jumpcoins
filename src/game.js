@@ -264,7 +264,7 @@ const config = {
       input: ['keyboard.Z', 'keyboard.SPACE', 'gamepad.A', 'gamepad.B', 'gamepad.X', 'gamepad.Y'],
     },
     win: {
-      input: ['keyboard.W'],
+      input: ['keyboard.W', 'gamepad.R2'],
       execute: () => winLevel(false),
       debug: true,
     },
@@ -275,12 +275,12 @@ const config = {
       unsuppressable: true,
     },
     restart: {
-      input: ['keyboard.R'],
+      input: ['keyboard.R', 'gamepad.L1'],
       execute: restartLevel,
       debug: true,
     },
     previous: {
-      input: ['keyboard.P'],
+      input: ['keyboard.P', 'gamepad.L2'],
       execute: previousLevel,
       debug: true,
     },
