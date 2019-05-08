@@ -308,7 +308,6 @@ export const props = {
   'input.ignore_all.any': [false, null, () => Object.values(state.input.ignore_all).find(o => o)],
   'input.ignore_all.intro': [false, null],
   'input.ignore_all.spawn': [false, null],
-  'input.ignore_all.outro': [false, null],
   'input.ignore_all.knockback': [false, null],
 
   ...gameKeyProps(),
@@ -2257,7 +2256,8 @@ function renderLevelOutro(callback) {
 
   hud.outro = {};
 
-  input.ignore_all.outro = true;
+  // to avoid outro -> intro causing a frame of allowed input
+  input.ignore_all.intro = true;
 
   const background = phaser.add.image(config.width * 0.5, config.height * 0.55, 'effectBlack');
   background.setDepth(8);
@@ -2484,8 +2484,6 @@ function renderLevelOutro(callback) {
           if (!hud.outro) {
             return;
           }
-
-          input.ignore_all.outro = false;
 
           hud.outro.badges.forEach((badge) => {
             badge.destroy();
