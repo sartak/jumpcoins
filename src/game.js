@@ -298,10 +298,10 @@ function readKeyProps() {
 }
 
 export const props = {
-  'engine.time': [0.01, null, 'game.game.loop.time'],
-  'engine.frameTime': [0.01, null, 'game.game.loop.delta'],
-  'engine.actualFps': [0.01, null, 'game.game.loop.actualFps'],
-  'engine.targetFps': [0.01, null, 'game.game.loop.targetFps'],
+  'engine.time': [0.01, null, 'phaser.game.loop.time'],
+  'engine.frameTime': [0.01, null, 'phaser.game.loop.delta'],
+  'engine.actualFps': [0.01, null, 'phaser.game.loop.actualFps'],
+  'engine.targetFps': [0.01, null, 'phaser.game.loop.targetFps'],
   'engine.physicsFps': [0.01, null, 'physics.world.fps'],
   'engine.throttle': [false],
 
@@ -448,7 +448,8 @@ try {
 }
 
 function saveState() {
-  save.levels[state.level.index].temp_time_ms = (new Date()).getTime() - state.level.startedAt.getTime();
+  const { level } = state;
+  save.levels[level.index].temp_time_ms = (new Date()).getTime() - level.startedAt.getTime();
 
   try {
     localStorage.setItem(SaveStateName, JSON.stringify(save));
@@ -476,7 +477,7 @@ const JUMP_WALL = 3;
 }
 
 const state : any = {
-  game: null,
+  phaser: null,
   physics: null,
   input: {
     keyboard: {},
@@ -508,10 +509,10 @@ if (DEBUG) {
 
 const Shader = new Phaser.Class({
   Extends: Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline,
-  initialize: function Shader(game) {
+  initialize: function Shader(phaser) {
     Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline.call(this, {
-      game,
-      renderer: game.renderer,
+      game: phaser.game,
+      renderer: phaser.game.renderer,
       fragShader: `
         precision mediump float;
         uniform vec2      resolution;
@@ -597,10 +598,10 @@ export default function startGame(debug: any, volume: number) {
 
   state.volume = volume;
 
-  const game = new Phaser.Game(config);
+  const phaser = new Phaser.Game(config);
 
   if (DEBUG) {
-    window.game = game;
+    window.phaser = phaser;
 
     Object.keys(props).forEach((key) => {
       debug[key] = props[key][0];
@@ -609,66 +610,66 @@ export default function startGame(debug: any, volume: number) {
 
   analytics(0, 'started game');
 
-  return game;
+  return phaser;
 }
 
 function preload() {
-  const game = state.game = this;
+  const phaser = state.phaser = this;
 
   if (DEBUG) {
     state.debug = window.props;
   }
 
   config.levels.forEach((levelFile, i) => {
-    game.load.text(`level-${i}`, levelFile);
+    phaser.load.text(`level-${i}`, levelFile);
   });
 
-  game.load.image('tileWall', tileWall);
-  game.load.image('tileSpikesUp', tileSpikesUp);
-  game.load.image('tileSpikesDown', tileSpikesDown);
-  game.load.image('tileSpikesLeft', tileSpikesLeft);
-  game.load.image('tileSpikesRight', tileSpikesRight);
-  game.load.image('tileEye', tileEye);
-  game.load.image('tileSemiground', tileSemiground);
-  game.load.image('tileTransparent', tileTransparent);
+  phaser.load.image('tileWall', tileWall);
+  phaser.load.image('tileSpikesUp', tileSpikesUp);
+  phaser.load.image('tileSpikesDown', tileSpikesDown);
+  phaser.load.image('tileSpikesLeft', tileSpikesLeft);
+  phaser.load.image('tileSpikesRight', tileSpikesRight);
+  phaser.load.image('tileEye', tileEye);
+  phaser.load.image('tileSemiground', tileSemiground);
+  phaser.load.image('tileTransparent', tileTransparent);
 
-  game.load.spritesheet('spritePlayerDefault', spritePlayerDefault, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
-  game.load.spritesheet('spritePlayerShielded', spritePlayerShielded, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
-  game.load.spritesheet('spriteEnemyA', spriteEnemyA, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
-  game.load.spritesheet('spriteEnemyB', spriteEnemyB, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
-  game.load.image('spriteHeart', spriteHeart);
-  game.load.spritesheet('spriteFreebie', spriteFreebie, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
+  phaser.load.spritesheet('spritePlayerDefault', spritePlayerDefault, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
+  phaser.load.spritesheet('spritePlayerShielded', spritePlayerShielded, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
+  phaser.load.spritesheet('spriteEnemyA', spriteEnemyA, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
+  phaser.load.spritesheet('spriteEnemyB', spriteEnemyB, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
+  phaser.load.image('spriteHeart', spriteHeart);
+  phaser.load.spritesheet('spriteFreebie', spriteFreebie, { frameWidth: config.tileWidth, frameHeight: config.tileHeight });
 
-  game.load.image('effectImagePuff', effectImagePuff);
-  game.load.image('effectImageSpark', effectImageSpark);
-  game.load.image('effectImageFloodlight', effectImageFloodlight);
-  game.load.image('effectBackgroundScreen', effectBackgroundScreen);
-  game.load.image('effectPupil', effectPupil);
-  game.load.image('effectBlack', effectBlack);
+  phaser.load.image('effectImagePuff', effectImagePuff);
+  phaser.load.image('effectImageSpark', effectImageSpark);
+  phaser.load.image('effectImageFloodlight', effectImageFloodlight);
+  phaser.load.image('effectBackgroundScreen', effectBackgroundScreen);
+  phaser.load.image('effectPupil', effectPupil);
+  phaser.load.image('effectBlack', effectBlack);
 
-  game.load.image('badgeCompleted', badgeCompleted);
-  game.load.image('badgeDamageless', badgeDamageless);
-  game.load.image('badgeDeathless', badgeDeathless);
-  game.load.image('badgeRich', badgeRich);
-  game.load.image('badgeBirdie', badgeBirdie);
-  game.load.image('badgeKiller', badgeKiller);
-  game.load.image('badgeEmpty', badgeEmpty);
+  phaser.load.image('badgeCompleted', badgeCompleted);
+  phaser.load.image('badgeDamageless', badgeDamageless);
+  phaser.load.image('badgeDeathless', badgeDeathless);
+  phaser.load.image('badgeRich', badgeRich);
+  phaser.load.image('badgeBirdie', badgeBirdie);
+  phaser.load.image('badgeKiller', badgeKiller);
+  phaser.load.image('badgeEmpty', badgeEmpty);
 
-  game.load.audio('musicWorld1', musicWorld1);
-  game.load.audio('musicWorld2', musicWorld2);
-  game.load.audio('musicWorld3', musicWorld3);
-  game.load.audio('musicBye', musicBye);
+  phaser.load.audio('musicWorld1', musicWorld1);
+  phaser.load.audio('musicWorld2', musicWorld2);
+  phaser.load.audio('musicWorld3', musicWorld3);
+  phaser.load.audio('musicBye', musicBye);
 
-  game.load.audio('soundCoin', soundCoin);
-  game.load.audio('soundJump1', soundJump1);
-  game.load.audio('soundJump2', soundJump2);
-  game.load.audio('soundJump3', soundJump3);
-  game.load.audio('soundDoubleJump', soundDoubleJump);
-  game.load.audio('soundWalljump', soundWalljump);
-  game.load.audio('soundKill', soundKill);
-  game.load.audio('soundWin', soundWin);
-  game.load.audio('soundDie', soundDie);
-  game.load.audio('soundBadge', soundBadge);
+  phaser.load.audio('soundCoin', soundCoin);
+  phaser.load.audio('soundJump1', soundJump1);
+  phaser.load.audio('soundJump2', soundJump2);
+  phaser.load.audio('soundJump3', soundJump3);
+  phaser.load.audio('soundDoubleJump', soundDoubleJump);
+  phaser.load.audio('soundWalljump', soundWalljump);
+  phaser.load.audio('soundKill', soundKill);
+  phaser.load.audio('soundWin', soundWin);
+  phaser.load.audio('soundDie', soundDie);
+  phaser.load.audio('soundBadge', soundBadge);
 }
 
 function parseMap(lines, level) {
@@ -729,9 +730,9 @@ function parseLevel(levelDefinition) {
 }
 
 function createLevel(index) {
-  const { game, debug, physics } = state;
+  const { phaser, debug, physics } = state;
 
-  const level = parseLevel(game.cache.text.get(`level-${index}`));
+  const level = parseLevel(phaser.cache.text.get(`level-${index}`));
   level.index = index;
 
   if (DEBUG) {
@@ -785,7 +786,7 @@ function createLevel(index) {
       state.currentMusicPlayer.destroy();
     }
 
-    const music = game.sound.add(level.music);
+    const music = phaser.sound.add(level.music);
     music.play('', { loop: true });
     music.setVolume(0.66 * state.volume);
     state.currentMusicPlayer = music;
@@ -800,7 +801,7 @@ function positionToScreenCoordinate(x, y) {
 }
 
 function initializeMap() {
-  const { game, level, physics } = state;
+  const { phaser, level, physics } = state;
   const { map } = level;
   const { tileWidth, tileHeight } = config;
 
@@ -824,7 +825,7 @@ function initializeMap() {
 
       if (tile.combineVertical) {
         toCombine[c].push(tile);
-        const image = game.add.image(x, y, tile.image);
+        const image = phaser.add.image(x, y, tile.image);
         images.push(image);
         image.setDepth(2);
       } else if (tile.object) {
@@ -889,7 +890,7 @@ function initializeMap() {
       const { animate } = child.config;
       const offset = (child.config.x + child.config.y) % 2;
 
-      game.tweens.add({
+      phaser.tweens.add({
         targets: child,
         x: child.x + animate[0] * 4,
         y: child.y + animate[1] * 4,
@@ -903,7 +904,7 @@ function initializeMap() {
 }
 
 function scheduleMover(mover, isFirst) {
-  const { game, level } = state;
+  const { phaser, level } = state;
 
   const speed = mover.config.speed;
   const distance = config.tileWidth * mover.config.distance * (isFirst ? 0.5 : 1);
@@ -911,7 +912,7 @@ function scheduleMover(mover, isFirst) {
 
   let timer;
   // eslint-disable-next-line prefer-const
-  timer = game.time.addEvent({
+  timer = phaser.time.addEvent({
     delay: duration * 1000,
     callback: () => {
       level.timers = level.timers.filter(t => t !== timer);
@@ -947,7 +948,7 @@ function setupMover(mover) {
 }
 
 function setupExit(exit) {
-  const { game, level } = state;
+  const { phaser, level } = state;
 
   const speed = {};
   if (exit.config.x >= config.mapWidth - 2) {
@@ -968,7 +969,7 @@ function setupExit(exit) {
     speed.y = exit.y - config.tileHeight / 2;
   }
 
-  const particles = game.add.particles('effectImageSpark');
+  const particles = phaser.add.particles('effectImageSpark');
   particles.setDepth(5);
   const emitter = particles.createEmitter({
     ...speed,
@@ -999,7 +1000,7 @@ function setupExit(exit) {
 }
 
 function reactFloodlightsToDie() {
-  const { game, floodlightEmitter, level } = state;
+  const { phaser, floodlightEmitter, level } = state;
   const { player } = level;
 
   const x = player.x;
@@ -1022,13 +1023,13 @@ function reactFloodlightsToDie() {
     const vx = 200 * Math.cos(theta);
     const vy = 200 * Math.sin(theta);
 
-    game.time.addEvent({
+    phaser.time.addEvent({
       delay: 500 * distance / config.width,
       callback: () => {
         particle.velocityX = vx + particle.originalVelocityX;
         particle.velocityY = vy + particle.originalVelocityY;
 
-        particle.jumpTween = game.tweens.addCounter({
+        particle.jumpTween = phaser.tweens.addCounter({
           from: 100,
           to: -30,
           delay: 100,
@@ -1050,7 +1051,7 @@ function reactFloodlightsToDie() {
 }
 
 function reactFloodlightsToJump() {
-  const { game, floodlightEmitter, level } = state;
+  const { phaser, floodlightEmitter, level } = state;
   const { player } = level;
 
   const x = player.x;
@@ -1090,7 +1091,7 @@ function reactFloodlightsToJump() {
     particle.velocityX = vx + particle.originalVelocityX;
     particle.velocityY = vy + particle.originalVelocityY;
 
-    particle.jumpTween = game.tweens.addCounter({
+    particle.jumpTween = phaser.tweens.addCounter({
       from: 100,
       to: 0,
       duration: 2000,
@@ -1108,9 +1109,9 @@ function reactFloodlightsToJump() {
 }
 
 function setupFloodlights() {
-  const { game, level } = state;
+  const { phaser, level } = state;
 
-  const particles = game.add.particles('effectImageFloodlight');
+  const particles = phaser.add.particles('effectImageFloodlight');
   const emitter = particles.createEmitter({
     speed: { min: 10, max: 20 },
     x: { min: 0, max: config.width },
@@ -1140,10 +1141,10 @@ function setupFloodlights() {
 }
 
 function freebieGlow(freebie) {
-  const { game, level } = state;
+  const { phaser, level } = state;
 
   {
-    const particles = game.add.particles('effectImageFloodlight');
+    const particles = phaser.add.particles('effectImageFloodlight');
     const emitter = particles.createEmitter({
       tint: 0x4397F7,
       alpha: { start: 0, end: 0.4, ease: t => (t < 0.2 ? 5 * t : 1 - (t - 0.2)) },
@@ -1163,7 +1164,7 @@ function freebieGlow(freebie) {
   }
 
   {
-    const particles = game.add.particles('effectImageSpark');
+    const particles = phaser.add.particles('effectImageSpark');
     particles.setDepth(5);
     const emitter = particles.createEmitter({
       speed: 5,
@@ -1191,9 +1192,9 @@ function setupEnemy(enemy) {
 }
 
 function setupFreebie(freebie) {
-  const { game } = state;
+  const { phaser } = state;
 
-  freebie.bobTween = game.tweens.add({
+  freebie.bobTween = phaser.tweens.add({
     targets: freebie,
     duration: 1000,
     delay: Phaser.Math.Between(0, 500),
@@ -1284,7 +1285,7 @@ function createLevelObjects(isRespawn) {
 }
 
 function createPlayer() {
-  const { game, physics, level } = state;
+  const { phaser, physics, level } = state;
 
   const location = level.playerLocation;
   const [x, y] = positionToScreenCoordinate(location[0], location[1]);
@@ -1404,7 +1405,7 @@ function winLevelProperly() {
 }
 
 function winLevel(isProper) {
-  const { game, level, input } = state;
+  const { phaser, level, input } = state;
   const { player } = level;
 
   if (level.isWinning) {
@@ -1457,7 +1458,7 @@ function winLevel(isProper) {
 
   player.disableBody(true, false);
 
-  game.tweens.add({
+  phaser.tweens.add({
     targets: player,
     alpha: 0,
     duration: 2000,
@@ -1468,7 +1469,7 @@ function winLevel(isProper) {
     removePhysics();
 
     // defer this to avoid crashes while removing during collider callback
-    game.time.addEvent({
+    phaser.time.addEvent({
       callback: () => {
         destroyLevel(false);
 
@@ -1497,14 +1498,14 @@ function previousLevel() {
 }
 
 function setPlayerInvincible() {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player } = level;
 
   player.invincible = true;
   player.fastInvincible = false;
   player.alpha = 1;
 
-  player.invincibleTween = game.tweens.add({
+  player.invincibleTween = phaser.tweens.add({
     targets: player,
     alpha: 0.5,
     duration: 300,
@@ -1514,7 +1515,7 @@ function setPlayerInvincible() {
     onUpdate: () => {
       if (player.fastInvincible && player.alpha >= 1) {
         player.invincibleTween.stop();
-        player.invincibleTween = game.tweens.add({
+        player.invincibleTween = phaser.tweens.add({
           targets: player,
           alpha: 0.5,
           duration: 100,
@@ -1526,14 +1527,14 @@ function setPlayerInvincible() {
     },
   });
 
-  game.time.addEvent({
+  phaser.time.addEvent({
     delay: prop('rules.invincibility_ms') * 0.5,
     callback: () => {
       player.fastInvincible = true;
     },
   });
 
-  game.time.addEvent({
+  phaser.time.addEvent({
     delay: prop('rules.invincibility_ms'),
     callback: () => {
       player.invincible = false;
@@ -1544,7 +1545,7 @@ function setPlayerInvincible() {
 }
 
 function damageBlur() {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player } = level;
 
   if (!state.shader) {
@@ -1555,7 +1556,7 @@ function damageBlur() {
     player.blurTween.stop();
   }
 
-  player.blurTween = game.tweens.addCounter({
+  player.blurTween = phaser.tweens.addCounter({
     from: 0,
     to: 100,
     duration: prop('effects.damageBlur.in_ms'),
@@ -1563,7 +1564,7 @@ function damageBlur() {
       state.shader.setFloat1('blurEffect', prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0));
     },
     onComplete: () => {
-      player.blurTween = game.tweens.addCounter({
+      player.blurTween = phaser.tweens.addCounter({
         from: 100,
         to: 0,
         duration: prop('effects.damageBlur.out_ms'),
@@ -1576,7 +1577,7 @@ function damageBlur() {
 }
 
 function shockwave() {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player } = level;
 
   reactFloodlightsToDie();
@@ -1590,7 +1591,7 @@ function shockwave() {
 }
 
 function spendLife(isVoluntary): bool {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player, hud } = level;
 
   const spendFreebie = player.freebies > 0;
@@ -1625,13 +1626,13 @@ function spendLife(isVoluntary): bool {
     image.x = player.x;
     image.y = player.y;
 
-    game.tweens.add({
+    phaser.tweens.add({
       targets: image,
       duration: 500,
       y: image.y - config.tileHeight,
       ease: 'Cubic.easeOut',
       onComplete: () => {
-        game.tweens.add({
+        phaser.tweens.add({
           targets: image,
           duration: 500,
           // $FlowFixMe
@@ -1670,7 +1671,7 @@ function spendLife(isVoluntary): bool {
 }
 
 function takeSpikeDamage(object1, object2) {
-  const { game, level, input } = state;
+  const { phaser, level, input } = state;
   const { player } = level;
 
   if (player.invincible) {
@@ -1699,7 +1700,7 @@ function takeSpikeDamage(object1, object2) {
     input.ignore_all.knockback = true;
     player.canCancelIgnoreInput = false;
 
-    game.time.addEvent({
+    phaser.time.addEvent({
       delay: prop('rules.knockback_ignore_input_ms'),
       callback: () => {
         player.canCancelIgnoreInput = true;
@@ -1709,7 +1710,7 @@ function takeSpikeDamage(object1, object2) {
 }
 
 function destroyEnemy(enemy) {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player } = level;
 
   level.livingEnemies--;
@@ -1728,7 +1729,7 @@ function destroyEnemy(enemy) {
   enemy.disableBody(true, false);
   level.enemies = level.enemies.filter(e => e !== enemy);
 
-  game.tweens.add({
+  phaser.tweens.add({
     targets: enemy,
     duration: 1000,
     y: enemy.y + config.height,
@@ -1738,7 +1739,7 @@ function destroyEnemy(enemy) {
     },
   });
 
-  game.tweens.add({
+  phaser.tweens.add({
     targets: enemy,
     duration: 1000,
     alpha: 0,
@@ -1747,7 +1748,7 @@ function destroyEnemy(enemy) {
     rotation: player.x < enemy.x ? 2 : -2,
   });
 
-  game.tweens.add({
+  phaser.tweens.add({
     targets: enemy,
     duration: 1000,
     scale: 1.5,
@@ -1756,7 +1757,7 @@ function destroyEnemy(enemy) {
 }
 
 function takeEnemyDamage(object1, object2) {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player } = level;
 
   const enemy = object1.config && object1.config.group === 'enemies' ? object1 : object2;
@@ -1787,13 +1788,13 @@ export function changeVolume(volume: number) {
 }
 
 function playSound(name, variants, volume) {
-  const { game, level } = state;
+  const { phaser, level } = state;
 
   if (variants) {
     name += Phaser.Math.Between(1, variants);
   }
 
-  const sound = game.sound.add(name);
+  const sound = phaser.sound.add(name);
 
   if (volume === undefined) {
     volume = 0.66;
@@ -1812,7 +1813,7 @@ function playSound(name, variants, volume) {
 }
 
 function acquireFreebie(object1, object2) {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player, hud } = level;
 
   const freebie = object1.config && object1.config.group === 'freebie' ? object1 : object2;
@@ -1827,7 +1828,7 @@ function acquireFreebie(object1, object2) {
   freebie.sparkEmitter.stop();
   freebie.sparkEmitter.stopFollow();
 
-  game.tweens.add({
+  phaser.tweens.add({
     targets: freebie,
     duration: 1000,
     y: freebie.y - 8,
@@ -1851,13 +1852,13 @@ function acquireFreebie(object1, object2) {
     saveState();
   }
 
-  const img = game.add.image(freebie.x, freebie.y, 'spriteFreebie');
+  const img = phaser.add.image(freebie.x, freebie.y, 'spriteFreebie');
   hud.freebies.push(img);
   const x = 2 * config.tileWidth + img.width * (player.freebies + player.life - 1) + state.lifeIsText.width;
   const y = config.yBorder / 2;
   img.setDepth(6);
 
-  img.hudTween = game.tweens.add({
+  img.hudTween = phaser.tweens.add({
     targets: img,
     duration: 800,
     x,
@@ -1869,7 +1870,7 @@ function acquireFreebie(object1, object2) {
 }
 
 function checkSemiground(object1, object2) {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player, hud } = level;
 
   const semiground = object1.config && object1.config.group === 'semiground' ? object1 : object2;
@@ -1880,7 +1881,7 @@ function checkSemiground(object1, object2) {
 }
 
 function removeHints() {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { hud } = level;
 
   if (level.removedHints) {
@@ -1891,7 +1892,7 @@ function removeHints() {
   hud.hints.forEach((hint, i) => {
     hint.hintShowTween.stop();
 
-    game.tweens.add({
+    phaser.tweens.add({
       targets: hint,
       delay: 300 * i,
       duration: 500,
@@ -1908,7 +1909,7 @@ function removeHints() {
 }
 
 function setupLevelPhysics(isInitial) {
-  const { game, level, physics } = state;
+  const { phaser, level, physics } = state;
   const { player, statics, enemies, objects } = level;
 
   physics.add.collider(player, statics.ground);
@@ -1934,13 +1935,13 @@ function setupLevelPhysics(isInitial) {
 }
 
 function renderHud(isRespawn) {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player, hud } = level;
 
   hud.hearts = _.range(player.life).map((i) => {
     const x = 2 * config.tileWidth;
     const y = 0;
-    const heart = game.add.image(x, y, 'spriteHeart');
+    const heart = phaser.add.image(x, y, 'spriteHeart');
     heart.x += state.lifeIsText.width + heart.width * i;
     heart.y += config.yBorder / 2;
     return heart;
@@ -1981,7 +1982,7 @@ function renderHud(isRespawn) {
       y = config.height * level.hintYPosition;
     }
 
-    const label = game.add.text(
+    const label = phaser.add.text(
       x,
       y,
       text,
@@ -1999,7 +2000,7 @@ function renderHud(isRespawn) {
 
     label.alpha = 0;
     label.y += 20;
-    label.hintShowTween = game.tweens.add({
+    label.hintShowTween = phaser.tweens.add({
       targets: label,
       delay: isRespawn ? (1000 + 500 * i) : (4000 + 500 * i),
       duration: 500,
@@ -2007,7 +2008,7 @@ function renderHud(isRespawn) {
       y: label.y - 20,
       ease: 'Cubic.easeOut',
       onComplete: () => {
-        label.hintShowTween = game.tweens.add({
+        label.hintShowTween = phaser.tweens.add({
           targets: label,
           delay: 500,
           duration: 2000,
@@ -2022,13 +2023,13 @@ function renderHud(isRespawn) {
 }
 
 function spawnPlayer(delay) {
-  const { game, level, input } = state;
+  const { phaser, level, input } = state;
   const { player } = level;
 
   player.alpha = 0;
   input.ignore_all.spawn = true;
 
-  game.tweens.add({
+  phaser.tweens.add({
     targets: player,
     alpha: 1,
     delay,
@@ -2040,7 +2041,7 @@ function spawnPlayer(delay) {
 }
 
 function respawn() {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player } = level;
 
   if (player.isRespawning) {
@@ -2049,7 +2050,7 @@ function respawn() {
 
   player.isRespawning = true;
 
-  game.time.addEvent({
+  phaser.time.addEvent({
     callback: () => {
       destroyLevel(true);
       createLevelObjects(true);
@@ -2071,28 +2072,28 @@ function setupLevel(isInitial) {
 }
 
 function renderLevelIntro() {
-  const { game, level, input } = state;
+  const { phaser, level, input } = state;
   const { player, hud } = level;
 
   hud.intro = {};
 
   input.ignore_all.intro = true;
 
-  const background = game.add.image(config.width * 0.5, config.height * 0.55, 'effectBlack');
+  const background = phaser.add.image(config.width * 0.5, config.height * 0.55, 'effectBlack');
   background.setDepth(8);
   const scaleY = config.height / background.height * 0.20;
   background.setScale(config.width / background.width, scaleY / 5);
   background.x = config.width * 1.5;
   hud.intro.background = background;
 
-  game.tweens.add({
+  phaser.tweens.add({
     targets: background,
     scaleY,
     x: config.width * 0.5,
     ease: 'Cubic.easeIn',
     duration: 500,
     onComplete: () => {
-      const levelName = game.add.text(
+      const levelName = phaser.add.text(
         config.width / 2,
         config.height / 2,
         level.name,
@@ -2110,7 +2111,7 @@ function renderLevelIntro() {
       levelName.alpha = 0;
       levelName.y += 20;
 
-      game.tweens.add({
+      phaser.tweens.add({
         targets: levelName,
         alpha: 1,
         y: levelName.y - 20,
@@ -2123,7 +2124,7 @@ function renderLevelIntro() {
         const best_time = save.levels[level.index].best_time_ms;
         const best_duration = renderMillisecondDuration(best_time);
 
-        const bestTime = game.add.text(
+        const bestTime = phaser.add.text(
           config.width / 2,
           config.height / 2 + 60,
           `Your personal best: ${best_duration}`,
@@ -2141,7 +2142,7 @@ function renderLevelIntro() {
         bestTime.alpha = 0;
         bestTime.y -= 20;
 
-        game.tweens.add({
+        phaser.tweens.add({
           targets: bestTime,
           alpha: 1,
           delay: 500,
@@ -2168,7 +2169,7 @@ function renderLevelIntro() {
 
       const badges = [];
       badgesToRender.forEach((badgeName, i) => {
-        const badge = game.add.image(config.width * 0.5, config.height * 0.5 + 30, badgeName);
+        const badge = phaser.add.image(config.width * 0.5, config.height * 0.5 + 30, badgeName);
         badge.x -= (i + 0.5) * (config.tileWidth + 20);
         badge.x += (badgesToRender.length / 2) * (config.tileWidth + 20);
         badge.setDepth(8);
@@ -2179,7 +2180,7 @@ function renderLevelIntro() {
         badge.alpha = 0;
         badge.y -= 20;
 
-        game.tweens.add({
+        phaser.tweens.add({
           targets: badge,
           delay: i * 50,
           alpha: badgeName === 'badgeEmpty' ? 0.3 : 1,
@@ -2198,7 +2199,7 @@ function renderLevelIntro() {
       }
 
       faders.forEach((fader) => {
-        game.tweens.add({
+        phaser.tweens.add({
           targets: fader,
           delay: 2000,
           duration: 500,
@@ -2206,14 +2207,14 @@ function renderLevelIntro() {
         });
       });
 
-      game.tweens.add({
+      phaser.tweens.add({
         targets: hud.intro.background,
         delay: 2250,
         duration: 500,
         scaleY: 0,
       });
 
-      game.time.addEvent({
+      phaser.time.addEvent({
         delay: 2750,
         callback: () => {
           if (!hud.intro) {
@@ -2251,14 +2252,14 @@ function renderMillisecondDuration(duration) {
 }
 
 function renderLevelOutro(callback) {
-  const { game, level, input } = state;
+  const { phaser, level, input } = state;
   const { player, hud } = level;
 
   hud.outro = {};
 
   input.ignore_all.outro = true;
 
-  const background = game.add.image(config.width * 0.5, config.height * 0.55, 'effectBlack');
+  const background = phaser.add.image(config.width * 0.5, config.height * 0.55, 'effectBlack');
   background.setDepth(8);
   const scaleX = config.width / background.width;
   const scaleY = config.height / background.height * 0.20;
@@ -2272,13 +2273,13 @@ function renderLevelOutro(callback) {
     encouragement = 'You set a new personal best!!';
   }
 
-  game.tweens.add({
+  phaser.tweens.add({
     targets: background,
     scaleX,
     ease: 'Cubic.easeIn',
     duration: 500,
     onComplete: () => {
-      const levelName = game.add.text(
+      const levelName = phaser.add.text(
         config.width / 2,
         config.height / 2,
         encouragement,
@@ -2296,7 +2297,7 @@ function renderLevelOutro(callback) {
       levelName.alpha = 0;
       levelName.y += 20;
 
-      game.tweens.add({
+      phaser.tweens.add({
         targets: levelName,
         alpha: 1,
         y: levelName.y - 20,
@@ -2317,7 +2318,7 @@ function renderLevelOutro(callback) {
           timeDescription = `Completed in: ${level_time} (personal best: ${best_time})`;
         }
 
-        const bestTime = game.add.text(
+        const bestTime = phaser.add.text(
           config.width / 2,
           config.height / 2 + 60,
           timeDescription,
@@ -2335,7 +2336,7 @@ function renderLevelOutro(callback) {
         bestTime.alpha = 0;
         bestTime.y -= 20;
 
-        game.tweens.add({
+        phaser.tweens.add({
           targets: bestTime,
           alpha: 1,
           delay: 500,
@@ -2363,7 +2364,7 @@ function renderLevelOutro(callback) {
       let earnedBadges = 0;
       const badges = [];
       badgesToRender.forEach((badgeName, i) => {
-        const badge = game.add.image(config.width * 0.5, config.height * 0.5 + 30, badgeName);
+        const badge = phaser.add.image(config.width * 0.5, config.height * 0.5 + 30, badgeName);
         badge.x -= (i + 0.5) * (config.tileWidth + 20);
         badge.x += (badgesToRender.length / 2) * (config.tileWidth + 20);
         badge.setDepth(8);
@@ -2381,7 +2382,7 @@ function renderLevelOutro(callback) {
           alpha = 0.3;
         }
 
-        game.tweens.add({
+        phaser.tweens.add({
           targets: badge,
           delay: i * 50,
           alpha,
@@ -2393,7 +2394,7 @@ function renderLevelOutro(callback) {
 
         if (level.earnedBadges[badgeName]) {
           earnedBadges++;
-          const empty = game.add.image(config.width * 0.5, config.height * 0.5 + 30, 'badgeEmpty');
+          const empty = phaser.add.image(config.width * 0.5, config.height * 0.5 + 30, 'badgeEmpty');
           empty.x = badge.x;
           empty.y = badge.y;
           empty.setDepth(8);
@@ -2404,7 +2405,7 @@ function renderLevelOutro(callback) {
 
           const thisEarnedBadge = earnedBadges;
 
-          game.tweens.add({
+          phaser.tweens.add({
             targets: empty,
             delay: i * 50,
             alpha: 0.3,
@@ -2413,20 +2414,20 @@ function renderLevelOutro(callback) {
             ease: 'Cubic.easeOut',
             duration: 500,
             onComplete: () => {
-              game.time.addEvent({
+              phaser.time.addEvent({
                 delay: 250 + (earnedBadges - thisEarnedBadge) * 500,
                 callback: () => {
                   playSound('soundBadge');
                 },
               });
 
-              game.tweens.add({
+              phaser.tweens.add({
                 targets: empty,
                 delay: (earnedBadges - thisEarnedBadge) * 500,
                 alpha: 0,
                 duration: 500,
               });
-              game.tweens.add({
+              phaser.tweens.add({
                 targets: badge,
                 delay: (earnedBadges - thisEarnedBadge) * 500,
                 alpha: 1,
@@ -2434,14 +2435,14 @@ function renderLevelOutro(callback) {
                 onComplete: () => {
                 },
               });
-              game.tweens.add({
+              phaser.tweens.add({
                 targets: [empty, badge],
                 ease: 'Cubic.easeOut',
                 duration: 300,
                 delay: 250 + (earnedBadges - thisEarnedBadge) * 500,
                 y: badge.y - 6,
                 onComplete: () => {
-                  game.tweens.add({
+                  phaser.tweens.add({
                     targets: [empty, badge],
                     ease: 'Cubic.easeOut',
                     duration: 300,
@@ -2462,7 +2463,7 @@ function renderLevelOutro(callback) {
       }
 
       faders.forEach((fader) => {
-        game.tweens.add({
+        phaser.tweens.add({
           targets: fader,
           delay: 4000,
           duration: 500,
@@ -2470,14 +2471,14 @@ function renderLevelOutro(callback) {
         });
       });
 
-      game.tweens.add({
+      phaser.tweens.add({
         targets: hud.outro.background,
         delay: 4250,
         duration: 500,
         scaleY: 0,
       });
 
-      game.time.addEvent({
+      phaser.time.addEvent({
         delay: 4750,
         callback: () => {
           if (!hud.outro) {
@@ -2505,9 +2506,9 @@ function renderLevelOutro(callback) {
 }
 
 function create() {
-  const { game, input } = state;
+  const { phaser, input } = state;
 
-  state.physics = game.physics;
+  state.physics = phaser.physics;
 
   // there's no event for physics step, so interject one {
   const world = state.physics.world;
@@ -2521,9 +2522,9 @@ function create() {
   };
   // }
 
-  game.sound.pauseOnBlur = false;
+  phaser.sound.pauseOnBlur = false;
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spriteEnemyAWalk',
     frames: [
       {
@@ -2547,7 +2548,7 @@ function create() {
     repeat: -1,
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spriteEnemyADie',
     frames: [
       {
@@ -2557,7 +2558,7 @@ function create() {
     ],
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spriteEnemyBWalk',
     frames: [
       {
@@ -2581,7 +2582,7 @@ function create() {
     repeat: -1,
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spriteEnemyBDie',
     frames: [
       {
@@ -2591,7 +2592,7 @@ function create() {
     ],
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spritePlayerDefaultWalk',
     frames: [
       {
@@ -2615,7 +2616,7 @@ function create() {
     repeat: -1,
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spritePlayerDefaultNeutral',
     frames: [
       {
@@ -2625,7 +2626,7 @@ function create() {
     ],
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spritePlayerDefaultJumpUp',
     frames: [
       {
@@ -2635,7 +2636,7 @@ function create() {
     ],
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spritePlayerDefaultJumpDown',
     frames: [
       {
@@ -2645,7 +2646,7 @@ function create() {
     ],
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spritePlayerDefaultDrag',
     frames: [
       {
@@ -2655,7 +2656,7 @@ function create() {
     ],
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spritePlayerShieldedWalk',
     frames: [
       {
@@ -2679,7 +2680,7 @@ function create() {
     repeat: -1,
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spritePlayerShieldedNeutral',
     frames: [
       {
@@ -2689,7 +2690,7 @@ function create() {
     ],
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spritePlayerShieldedJumpUp',
     frames: [
       {
@@ -2699,7 +2700,7 @@ function create() {
     ],
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spritePlayerShieldedJumpDown',
     frames: [
       {
@@ -2709,7 +2710,7 @@ function create() {
     ],
   });
 
-  game.anims.create({
+  phaser.anims.create({
     key: 'spritePlayerShieldedDrag',
     frames: [
       {
@@ -2719,10 +2720,10 @@ function create() {
     ],
   });
 
-  input.rawCursors = game.input.keyboard.createCursorKeys();
+  input.rawCursors = phaser.input.keyboard.createCursorKeys();
 
   keysToRead().forEach((code) => {
-    input.rawKeys[code] = game.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes[code]);
+    input.rawKeys[code] = phaser.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes[code]);
   });
 
   ['up', 'down', 'left', 'right', ...Object.keys(config.gameKeys)].forEach((commandName) => {
@@ -2739,8 +2740,8 @@ function create() {
   });
 
   if (config.debug) {
-    game.input.keyboard.on('keydown_Q', () => {
-      game.scene.stop();
+    phaser.input.keyboard.on('keydown_Q', () => {
+      phaser.scene.stop();
 
       const music = state.currentMusicPlayer;
       if (music) {
@@ -2766,11 +2767,11 @@ function create() {
       }
     });
 
-    game.input.keyboard.on('keydown_W', () => {
+    phaser.input.keyboard.on('keydown_W', () => {
       winLevel(false);
     });
 
-    game.input.keyboard.on('keydown_R', () => {
+    phaser.input.keyboard.on('keydown_R', () => {
       restartLevel();
     });
 
@@ -2786,8 +2787,8 @@ function create() {
   state.levelIndex = save.current_level;
   setupLevel(true);
 
-  if (game.game.renderer.type === Phaser.WEBGL) {
-    state.shader = game.game.renderer.addPipeline('Shader', new Shader(game.game));
+  if (phaser.game.renderer.type === Phaser.WEBGL) {
+    state.shader = phaser.game.renderer.addPipeline('Shader', new Shader(phaser));
 
     state.shader.setFloat2('resolution', config.width, config.height);
 
@@ -2796,7 +2797,7 @@ function create() {
 
     state.shader.setFloat1('blurEffect', 0.0);
 
-    game.cameras.main.setRenderToTexture(state.shader);
+    phaser.cameras.main.setRenderToTexture(state.shader);
   }
 
   const spinner = document.getElementById('spinner');
@@ -2804,18 +2805,18 @@ function create() {
     spinner.parentNode.removeChild(spinner);
   }
 
-  if (game.game.renderer.type === Phaser.CANVAS) {
+  if (phaser.game.renderer.type === Phaser.CANVAS) {
     // eslint-disable-next-line no-alert
     alert('It looks like this browser will offer a degraded experience, like background colors being grayscale. For best results, please use Chrome!');
   }
 }
 
 function setupBackgroundScreen() {
-  const { game } = state;
-  const backgroundScreen = game.add.image(config.width / 2, config.height / 2, 'effectBackgroundScreen');
+  const { phaser } = state;
+  const backgroundScreen = phaser.add.image(config.width / 2, config.height / 2, 'effectBackgroundScreen');
   state.backgroundScreen = backgroundScreen;
 
-  const text = game.add.text(
+  const text = phaser.add.text(
     config.xBorder * 2,
     config.yBorder / 2,
     'Your life is ',
@@ -2833,7 +2834,7 @@ function setupBackgroundScreen() {
 }
 
 function readInput(time, dt) {
-  const { game, level, input, debug } = state;
+  const { phaser, level, input, debug } = state;
   const { keyboard, gamepad, rawKeys, rawCursors } = input;
   const { player } = level;
 
@@ -2865,8 +2866,8 @@ function readInput(time, dt) {
   gamepad.r_stick_x = 0;
   gamepad.r_stick_y = 0;
 
-  if (game.input.gamepad.total) {
-    const rawPads = game.input.gamepad.gamepads;
+  if (phaser.input.gamepad.total) {
+    const rawPads = phaser.input.gamepad.gamepads;
     rawPads.filter(pad => pad).forEach((rawPad) => {
       /*
       if (rumble) {
@@ -2949,7 +2950,7 @@ function jumpShake(type) {
   reactFloodlightsToJump();
   if (type !== JUMP_NORMAL) {
     state.rumble = true;
-    state.game.cameras.main.shake(
+    state.phaser.cameras.main.shake(
       prop('effects.jumpShake.duration_ms'),
       prop('effects.jumpShake.amount'),
     );
@@ -2957,7 +2958,7 @@ function jumpShake(type) {
 }
 
 function processInput(time, dt) {
-  const { game, level, input } = state;
+  const { phaser, level, input } = state;
   const { player } = level;
 
   const canJump = player.body.touching.down || (!player.isJumping && (time - player.touchDownTime) < prop('rules.jump.grace_period_ms'));
@@ -3002,7 +3003,7 @@ function processInput(time, dt) {
         playSound('soundWalljump');
       }
 
-      game.time.addEvent({
+      phaser.time.addEvent({
         delay: prop('rules.walljump.ignore_direction_ms'),
         callback: () => {
           player.wallJumpIgnoreDirection = false;
@@ -3121,11 +3122,11 @@ function renderDebug() {
 }
 
 function manageWallDragPuff(isEnabled, isLeft) {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player } = level;
 
   if (isEnabled && !player.wallDragPuff) {
-    const particles = game.add.particles('effectImagePuff');
+    const particles = phaser.add.particles('effectImagePuff');
     particles.setDepth(5);
     const emitter = particles.createEmitter({
       speed: 50,
@@ -3150,7 +3151,7 @@ function manageWallDragPuff(isEnabled, isLeft) {
     const { particles, emitter } = player.wallDragPuff;
     emitter.stopFollow();
     emitter.stop();
-    game.time.addEvent({
+    phaser.time.addEvent({
       delay: 1000,
       callback: () => {
         level.particles = level.particles.filter(p => p !== particles);
@@ -3162,10 +3163,10 @@ function manageWallDragPuff(isEnabled, isLeft) {
 }
 
 function jumpPuff(isLeft, downward) {
-  const { game, level } = state;
+  const { phaser, level } = state;
   const { player } = level;
 
-  const particles = game.add.particles('effectImagePuff');
+  const particles = phaser.add.particles('effectImagePuff');
   particles.setDepth(5);
   const emitter = particles.createEmitter({
     speed: 50,
@@ -3183,11 +3184,11 @@ function jumpPuff(isLeft, downward) {
 
   level.particles.push(particles);
 
-  game.time.addEvent({
+  phaser.time.addEvent({
     delay: 500,
     callback: () => {
       emitter.stop();
-      game.time.addEvent({
+      phaser.time.addEvent({
         delay: 1000,
         callback: () => {
           level.particles = level.particles.filter(p => p !== particles);
@@ -3435,9 +3436,6 @@ function updateEnemies() {
 }
 
 function update(time, dt) {
-  const { game, physics, level, debug } = state;
-  const { player } = level;
-
   if (prop('engine.throttle')) {
     let result = 0;
     for (let i = 0; i < 1000000; i++) {
