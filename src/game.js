@@ -365,9 +365,9 @@ export const props = {
   'level.index': [-1, null],
   'level.file': ['', null],
   'level.timers': [0, null, 'level.timers.length'],
-  'level.win': [() => window.state.commands.winLevel()],
-  'level.restart': [() => window.state.commands.restartLevel()],
-  'level.previous': [() => window.state.commands.previousLevel()],
+  'level.win': [winLevel],
+  'level.restart': [restartLevel],
+  'level.previous': [previousLevel],
 
   'player.squish_max': [0.10, 0, 1],
   'player.squish_speed': [0.2, 0, 1],
@@ -400,7 +400,7 @@ export const props = {
   'effects.damageBlur.amount': [2.5, 0, 50],
   'effects.damageBlur.in_ms': [100, 0, 2000],
   'effects.damageBlur.out_ms': [200, 0, 2000],
-  'effects.damageBlur.execute': [() => window.state.commands.damageBlur()],
+  'effects.damageBlur.execute': [damageBlur],
 
   'effects.shockwave.scale': [10.0, 0, 500],
   'effects.shockwave.range': [0.8, 0, 10],
@@ -408,11 +408,11 @@ export const props = {
   'effects.shockwave.speed': [3.0, 0, 50],
   'effects.shockwave.inner': [0.09, 0, 1],
   'effects.shockwave.dropoff': [40.0, 0, 500],
-  'effects.shockwave.execute': [() => window.state.commands.shockwave()],
+  'effects.shockwave.execute': [shockwave],
 
   'effects.jumpShake.amount': [0.01, 0, 0.1],
   'effects.jumpShake.duration_ms': [75, 0, 1000],
-  'effects.jumpShake.execute': [() => window.state.commands.jumpShake()],
+  'effects.jumpShake.execute': [jumpShake],
 };
 
 const SaveStateName = 'jumpcoins_save';
@@ -487,7 +487,6 @@ const state : any = {
   },
   debug: null,
   level: {},
-  commands: {},
 };
 
 let prop = (name: string): any => {
@@ -602,13 +601,6 @@ export default function startGame(debug: any, volume: number) {
 
   if (DEBUG) {
     window.game = game;
-
-    window.state.commands.winLevel = winLevel;
-    window.state.commands.restartLevel = restartLevel;
-    window.state.commands.previousLevel = previousLevel;
-    window.state.commands.damageBlur = damageBlur;
-    window.state.commands.shockwave = shockwave;
-    window.state.commands.jumpShake = jumpShake;
 
     Object.keys(props).forEach((key) => {
       debug[key] = props[key][0];
