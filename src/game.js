@@ -249,16 +249,16 @@ const config = {
   yBorder: 0,
   gameKeys: {
     up: {
-      input: ['keyboard.up', 'gamepad.up', 'keyboard.W'],
+      input: ['keyboard.up', 'gamepad.up', 'keyboard.W', 'keyboard.NUMPAD_EIGHT', 'gamepad.l_stick.up', 'gamepad.r_stick.up'],
     },
     down: {
-      input: ['keyboard.down', 'gamepad.down', 'keyboard.S'],
+      input: ['keyboard.down', 'gamepad.down', 'keyboard.S', 'keyboard.NUMPAD_TWO', 'gamepad.l_stick.down', 'gamepad.r_stick.down'],
     },
     left: {
-      input: ['keyboard.left', 'gamepad.left', 'keyboard.A'],
+      input: ['keyboard.left', 'gamepad.left', 'keyboard.A', 'keyboard.NUMPAD_4', 'gamepad.l_stick.left', 'gamepad.r_stick.left'],
     },
     right: {
-      input: ['keyboard.right', 'gamepad.right', 'keyboard.D'],
+      input: ['keyboard.right', 'gamepad.right', 'keyboard.D', 'keyboard.NUMPAD_6', 'gamepad.l_stick.right', 'gamepad.r_stick.right'],
     },
     jump: {
       input: ['keyboard.Z', 'keyboard.SPACE', 'gamepad.A', 'gamepad.B', 'gamepad.X', 'gamepad.Y'],
@@ -309,6 +309,11 @@ function gameKeyProps() {
     props[`input.${commandName}.heldDuration`] = [0, null];
     props[`input.${commandName}.releasedDuration`] = [0, null];
     props[`input.${commandName}.ignoreDuration`] = [0, null];
+
+    config.gameKeys[commandName].input.forEach((path) => {
+      const section = path.replace(/\./g, '_');
+      props[`input.${commandName}.${section}`] = [false, null];
+    });
   });
 
   return props;
@@ -324,7 +329,7 @@ function keysToRead() {
     }
 
     keyConfig.input.forEach((inputPath) => {
-      const match = inputPath.match(/^keyboard\.(\w+)$/);
+      const match = inputPath.match(/^keyboard\.(.+)$/);
       if (match) {
         const key = match[1];
         if (key !== 'up' && key !== 'down' && key !== 'right' && key !== 'left') {
@@ -2878,6 +2883,8 @@ function readInput(time, dt) {
   const rumble = state.rumble;
   state.rumble = null;
 
+  const hasGamepads = phaser.input.gamepad.total;
+
   gamepad.A = false;
   gamepad.B = false;
   gamepad.X = false;
@@ -2895,7 +2902,7 @@ function readInput(time, dt) {
   gamepad.r_stick_x = 0;
   gamepad.r_stick_y = 0;
 
-  if (phaser.input.gamepad.total) {
+  if (hasGamepads) {
     const rawPads = phaser.input.gamepad.gamepads;
     rawPads.filter(pad => pad).forEach((rawPad) => {
       /*
@@ -2935,27 +2942,48 @@ function readInput(time, dt) {
 
   Object.keys(config.gameKeys).forEach((commandName) => {
     const keyConfig = config.gameKeys[commandName];
+    let held = false;
     if (keyConfig.input) {
-      input[commandName].held = !!keyConfig.input.find(path => _.get(input, path));
+      keyConfig.input.forEach((path) => {
+        let keyHeld;
+
+        if (hasGamepads) {
+          if (path === 'gamepad.l_stick.up') {
+            keyHeld = gamepad.l_stick_y < -0.2;
+          } else if (path === 'gamepad.l_stick.down') {
+            keyHeld = gamepad.l_stick_y > 0.2;
+          } else if (path === 'gamepad.l_stick.left') {
+            keyHeld = gamepad.l_stick_x < -0.2;
+          } else if (path === 'gamepad.l_stick.right') {
+            keyHeld = gamepad.l_stick_x > 0.2;
+          } else if (path === 'gamepad.r_stick.up') {
+            keyHeld = gamepad.r_stick_y < -0.2;
+          } else if (path === 'gamepad.r_stick.down') {
+            keyHeld = gamepad.r_stick_y > 0.2;
+          } else if (path === 'gamepad.r_stick.left') {
+            keyHeld = gamepad.r_stick_x < -0.2;
+          } else if (path === 'gamepad.r_stick.right') {
+            keyHeld = gamepad.r_stick_x > 0.2;
+          } else {
+            keyHeld = _.get(input, path);
+          }
+        } else {
+          keyHeld = _.get(input, path);
+        }
+
+        if (DEBUG) {
+          const section = path.replace(/\./g, '_');
+          input[commandName][section] = keyHeld;
+        }
+
+        if (keyHeld) {
+          held = true;
+        }
+      });
+
+      input[commandName].held = held;
     }
   });
-
-  if (input.up) {
-    input.up.held = input.up.held || gamepad.l_stick_y < -0.2 || gamepad.r_stick_y < -0.2;
-  }
-
-  if (input.left) {
-    input.left.held = input.left.held || gamepad.l_stick_x < -0.2 || gamepad.r_stick_x < -0.2;
-  }
-
-  if (input.right) {
-    input.right.held = input.right.held || gamepad.l_stick_x > 0.2 || gamepad.r_stick_x > 0.2;
-  }
-
-  if (input.down) {
-    input.down.held = input.down.held || gamepad.l_stick_y > 0.2 || gamepad.r_stick_y > 0.2;
-  }
-
 
   const ignoreAll = Object.values(input.ignore_all).find(o => o);
 
