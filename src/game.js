@@ -427,7 +427,7 @@ export const props = {
   'player.velocity_x': [0.01, null, 'player.body.velocity.x'],
   'player.velocity_y': [0.01, null, 'player.body.velocity.y'],
   'player.invincible': [false, null],
-  'player.canCancelIgnoreInput': [false, null],
+  'player.canCancelKnockbackIgnore': [false, null],
   'player.isJumping': [false, null],
   'player.hasLiftedOff': [false, null],
   'player.canDoubleJump': [false, null],
@@ -1768,12 +1768,12 @@ function takeSpikeDamage(object1, object2) {
     player.setVelocityY(-prop('rules.spike_knockback_y'));
 
     input.ignore_all.knockback = true;
-    player.canCancelIgnoreInput = false;
+    player.canCancelKnockbackIgnore = false;
 
     phaser.time.addEvent({
       delay: prop('rules.knockback_ignore_input_ms'),
       callback: () => {
-        player.canCancelIgnoreInput = true;
+        player.canCancelKnockbackIgnore = true;
       },
     });
   }
@@ -3318,10 +3318,10 @@ function frameUpdates(time, dt) {
     player.touchDownTime = time;
   }
 
-  if (input.ignore_all.knockback && player.canCancelIgnoreInput) {
+  if (input.ignore_all.knockback && player.canCancelKnockbackIgnore) {
     if (player.body.touching.down || player.body.touching.left || player.body.touching.right || player.body.touching.up) {
       input.ignore_all.knockback = false;
-      player.canCancelIgnoreInput = false;
+      player.canCancelKnockbackIgnore = false;
     }
   }
 
