@@ -261,7 +261,7 @@ const config = {
       input: ['keyboard.right', 'gamepad.right', 'keyboard.D'],
     },
     jump: {
-      input: ['keyboard.Z', 'gamepad.A', 'gamepad.B', 'gamepad.X', 'gamepad.Y'],
+      input: ['keyboard.Z', 'keyboard.SPACE', 'gamepad.A', 'gamepad.B', 'gamepad.X', 'gamepad.Y'],
     },
     win: {
       input: ['keyboard.W'],
