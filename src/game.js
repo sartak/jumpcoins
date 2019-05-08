@@ -650,12 +650,12 @@ function analytics(identifier: any, progress) {
 }
 
 export default function startGame(debug: any, volume: number) {
-  state.debug = debug;
   state.volume = volume;
 
   const phaser = new Phaser.Game(config);
 
   if (DEBUG) {
+    state.debug = debug;
     window.phaser = phaser;
   }
 
@@ -777,7 +777,7 @@ function parseLevel(levelDefinition) {
 }
 
 function createLevel(index) {
-  const { phaser, debug, physics } = state;
+  const { phaser, physics } = state;
 
   const level = parseLevel(phaser.cache.text.get(`level-${index}`));
   level.index = index;
@@ -2872,7 +2872,7 @@ function setupBackgroundScreen() {
 }
 
 function readInput(time, dt) {
-  const { phaser, level, input, debug } = state;
+  const { phaser, level, input } = state;
   const { keyboard, gamepad, rawKeys, rawCursors } = input;
   const { player } = level;
 
@@ -3187,6 +3187,8 @@ function processInput(time, dt) {
 }
 
 function renderDebug() {
+  const { debug } = state;
+
   Object.keys(props).forEach((key) => {
     const spec : any = props[key];
     if (spec[1] !== null) {
@@ -3194,11 +3196,11 @@ function renderDebug() {
     }
 
     if (!spec[2]) {
-      state.debug[key] = _.get(state, key);
+      debug[key] = _.get(state, key);
     } else if (typeof spec[2] === 'string') {
-      state.debug[key] = _.get(state, spec[2]);
+      debug[key] = _.get(state, spec[2]);
     } else if (typeof spec[2] === 'function') {
-      state.debug[key] = spec[2](state);
+      debug[key] = spec[2](state);
     }
   });
 }
