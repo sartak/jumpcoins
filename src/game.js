@@ -381,29 +381,29 @@ export const props = {
   'player.wallJumpDirectionLeft': [false, null],
   'player.wallJumpHeld': [false, null],
   'player.wallJumpContra': [false, null],
-  'player.touching_up': [false, null],
-  'player.touching_down': [false, null],
-  'player.touching_left': [false, null],
-  'player.touching_right': [false, null],
+  'player.touching_up': [false, null, 'player.body.touching.up'],
+  'player.touching_down': [false, null, 'player.body.touching.down'],
+  'player.touching_left': [false, null, 'player.body.touching.left'],
+  'player.touching_right': [false, null, 'player.body.touching.right'],
   'player.squish_speed': [0.2, 0, 1],
   'player.animation': ['', null],
 
-  'effect.damageBlur.amount': [2.5, 0, 50],
-  'effect.damageBlur.in_ms': [100, 0, 2000],
-  'effect.damageBlur.out_ms': [200, 0, 2000],
-  'effect.damageBlur.execute': [() => window.state.commands.damageBlur()],
+  'effects.damageBlur.amount': [2.5, 0, 50],
+  'effects.damageBlur.in_ms': [100, 0, 2000],
+  'effects.damageBlur.out_ms': [200, 0, 2000],
+  'effects.damageBlur.execute': [() => window.state.commands.damageBlur()],
 
-  'effect.shockwave.scale': [10.0, 0, 500],
-  'effect.shockwave.range': [0.8, 0, 10],
-  'effect.shockwave.thickness': [0.1, 0, 10],
-  'effect.shockwave.speed': [3.0, 0, 50],
-  'effect.shockwave.inner': [0.09, 0, 1],
-  'effect.shockwave.dropoff': [40.0, 0, 500],
-  'effect.shockwave.execute': [() => window.state.commands.shockwave()],
+  'effects.shockwave.scale': [10.0, 0, 500],
+  'effects.shockwave.range': [0.8, 0, 10],
+  'effects.shockwave.thickness': [0.1, 0, 10],
+  'effects.shockwave.speed': [3.0, 0, 50],
+  'effects.shockwave.inner': [0.09, 0, 1],
+  'effects.shockwave.dropoff': [40.0, 0, 500],
+  'effects.shockwave.execute': [() => window.state.commands.shockwave()],
 
-  'effect.jumpShake.amount': [0.01, 0, 0.1],
-  'effect.jumpShake.duration_ms': [75, 0, 1000],
-  'effect.jumpShake.execute': [() => window.state.commands.jumpShake()],
+  'effects.jumpShake.amount': [0.01, 0, 0.1],
+  'effects.jumpShake.duration_ms': [75, 0, 1000],
+  'effects.jumpShake.execute': [() => window.state.commands.jumpShake()],
 };
 
 const SaveStateName = 'jumpcoins_save';
@@ -1567,17 +1567,17 @@ function damageBlur() {
   player.blurTween = game.tweens.addCounter({
     from: 0,
     to: 100,
-    duration: prop('effect.damageBlur.in_ms'),
+    duration: prop('effects.damageBlur.in_ms'),
     onUpdate: () => {
-      state.shader.setFloat1('blurEffect', prop('effect.damageBlur.amount') * (player.blurTween.getValue() / 100.0));
+      state.shader.setFloat1('blurEffect', prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0));
     },
     onComplete: () => {
       player.blurTween = game.tweens.addCounter({
         from: 100,
         to: 0,
-        duration: prop('effect.damageBlur.out_ms'),
+        duration: prop('effects.damageBlur.out_ms'),
         onUpdate: () => {
-          state.shader.setFloat1('blurEffect', prop('effect.damageBlur.amount') * (player.blurTween.getValue() / 100.0));
+          state.shader.setFloat1('blurEffect', prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0));
         },
       });
     },
@@ -2944,8 +2944,8 @@ function jumpShake(type) {
   if (type !== JUMP_NORMAL) {
     state.rumble = true;
     state.game.cameras.main.shake(
-      prop('effect.jumpShake.duration_ms'),
-      prop('effect.jumpShake.amount'),
+      prop('effects.jumpShake.duration_ms'),
+      prop('effects.jumpShake.amount'),
     );
   }
 }
