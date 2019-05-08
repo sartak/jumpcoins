@@ -4,7 +4,7 @@ import * as dat from 'dat.gui';
 import Engine from './Engine';
 import twitchLogo from './assets/public/twitchLogo.png';
 import twitterLogo from './assets/public/twitterLogo.png';
-import defaultProps from './props';
+import { props as defaultProps } from './game';
 
 function Debug() {
   Object.keys(defaultProps).forEach((key) => {
