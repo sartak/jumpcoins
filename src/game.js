@@ -296,12 +296,11 @@ function readKeyProps() {
 }
 
 export const props = {
-  'engine.time': [0.01, null],
-  'engine.frameTime': [0.01, null],
-  'engine.actualFps': [0.01, null],
-  'engine.targetFps': [0.01, null],
-  'engine.physicsTime': [0.01, null],
-  'engine.physicsFps': [0.01, null],
+  'engine.time': [0.01, null, 'game.game.loop.time'],
+  'engine.frameTime': [0.01, null, 'game.game.loop.delta'],
+  'engine.actualFps': [0.01, null, 'game.game.loop.actualFps'],
+  'engine.targetFps': [0.01, null, 'game.game.loop.targetFps'],
+  'engine.physicsFps': [0.01, null, 'physics.world.fps'],
   'engine.throttle': [false],
 
   ...gameKeyProps(),
@@ -357,18 +356,19 @@ export const props = {
   'level.name': ['', null],
   'level.index': [-1, null],
   'level.file': ['', null],
-  'level.timers': [0, null],
+  'level.timers': [0, null, 'level.timers.length'],
   'level.win': [() => window.state.commands.winLevel()],
   'level.restart': [() => window.state.commands.restartLevel()],
   'level.previous': [() => window.state.commands.previousLevel()],
 
   'player.squish_max': [0.10, 0, 1],
+  'player.squish_speed': [0.2, 0, 1],
   'player.life': [0, null],
   'player.freebies': [0, null],
   'player.x': [0.01, null],
   'player.y': [0.01, null],
-  'player.velocity_x': [0.01, null],
-  'player.velocity_y': [0.01, null],
+  'player.velocity_x': [0.01, null, 'player.body.velocity.x'],
+  'player.velocity_y': [0.01, null, 'player.body.velocity.y'],
   'player.invincible': [false, null],
   'player.ignoreInput': [false, null],
   'player.canCancelIgnoreInput': [false, null],
@@ -387,8 +387,8 @@ export const props = {
   'player.touching_down': [false, null, 'player.body.touching.down'],
   'player.touching_left': [false, null, 'player.body.touching.left'],
   'player.touching_right': [false, null, 'player.body.touching.right'],
-  'player.squish_speed': [0.2, 0, 1],
-  'player.animation': ['', null],
+  'player.animation': ['', null, 'player.previousAnimation'],
+  'player.spritesheet': ['', null, 'player.previousStatus'],
 
   'effects.damageBlur.amount': [2.5, 0, 50],
   'effects.damageBlur.in_ms': [100, 0, 2000],
@@ -497,14 +497,6 @@ if (DEBUG) {
     }
     throw new Error(`Unknown prop "${name}"`);
   };
-}
-
-function listenProp(name: string, value: any) {
-  if (!DEBUG) {
-    return;
-  }
-
-  window.props[name] = value;
 }
 
 const Shader = new Phaser.Class({
@@ -763,15 +755,12 @@ function createLevel(index) {
   save.current_level = level.index;
   saveState();
 
-  listenProp('level.name', level.name);
-  listenProp('level.index', index);
-
   const filename = config.levels[index];
   const match = filename.match(/\/([^/]+)\.\w+\.map$/);
   if (match) {
-    listenProp('level.file', `${match[1]}.map`);
+    level.file = `${match[1]}.map`;
   } else {
-    listenProp('level.file', filename);
+    level.file = filename;
   }
 
   level.hud = {};
@@ -1316,6 +1305,7 @@ function createPlayer() {
   player.setDepth(4);
 
   level.player = player;
+  state.player = player;
 
   level.spawnedAt = new Date();
 
@@ -3104,45 +3094,20 @@ function processInput(time, dt) {
 }
 
 function renderDebug() {
-  const { level } = state;
-  const { player } = level;
+  Object.keys(props).forEach((key) => {
+    const spec : any = props[key];
+    if (spec[1] !== null) {
+      return;
+    }
 
-  listenProp('level.timers', level.timers.length);
-
-  listenProp('player.life', player.life);
-  listenProp('player.x', player.x);
-  listenProp('player.y', player.y);
-  listenProp('player.velocity_x', player.body.velocity.x);
-  listenProp('player.velocity_y', player.body.velocity.y);
-  listenProp('player.invincible', player.invincible);
-  listenProp('player.ignoreInput', player.ignoreInput);
-  listenProp('player.canCancelIgnoreInput', player.canCancelIgnoreInput);
-  listenProp('player.isJumping', player.isJumping);
-  listenProp('player.hasLiftedOff', player.hasLiftedOff);
-  listenProp('player.canDoubleJump', player.canDoubleJump);
-  listenProp('player.isDoubleJumping', player.isDoubleJumping);
-  listenProp('player.canWallJump', player.canWallJump);
-  listenProp('player.isWallJumping', player.isWallJumping);
-  listenProp('player.wallJumpIgnoreDirection', player.wallJumpIgnoreDirection);
-  listenProp('player.wallJumpContinuing', player.wallJumpContinuing);
-  listenProp('player.wallJumpDirectionLeft', player.wallJumpDirectionLeft);
-  listenProp('player.wallJumpHeld', player.wallJumpHeld);
-  listenProp('player.wallJumpContra', player.wallJumpContra);
-  listenProp('player.touching_up', player.body.touching.up);
-  listenProp('player.touching_down', player.body.touching.down);
-  listenProp('player.touching_left', player.body.touching.left);
-  listenProp('player.touching_right', player.body.touching.right);
-
-  listenProp('player.freebies', player.freebies);
-
-  if (state.shader) {
-    state.shader.setFloat1('shockwaveScale', prop('effect.shockwave.scale'));
-    state.shader.setFloat1('shockwaveRange', prop('effect.shockwave.range'));
-    state.shader.setFloat1('shockwaveThickness', prop('effect.shockwave.thickness'));
-    state.shader.setFloat1('shockwaveSpeed', prop('effect.shockwave.speed'));
-    state.shader.setFloat1('shockwaveInner', prop('effect.shockwave.inner'));
-    state.shader.setFloat1('shockwaveDropoff', prop('effect.shockwave.dropoff'));
-  }
+    if (!spec[2]) {
+      window.props[key] = _.get(state, key);
+    } else if (typeof spec[2] === 'string') {
+      window.props[key] = _.get(state, spec[2]);
+    } else if (typeof spec[2] === 'function') {
+      window.props[key] = spec[2](state);
+    }
+  });
 }
 
 function manageWallDragPuff(isEnabled, isLeft) {
@@ -3470,13 +3435,6 @@ function update(time, dt) {
     }
   }
 
-  listenProp('engine.time', time);
-  listenProp('engine.frameTime', dt);
-  listenProp('engine.actualFps', game.game.loop.actualFps);
-  listenProp('engine.targetFps', game.game.loop.targetFps);
-  listenProp('engine.physicsFps', physics.world.fps);
-  listenProp('player.animation', player.previousAnimation);
-
   if (state.shader) {
     state.shockwaveTime += dt / 3333;
     state.shader.setFloat1('shockwaveTime', state.shockwaveTime);
@@ -3488,7 +3446,6 @@ function update(time, dt) {
 }
 
 function physicsStep(time, dt) {
-  listenProp('engine.physicsTime', dt);
   readInput(time, dt);
   processInput(time, dt);
   frameUpdates(time, dt);

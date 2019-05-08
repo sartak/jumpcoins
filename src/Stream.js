@@ -46,7 +46,7 @@ export default class Stream extends Component<any> {
       const propName = sections[0];
 
       let controller;
-      if (options.length === 1 && options[0] === null) {
+      if (options.length >= 1 && options[0] === null) {
         controller = folder.add(debug, key).listen();
       } else if (key.match(/color/i)) {
         controller = folder.addColor(debug, key, ...options);
