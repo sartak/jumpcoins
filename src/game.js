@@ -633,6 +633,10 @@ if (DEBUG) {
 }
 
 function analytics(identifier: any, progress) {
+  if (DEBUG) {
+    return;
+  }
+
   try {
     if (identifier < 10) {
       identifier = `0${identifier}`;
