@@ -549,8 +549,8 @@ let prop = (name: string): any => {
 
 if (DEBUG) {
   prop = (name: string): any => {
-    if (name in window.props) {
-      return window.props[name];
+    if (name in state.debug) {
+      return state.debug[name];
     }
     throw new Error(`Unknown prop "${name}"`);
   };
@@ -641,20 +641,13 @@ function analytics(identifier: any, progress) {
 }
 
 export default function startGame(debug: any, volume: number) {
-  if (DEBUG) {
-    window.props = debug;
-  }
-
+  state.debug = debug;
   state.volume = volume;
 
   const phaser = new Phaser.Game(config);
 
   if (DEBUG) {
     window.phaser = phaser;
-
-    Object.keys(props).forEach((key) => {
-      debug[key] = props[key][0];
-    });
   }
 
   analytics(0, 'started game');
@@ -664,10 +657,6 @@ export default function startGame(debug: any, volume: number) {
 
 function preload() {
   const phaser = state.phaser = this;
-
-  if (DEBUG) {
-    state.debug = window.props;
-  }
 
   config.levels.forEach((levelFile, i) => {
     phaser.load.text(`level-${i}`, levelFile);
@@ -3171,11 +3160,11 @@ function renderDebug() {
     }
 
     if (!spec[2]) {
-      window.props[key] = _.get(state, key);
+      state.debug[key] = _.get(state, key);
     } else if (typeof spec[2] === 'string') {
-      window.props[key] = _.get(state, spec[2]);
+      state.debug[key] = _.get(state, spec[2]);
     } else if (typeof spec[2] === 'function') {
-      window.props[key] = spec[2](state);
+      state.debug[key] = spec[2](state);
     }
   });
 }
