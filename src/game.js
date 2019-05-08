@@ -302,13 +302,13 @@ function gameKeyProps() {
     props[`input.${commandName}.held`] = [false, null];
     props[`input.${commandName}.started`] = [false, null];
     props[`input.${commandName}.continued`] = [false, null];
-    // props[`input.${commandName}.released`] = [false, null];
+    props[`input.${commandName}.released`] = [false, null];
 
     props[`input.${commandName}.heldFrames`] = [0, null];
-    // props[`input.${commandName}.releasedFrames`] = [0, null];
-    props[`input.${commandName}.heldTime`] = [0, null];
-
-    props[`input.${commandName}.ignoreTime`] = [0, null];
+    props[`input.${commandName}.releasedFrames`] = [0, null];
+    props[`input.${commandName}.heldDuration`] = [0, null];
+    props[`input.${commandName}.releasedDuration`] = [0, null];
+    props[`input.${commandName}.ignoreDuration`] = [0, null];
   });
 
   return props;
@@ -2801,10 +2801,11 @@ function create() {
       heldFrames: 0,
       started: false,
       continued: false,
-      heldTime: 0,
-      // releasedFrames: 0,
-      // released: false,
-      ignoreTime: 0,
+      heldDuration: 0,
+      releasedFrames: 0,
+      released: false,
+      releasedDuration: 0,
+      ignoreDuration: 0,
     };
   });
 
@@ -2964,28 +2965,29 @@ function readInput(time, dt) {
 
     if (command.held) {
       command.heldFrames++;
+      command.heldDuration += dt;
       command.started = command.heldFrames === 1;
       command.continued = command.heldFrames > 1;
-      command.heldTime = time;
-
-      // command.releasedFrames = 0;
-      // command.released = false;
+      command.released = false;
+      command.releasedFrames = 0;
+      command.releasedDuration = 0;
     } else {
       command.heldFrames = 0;
+      command.heldDuration = 0;
       command.started = false;
       command.continued = false;
-
-      // command.releasedFrames++;
-      // command.released = command.releasedFrames === 1;
+      command.released = command.releasedFrames === 1;
+      command.releasedFrames++;
+      command.releasedDuration += dt;
     }
 
-    if ((ignoreAll && !keyConfig.unsuppressable) || command.ignoreTime > 0) {
+    if ((ignoreAll && !keyConfig.unsuppressable) || command.ignoreDuration > 0) {
       command.held = false;
       command.started = false;
       command.continued = false;
       command.released = true;
 
-      command.ignoreTime = Math.max(command.ignoreTime - dt, 0);
+      command.ignoreDuration = Math.max(command.ignoreDuration - dt, 0);
     }
 
     if (command.started && keyConfig.execute) {
@@ -3023,7 +3025,7 @@ function processInput(time, dt) {
       save.levels[level.index].jumps++;
       player.setVelocityY(-prop('rules.jump.velocity_y'));
       playSound('soundJump', 3);
-    } else if (player.canWallJump && ((time - player.touchingLeftTime < prop('rules.walljump.grace_period_ms') && time - input.left.heldTime < prop('rules.walljump.grace_period_ms')) || (time - player.touchingRightTime < prop('rules.walljump.grace_period_ms') && time - input.right.heldTime < prop('rules.walljump.grace_period_ms')))) {
+    } else if (player.canWallJump && ((time - player.touchingLeftTime < prop('rules.walljump.grace_period_ms') && input.left.releasedDuration < prop('rules.walljump.grace_period_ms')) || (time - player.touchingRightTime < prop('rules.walljump.grace_period_ms') && input.right.releasedDuration < prop('rules.walljump.grace_period_ms')))) {
       jumpShake(JUMP_WALL);
       level.walljumps++;
       save.levels[level.index].walljumps++;
