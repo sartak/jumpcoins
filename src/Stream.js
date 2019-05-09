@@ -48,10 +48,21 @@ export default class Stream extends Component<any> {
       let controller;
       if (options.length >= 1 && options[0] === null) {
         controller = folder.add(debug, key).listen();
-      } else if (key.match(/color/i)) {
-        controller = folder.addColor(debug, key, ...options);
       } else {
-        controller = folder.add(debug, key, ...options);
+        let callback;
+        if (options.length > 1 && typeof options[options.length-1] === 'function') {
+          callback = options.pop();
+        }
+
+        if (key.match(/color/i)) {
+          controller = folder.addColor(debug, key, ...options);
+        } else {
+          controller = folder.add(debug, key, ...options);
+        }
+
+        if (callback) {
+          controller.onChange(callback);
+        }
       }
     });
   }
