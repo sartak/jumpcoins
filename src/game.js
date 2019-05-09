@@ -78,6 +78,12 @@ import soundBadge from './assets/sounds/badge.wav';
 
 const DEBUG = (!process.env.NODE_ENV || process.env.NODE_ENV === 'development');
 
+const rendererName = {
+  [Phaser.AUTO]: 'auto',
+  [Phaser.CANVAS]: 'canvas',
+  [Phaser.WEBGL]: 'webgl',
+};
+
 const config = {
   debug: DEBUG,
   type: Phaser.AUTO,
@@ -358,6 +364,7 @@ export const props = {
   'engine.actualFps': [0.01, null, 'phaser.game.loop.actualFps'],
   'engine.targetFps': [0.01, null, 'phaser.game.loop.targetFps'],
   'engine.physicsFps': [0.01, null, 'physics.world.fps'],
+  'engine.renderer': [rendererName[config.type], null, () => rendererName[state.phaser.game.renderer.type]],
   'engine.throttle': [false],
 
   'input.ignore_all.any': [false, null, () => Object.values(state.input.ignore_all).find(o => o)],
