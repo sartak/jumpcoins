@@ -398,16 +398,18 @@ export const props = {
   'input.gamepad.r_stick_x': [0.01, null],
   'input.gamepad.r_stick_y': [0.01, null],
 
-  'rules.invincibility_ms': [2000, 0, 10000],
-  'rules.knockback_ignore_input_ms': [50, 0, 500],
-  'rules.spike_knockback_x': [40, 0, 500],
-  'rules.spike_knockback_y': [100, 0, 500],
+  'rules.damage.invincibility_ms': [2000, 0, 10000],
+  'rules.damage.knockback_ignore_input_ms': [50, 0, 500],
+  'rules.damage.spike_knockback_x': [40, 0, 500],
+  'rules.damage.spike_knockback_y': [100, 0, 500],
+  'rules.damage.infinite_coins': [false],
 
-  'rules.infinite_coins': [false],
   'rules.walk.velocity_x': [200, 0, 1000],
 
   'rules.jump.velocity_x': [200, 0, 1000],
   'rules.jump.velocity_y': [260, 0, 1000],
+  'rules.jump.down_gravity': [4, 0, 20],
+  'rules.jump.terminal_velocity': [500, 0, 1000],
   'rules.jump.grace_period_ms': [60, 0, 1000],
 
   'rules.double_jump.velocity_x': [75, 0, 1000],
@@ -416,7 +418,10 @@ export const props = {
 
   'rules.walljump.velocity_x': [600, 0, 1000],
   'rules.walljump.reverse_velocity_x': [100, 0, 1000],
+  'rules.walljump.continue_lerp_x': [0.5, 0, 1],
+  'rules.walljump.reverse_lerp_x': [0.3, 0, 1],
   'rules.walljump.velocity_y': [175, 0, 1000],
+  'rules.walljump.gravity_y': [-100, -1000, 1000],
   'rules.walljump.ignore_direction_ms': [400, 0, 1000],
   'rules.walljump.drag_terminal_velocity': [50, 0, 1000],
   'rules.walljump.grace_period_ms': [100, 0, 1000],
@@ -1616,14 +1621,14 @@ function setPlayerInvincible() {
   });
 
   phaser.time.addEvent({
-    delay: prop('rules.invincibility_ms') * 0.5,
+    delay: prop('rules.damage.invincibility_ms') * 0.5,
     callback: () => {
       player.fastInvincible = true;
     },
   });
 
   phaser.time.addEvent({
-    delay: prop('rules.invincibility_ms'),
+    delay: prop('rules.damage.invincibility_ms'),
     callback: () => {
       player.invincible = false;
       player.invincibleTween.stop();
@@ -1699,7 +1704,7 @@ function spendLife(isVoluntary): bool {
     if (player.freebies <= 0) {
       setPlayerAnimation();
     }
-  } else if (!prop('rules.infinite_coins')) {
+  } else if (!prop('rules.damage.infinite_coins')) {
     player.life--;
     image = hud.hearts.pop();
   }
@@ -1777,19 +1782,19 @@ function takeSpikeDamage(object1, object2) {
   setPlayerInvincible();
 
   if (knockback === 'left' || (knockback === true && player.facingLeft)) {
-    player.setVelocityX(prop('rules.spike_knockback_x'));
+    player.setVelocityX(prop('rules.damage.spike_knockback_x'));
   } else if (knockback === 'right' || (knockback === true && !player.facingLeft)) {
-    player.setVelocityX(-prop('rules.spike_knockback_x'));
+    player.setVelocityX(-prop('rules.damage.spike_knockback_x'));
   }
 
   if (knockback) {
-    player.setVelocityY(-prop('rules.spike_knockback_y'));
+    player.setVelocityY(-prop('rules.damage.spike_knockback_y'));
 
     input.ignore_all.knockback = true;
     player.canCancelKnockbackIgnore = false;
 
     phaser.time.addEvent({
-      delay: prop('rules.knockback_ignore_input_ms'),
+      delay: prop('rules.damage.knockback_ignore_input_ms'),
       callback: () => {
         player.canCancelKnockbackIgnore = true;
       },
@@ -3076,7 +3081,7 @@ function processInput(time, dt) {
       jumpShake(JUMP_WALL);
       level.walljumps++;
       save.levels[level.index].walljumps++;
-      player.body.setGravityY(-100);
+      player.body.setGravityY(prop('rules.walljump.gravity_y'));
       player.setVelocityY(-prop('rules.walljump.velocity_y'));
       if (player.touchingRightTime > player.touchingLeftTime) {
         player.facingLeft = true;
@@ -3167,7 +3172,7 @@ function processInput(time, dt) {
     if (player.wallJumpDirectionLeft) {
       x *= -1;
     }
-    const vx = player.body.velocity.x + 0.5 * (x - player.body.velocity.x);
+    const vx = player.body.velocity.x + prop('rules.walljump.continue_lerp_x') * (x - player.body.velocity.x);
     player.setVelocityX(vx);
   } else if (player.wallJumpContra) {
     // lerp down to the reverse speed
@@ -3175,7 +3180,7 @@ function processInput(time, dt) {
     if (input.left.held) {
       x *= -1;
     }
-    const vx = player.body.velocity.x + 0.3 * (x - player.body.velocity.x);
+    const vx = player.body.velocity.x + prop('rules.walljump.reverse_lerp_x') * (x - player.body.velocity.x);
     player.setVelocityX(vx);
   } else {
     let x = prop('rules.walk.velocity_x');
@@ -3327,8 +3332,8 @@ function frameUpdates(time, dt) {
   const { level, input } = state;
   const { player, hud } = level;
 
-  if (player.body.velocity.y > 500) {
-    player.setVelocityY(500);
+  if (player.body.velocity.y > prop('rules.jump.terminal_velocity')) {
+    player.setVelocityY(prop('rules.jump.terminal_velocity'));
   }
 
   if (player.body.touching.down) {
@@ -3388,7 +3393,7 @@ function frameUpdates(time, dt) {
   }
 
   if (!player.body.touching.down && !state.isWallJumping && (player.body.velocity.y > -40 || !input.jump.held)) {
-    player.body.setGravityY(config.physics.arcade.gravity.y * 4);
+    player.body.setGravityY(config.physics.arcade.gravity.y * prop('rules.jump.down_gravity'));
   }
 
   if (player.body.touching.down && player.hasLiftedOff) {
