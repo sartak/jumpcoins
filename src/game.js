@@ -462,6 +462,7 @@ export const props = {
   'effects.damageBlur.in_ms': [100, 0, 2000],
   'effects.damageBlur.out_ms': [200, 0, 2000],
   'effects.damageBlur.execute': [damageBlur],
+  'effects.damageBlur.executeRepeatedly': [false],
 
   'effects.shockwave.scale': [10.0, 0, 500, value => state.shader && state.shader.setFloat1('shockwaveScale', value)],
   'effects.shockwave.range': [0.8, 0, 10, value => state.shader && state.shader.setFloat1('shockwaveRange', value)],
@@ -470,10 +471,12 @@ export const props = {
   'effects.shockwave.inner': [0.09, 0, 1, value => state.shader && state.shader.setFloat1('shockwaveInner', value)],
   'effects.shockwave.dropoff': [40.0, 0, 500, value => state.shader && state.shader.setFloat1('shockwaveDropoff', value)],
   'effects.shockwave.execute': [shockwave],
+  'effects.shockwave.executeRepeatedly': [false],
 
   'effects.jumpShake.amount': [0.01, 0, 0.1],
   'effects.jumpShake.duration_ms': [75, 0, 1000],
   'effects.jumpShake.execute': [jumpShake],
+  'effects.jumpShake.executeRepeatedly': [false],
 };
 
 const SaveStateName = 'jumpcoins_save';
@@ -3204,10 +3207,21 @@ function renderDebug() {
   Object.keys(props).forEach((key) => {
     const spec : any = props[key];
     if (spec[1] !== null) {
-      return;
-    }
-
-    if (!spec[2]) {
+      if (key.endsWith('.executeRepeatedly')) {
+        const executeKey = key.replace(/\.executeRepeatedly$/, '.execute');
+        const intervalKey = `${key}interval`;
+        if (prop(key)) {
+          if (!state[intervalKey]) {
+            const effect = debug[executeKey];
+            effect();
+            state[intervalKey] = setInterval(effect, 2000);
+          }
+        } else if (state[intervalKey]) {
+          clearInterval(state[intervalKey]);
+          delete state[intervalKey];
+        }
+      }
+    } else if (!spec[2]) {
       debug[key] = _.get(state, key);
     } else if (typeof spec[2] === 'string') {
       debug[key] = _.get(state, spec[2]);
