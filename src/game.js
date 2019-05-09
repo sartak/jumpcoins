@@ -410,7 +410,7 @@ export const props = {
   'rules.jump.velocity_y': [260, 0, 1000],
   'rules.jump.down_gravity': [4, 0, 20],
   'rules.jump.terminal_velocity': [500, 0, 1000],
-  'rules.jump.grace_period_ms': [60, 0, 1000],
+  'rules.jump.coyote_grace_period_ms': [60, 0, 1000],
 
   'rules.double_jump.velocity_x': [75, 0, 1000],
   'rules.double_jump.velocity_y': [350, 0, 1000],
@@ -424,7 +424,7 @@ export const props = {
   'rules.walljump.gravity_y': [-100, -1000, 1000],
   'rules.walljump.ignore_direction_ms': [400, 0, 1000],
   'rules.walljump.drag_terminal_velocity': [50, 0, 1000],
-  'rules.walljump.grace_period_ms': [100, 0, 1000],
+  'rules.walljump.detach_grace_period_ms': [100, 0, 1000],
   'rules.walljump.forbid': [false],
 
   'level.name': ['', null],
@@ -3063,7 +3063,7 @@ function processInput(time, dt) {
   const { phaser, level, input } = state;
   const { player } = level;
 
-  const canJump = player.body.touching.down || (!player.isJumping && (time - player.touchDownTime) < prop('rules.jump.grace_period_ms'));
+  const canJump = player.body.touching.down || (!player.isJumping && (time - player.touchDownTime) < prop('rules.jump.coyote_grace_period_ms'));
 
   if (input.jump.started) {
     player.isJumping = true;
@@ -3077,7 +3077,7 @@ function processInput(time, dt) {
       save.levels[level.index].jumps++;
       player.setVelocityY(-prop('rules.jump.velocity_y'));
       playSound('soundJump', 3);
-    } else if (player.canWallJump && ((time - player.touchingLeftTime < prop('rules.walljump.grace_period_ms') && input.left.releasedDuration < prop('rules.walljump.grace_period_ms')) || (time - player.touchingRightTime < prop('rules.walljump.grace_period_ms') && input.right.releasedDuration < prop('rules.walljump.grace_period_ms')))) {
+    } else if (player.canWallJump && ((time - player.touchingLeftTime < prop('rules.walljump.detach_grace_period_ms') && input.left.releasedDuration < prop('rules.walljump.detach_grace_period_ms')) || (time - player.touchingRightTime < prop('rules.walljump.detach_grace_period_ms') && input.right.releasedDuration < prop('rules.walljump.detach_grace_period_ms')))) {
       jumpShake(JUMP_WALL);
       level.walljumps++;
       save.levels[level.index].walljumps++;
