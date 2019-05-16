@@ -367,6 +367,8 @@ export const props = {
   'engine.renderer': [rendererName[config.type], null, () => rendererName[state.phaser.game.renderer.type]],
   'engine.throttle': [false],
   'engine.debugDraw': [false, (value: boolean) => (value ? state.physics.world.createDebugGraphic() : state.physics.world.debugGraphic.destroy())],
+  'engine.stepping': [false, (value: boolean) => (value ? state.phaser.game.loop.sleep() : state.phaser.game.loop.wake())],
+  'engine.step': [() => prop('engine.stepping') && state.phaser.game.loop.tick()],
 
   'input.ignore_all.any': [false, null, () => Object.values(state.input.ignore_all).find(o => o)],
   'input.ignore_all.intro': [false, null],
