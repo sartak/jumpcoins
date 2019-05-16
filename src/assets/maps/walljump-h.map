@@ -24,5 +24,6 @@
 {
   "name": "The faithiest of leaps",
   "music": "musicWorld3",
-  "baseLife": 1
+  "baseLife": 1,
+  "badgeBirdie": true
 }
