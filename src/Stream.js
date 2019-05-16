@@ -101,8 +101,8 @@ class Debugger extends Component<any> {
           <li><a target="_blank" rel="noopener noreferrer" href="https://lodash.com/docs/4.17.11">lodash</a></li>
           <li><a target="_blank" rel="noopener noreferrer" href="https://sfbgames.com/chiptone/">chiptone</a></li>
           <li><a target="_blank" rel="noopener noreferrer" href="https://pernyblom.github.io/abundant-music/index.html">abundant</a></li>
-          <li><div ref={this.debugRef} id="debug-container" /></li>
         </ul>
+        <div ref={this.debugRef} id="debug-container" />
       </div>
     );
   }
