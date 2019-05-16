@@ -14,7 +14,7 @@ function Debug() {
 
 const sentenceCase = name => name.split(/[-_ ]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
-export default class Stream extends Component<any> {
+export default class Development extends Component<any> {
   debug = new Debug();
 
   gui = new dat.GUI({ autoPlace: false, width: 400 });
@@ -69,7 +69,7 @@ export default class Stream extends Component<any> {
 
   render() {
     return (
-      <div className="stream">
+      <div className="development">
         <Engine debugger={this.debug} />
         <Debugger gui={this.gui} />
       </div>

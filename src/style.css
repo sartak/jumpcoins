@@ -63,7 +63,7 @@ body.natural #engine-container canvas {
   margin-right: auto;
 }
 
-body.natural .stream #engine-container {
+body.natural .development #engine-container {
   position: fixed;
   top: 16px;
   left: 16px;

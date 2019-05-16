@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './style.css';
-import Stream from './Stream';
+import Development from './Development';
 import Deployed from './Deployed';
 
 const Layout =
   !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
-    ? Stream
+    ? Development
     : Deployed;
 
 ReactDOM.render(<Layout />, document.getElementById('root'));
