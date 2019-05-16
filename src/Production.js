@@ -4,10 +4,10 @@ import Engine from './Engine';
 import twitchLogo from './assets/public/twitchLogo.png';
 import twitterLogo from './assets/public/twitterLogo.png';
 
-export default class Deployed extends Component<{}> {
+export default class Production extends Component<{}> {
   render() {
     return (
-      <div className="deployed">
+      <div className="production">
         <Engine />
         <div className="game-info">
           <GameMetadata />

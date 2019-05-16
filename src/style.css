@@ -57,7 +57,7 @@ body.natural #engine-container canvas {
   border-radius: 16px;
 }
 
-.deployed #engine-container {
+.production #engine-container {
   margin-top: 32px;
   margin-left: auto;
   margin-right: auto;
@@ -69,7 +69,7 @@ body.natural .development #engine-container {
   left: 16px;
 }
 
-.deployed #engine-container {
+.production #engine-container {
   position: relative;
 }
 
