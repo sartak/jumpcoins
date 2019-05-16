@@ -50,7 +50,7 @@ export default class Stream extends Component<any> {
         controller = folder.add(debug, key).listen();
       } else {
         let callback;
-        if (options.length > 1 && typeof options[options.length-1] === 'function') {
+        if (options.length >= 1 && typeof options[options.length-1] === 'function') {
           callback = options.pop();
         }
 

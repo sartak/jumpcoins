@@ -366,6 +366,7 @@ export const props = {
   'engine.physicsFps': [0.01, null, 'physics.world.fps'],
   'engine.renderer': [rendererName[config.type], null, () => rendererName[state.phaser.game.renderer.type]],
   'engine.throttle': [false],
+  'engine.debugDraw': [false, (value: boolean) => (value ? state.physics.world.createDebugGraphic() : state.physics.world.debugGraphic.destroy())],
 
   'input.ignore_all.any': [false, null, () => Object.values(state.input.ignore_all).find(o => o)],
   'input.ignore_all.intro': [false, null],
