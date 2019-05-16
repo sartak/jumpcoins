@@ -69,6 +69,20 @@ body.natural .development #engine-container {
   left: 16px;
 }
 
+.development .debugger .links {
+  margin-bottom: 0;
+}
+
+.development .debugger .links li {
+  display: inline-block;
+  margin-right: 0.5em;
+}
+
+.development .debugger .links li a {
+  text-decoration: none;
+  color: blue;
+}
+
 .production #engine-container {
   position: relative;
 }

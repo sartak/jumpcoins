@@ -94,10 +94,9 @@ class Debugger extends Component<any> {
   render() {
     return (
       <div className="debugger">
-        <ul>
+        <ul className="links">
           <li><a target="_blank" rel="noopener noreferrer" href="https://labs.phaser.io/">labs</a></li>
           <li><a target="_blank" rel="noopener noreferrer" href="https://photonstorm.github.io/phaser3-docs/">phaser docs</a></li>
-          <li><a target="_blank" rel="noopener noreferrer" href="https://github.com/photonstorm/phaser/tree/v3.15.1">phaser code</a></li>
           <li><a target="_blank" rel="noopener noreferrer" href="https://lodash.com/docs/4.17.11">lodash</a></li>
           <li><a target="_blank" rel="noopener noreferrer" href="https://sfbgames.com/chiptone/">chiptone</a></li>
           <li><a target="_blank" rel="noopener noreferrer" href="https://pernyblom.github.io/abundant-music/index.html">abundant</a></li>
