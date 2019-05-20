@@ -2612,6 +2612,12 @@ function create() {
   };
   // }
 
+  // hack to stop phaser from rejecting our fullscreen
+  if (this.scale) {
+    // eslint-disable-next-line no-proto
+    this.scale.__proto__.onFullScreenChange = () => {};
+  }
+
   scene.sound.pauseOnBlur = false;
 
   scene.anims.create({
