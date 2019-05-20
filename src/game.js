@@ -1237,9 +1237,8 @@ function freebieGlow(freebie) {
       scale: 0.1,
       blendMode: 'SCREEN',
       particleBringToTop: true,
-      quantity: 1,
-      maxParticles: 6,
-      frequency: 150,
+      quantity: 6,
+      frequency: 3000,
       lifespan: 5000,
     });
 
@@ -3253,7 +3252,6 @@ function manageWallDragPuff(isEnabled, isLeft) {
       quantity: 1,
       alpha: 0.5,
       rotate: { min: 0, max: 360 },
-      maxParticles: 12,
       angle: isLeft ? { min: 280, max: 310 } : { min: 230, max: 260 },
       lifespan: 200,
     });
@@ -3290,11 +3288,11 @@ function jumpPuff(isLeft, downward) {
     y: player.y + player.height * 0.4,
     scale: { start: 0.7, end: 1 },
     quantity: 1,
-    alpha: { start: 0.4, end: 0 },
+    alpha: { start: 0.8, end: 0 },
     rotate: { start: 0, end: isLeft ? 90 : -90 },
-    maxParticles: 2,
     angle: isLeft ? { min: 180, max: 180 } : { min: 0, max: 0 },
     lifespan: 500,
+    frequency: 1000,
     gravityY: downward ? 200 : -200,
   });
 
