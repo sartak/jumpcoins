@@ -3201,7 +3201,7 @@ function processInput(time, dt) {
     } else if (input.right.held) {
       player.setVelocityX(x);
       player.facingLeft = false;
-    } else {
+    } else if (!input.ignore_all.knockback) {
       player.setVelocityX(0);
     }
   }
