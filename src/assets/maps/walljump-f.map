@@ -24,7 +24,6 @@
 {
   "name": "Is that a windmill?",
   "music": "musicWorld3",
-  "baseLife": 1,
   "badgeBirdie": true
 }
 

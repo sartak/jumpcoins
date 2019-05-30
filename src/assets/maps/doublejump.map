@@ -24,7 +24,6 @@
 {
   "name": "Double Jump!!",
   "music": "musicWorld1",
-  "baseLife": 1,
   "hint": "Press [JUMP] twice! But, it costs a jumpcoin. . .",
   "hintXMod": 60
 }

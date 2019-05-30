@@ -24,7 +24,6 @@
 {
   "name": "Coin power",
   "music": "musicWorld3",
-  "baseLife": 1,
   "badgeBirdie": true,
   "badgeKiller": true
 }

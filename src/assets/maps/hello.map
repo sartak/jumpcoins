@@ -24,7 +24,6 @@
 {
   "name": "Hello!",
   "music": "musicWorld1",
-  "baseLife": 1,
   "hint": "Press [Z] to jump!",
   "badgeBirdie": true
 }

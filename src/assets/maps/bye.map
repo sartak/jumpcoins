@@ -23,7 +23,6 @@
 
 {
   "name": "Thank you for playing!!!!",
-  "baseLife": 1,
   "music": "musicBye",
   "hint": "Made by Shawn M Moore (@sartak)",
   "hint2": "for Ludum Dare 44",

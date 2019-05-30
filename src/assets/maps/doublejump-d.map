@@ -24,7 +24,6 @@
 {
   "name": "It's a sticky situation",
   "music": "musicWorld2",
-  "baseLife": 1,
   "badgeBirdie": true
 }
 
