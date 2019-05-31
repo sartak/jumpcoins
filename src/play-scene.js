@@ -1098,11 +1098,13 @@ export default class PlayScene extends SuperScene {
       level.deaths += 1;
       save.levels[level.filename].deaths += 1;
       this.shockwave();
-      this.respawn();
-
       this.playSound('soundDie');
-
       this.saveState();
+
+      this.timer(() => {
+        this.respawn();
+      });
+
       return true;
     }
 
