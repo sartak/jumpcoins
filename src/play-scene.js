@@ -2584,7 +2584,7 @@ export default class PlayScene extends SuperScene {
   }
 
   launchTimeSight() {
-    const restore = super.launchTimeSight();
+    super.launchTimeSight();
 
     const {level, shader} = this;
     const {player, hud} = level;
@@ -2592,11 +2592,6 @@ export default class PlayScene extends SuperScene {
 
     if (prop('config.timesight_jumpcoins')) {
       jumpcoins.forEach((jumpcoin) => {
-        restore.push(() => {
-          jumpcoin.visible = true;
-          jumpcoin.glowEmitter.visible = true;
-          jumpcoin.sparkEmitter.visible = true;
-        });
         jumpcoin.visible = false;
         jumpcoin.glowEmitter.visible = false;
         jumpcoin.sparkEmitter.visible = false;
@@ -2604,9 +2599,6 @@ export default class PlayScene extends SuperScene {
     }
 
     if (prop('config.timesight_player')) {
-      restore.push(() => {
-        player.visible = true;
-      });
       player.visible = false;
     }
 
@@ -2626,8 +2618,6 @@ export default class PlayScene extends SuperScene {
     hud.hints.forEach((hint) => {
       hint.destroy();
     });
-
-    return restore;
   }
 
   renderTimeSightFrameInto(scene, phantomDt, time, dt, isLast) {

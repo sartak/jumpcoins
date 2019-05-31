@@ -25,7 +25,7 @@ export default class SuperScene extends Phaser.Scene {
     }
 
     this.command = this.game.command;
-    this.command.attachScene(this);
+    this.command.attachScene(this, config._timeSightTarget);
 
     this.rnd = {};
 
@@ -346,8 +346,14 @@ export default class SuperScene extends Phaser.Scene {
         this.calculateTimeSight();
       } else if (replay.timeSightFrameCallback) {
         this.game._replayPreflight += 1;
+        const manager = this.command.getManager(this);
+
+        this._timeSightTargetEnded = () => {
+          replay.timeSightFrameCallback(this, time, dt, manager.speculativeRecording, true);
+        };
+
         while (!this._timeSightTargetDone) {
-          replay.timeSightFrameCallback(this, time, dt, false);
+          replay.timeSightFrameCallback(this, time, dt, manager.speculativeRecording, false);
           time += dt;
           loop.step(time);
 
@@ -357,7 +363,6 @@ export default class SuperScene extends Phaser.Scene {
             return;
           }
         }
-        replay.timeSightFrameCallback(this, time, dt, true);
         this.scene.remove();
         this.game._replayPreflight -= 1;
       } else {
@@ -371,28 +376,12 @@ export default class SuperScene extends Phaser.Scene {
     // eslint-disable-next-line no-console
     console.info('Calculating timeSight');
 
-    if (this._restoreTimeSight) {
-      this._restoreTimeSight.forEach((callback) => callback());
-    }
-
-    if (this._timeSightFrames) {
-      this._timeSightFrames.forEach(({objects, timer}) => {
-        if (timer) {
-          timer.stop();
-        }
-
-        objects.forEach((child) => {
-          child.destroy();
-        });
-      });
-    }
-
     this._timeSightFrames = [];
 
     this.scene.setActive(false);
     this.scene.setVisible(false);
 
-    this._restoreTimeSight = this.launchTimeSight();
+    this.launchTimeSight();
 
     const target = `scene-${Math.random() * Date.now()}`;
     const targetScene = this.game.scene.add(target, this.constructor, true, {...this.scene.settings.data, _timeSightTarget: true});
@@ -404,10 +393,10 @@ export default class SuperScene extends Phaser.Scene {
       {
         ...this._replay,
         timeSight: false,
-        timeSightFrameCallback: (scene, frameTime, frameDt, isLast) => {
+        timeSightFrameCallback: (scene, frameTime, frameDt, preflight, isLast) => {
           objectDt += frameDt;
           const objects = scene.renderTimeSightFrameInto(this, objectDt, frameTime, frameDt, isLast);
-          if (!objects) {
+          if (!objects || !objects.length) {
             return;
           }
 
@@ -416,6 +405,7 @@ export default class SuperScene extends Phaser.Scene {
           this._timeSightFrames.push({
             objects,
             props: {...manageableProps},
+            preflight: [...preflight],
           });
           objectDt = 0;
         },
@@ -429,53 +419,141 @@ export default class SuperScene extends Phaser.Scene {
 
           this.game.loop.wake();
 
-          const frames = this._timeSightFrames;
-
-          overrideProps(frames[0].props);
-
-          let loopAlpha;
-          // eslint-disable-next-line prefer-const
-          loopAlpha = (frame, n) => {
-            const {objects, props} = frame;
-
-            overrideProps(props);
-
-            objects.forEach((object, i) => {
-              const {alpha} = object;
-              this.tweens.add({
-                targets: object,
-                alpha: 0.7,
-                duration: 200,
-                onComplete: () => {
-                  this.tweens.add({
-                    targets: object,
-                    alpha,
-                    duration: 200,
-                    onComplete: () => {
-                      if (i === 0) {
-                        frame.timer = this.time.addEvent({
-                          delay: 100 * frames.length + 1000,
-                          callback: () => loopAlpha(frame, n),
-                        });
-                      }
-                    },
-                  });
-                },
-              });
-            });
-          };
-
-          frames.forEach((frame, n) => {
-            frame.timer = this.time.addEvent({
-              delay: 100 * n + 1000,
-              callback: () => {
-                loopAlpha(frame, n);
-              },
-            });
-          });
+          this.beginTimeSightAlphaAnimation();
         },
       },
     );
+  }
+
+  beginTimeSightAlphaAnimation() {
+    const frames = this._timeSightFrames;
+
+    overrideProps(frames[0].props);
+
+    let loopAlpha;
+    // eslint-disable-next-line prefer-const
+    loopAlpha = (frame, n) => {
+      const {objects, props} = frame;
+
+      overrideProps(props);
+
+      objects.forEach((object, i) => {
+        object._timeSightAlphaTween = this.tweens.add({
+          targets: object,
+          alpha: 0.7,
+          duration: 200,
+          onComplete: () => {
+            object._timeSightAlphaTween = this.tweens.add({
+              targets: object,
+              alpha: object._timeSightAlpha,
+              duration: 200,
+              onComplete: () => {
+                if (i === 0) {
+                  frame.timer = this.time.addEvent({
+                    delay: 100 * frames.length + 1000,
+                    callback: () => loopAlpha(frame, n),
+                  });
+                }
+              },
+            });
+          },
+        });
+      });
+    };
+
+    frames.forEach((frame, n) => {
+      frame.timer = this.time.addEvent({
+        delay: 100 * n + 1000,
+        callback: () => {
+          loopAlpha(frame, n);
+        },
+      });
+    });
+
+    if (this._timeSightMouseInput) {
+      frames.forEach((frame) => {
+        frame.objects.forEach((object) => {
+          object.alpha = object._timeSightAlpha;
+        });
+      });
+
+      return;
+    }
+
+    this._timeSightMouseInput = true;
+
+    this.input.topOnly = true;
+
+    frames.forEach((frame) => {
+      frame.objects.forEach((object) => {
+        object.setInteractive();
+        object._timeSightAlpha = object.alpha;
+        object._timeSightFrame = frame;
+      });
+    });
+
+    this.input.on('gameobjectover', (pointer, activeObject) => {
+      if (this._timeSightRemoveFocusTimer) {
+        this._timeSightRemoveFocusTimer.destroy();
+      }
+
+      this.game.canvas.style.cursor = 'pointer';
+
+      let matchedFrame;
+      frames.forEach((frame) => {
+        if (frame.timer) {
+          frame.timer.destroy();
+        }
+
+        frame.objects.forEach((object) => {
+          if (object._timeSightAlphaTween) {
+            object._timeSightAlphaTween.stop();
+          }
+
+          object.alpha = object._timeSightAlpha;
+
+          if (object === activeObject) {
+            matchedFrame = frame;
+            object.alpha = 1;
+          }
+        });
+      });
+
+      if (matchedFrame) {
+        overrideProps(matchedFrame.props);
+      }
+    });
+
+    this.input.on('gameobjectout', (pointer, activeObject) => {
+      if (this._timeSightRemoveFocusTimer) {
+        this._timeSightRemoveFocusTimer.destroy();
+      }
+
+      this._timeSightRemoveFocusTimer = this.time.addEvent({
+        delay: 100,
+        callback: () => {
+          this.game.canvas.style.cursor = '';
+          this.beginTimeSightAlphaAnimation();
+        },
+      });
+    });
+
+    this.input.on('gameobjectdown', (pointer, activeObject) => {
+      if (this._timeSightRemoveFocusTimer) {
+        this._timeSightRemoveFocusTimer.destroy();
+      }
+
+      const replay = this._replay;
+
+      this.game.stopReplay();
+      this.game.beginReplay({
+        ...replay,
+        timeSight: false,
+        snapshot: true,
+        preflight: activeObject._timeSightFrame.preflight,
+        commands: [],
+      });
+    });
   }
 
   endedReplay() {
@@ -492,6 +570,10 @@ export default class SuperScene extends Phaser.Scene {
     if (replay.timeSight) {
       this.replaceWithSelf(false);
       return;
+    }
+
+    if (this._timeSightTargetEnded) {
+      this._timeSightTargetEnded();
     }
 
     if (onEnd) {
@@ -543,7 +625,6 @@ export default class SuperScene extends Phaser.Scene {
         });
       },
     });
-    return [];
   }
 
   propDidChange(key, value) {
