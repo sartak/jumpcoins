@@ -24,7 +24,6 @@
 {
   "name": "Flip it and reverse it",
   "music": "musicWorld2",
-  "baseLife": 1,
   "badgeBirdie": true,
   "badgeKiller": true
 }

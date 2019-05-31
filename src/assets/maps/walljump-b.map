@@ -24,7 +24,6 @@
 {
   "name": "The ole one, two, jump!",
   "music": "musicWorld2",
-  "baseLife": 1,
   "badgeKiller": true
 }
 

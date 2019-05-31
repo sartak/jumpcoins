@@ -24,7 +24,6 @@
 {
   "name": "Wall Jump!!",
   "music": "musicWorld2",
-  "baseLife": 1,
   "hint": "Press into a wall while in the air, then [JUMP]!",
   "hintYPosition": 0.77
 }
