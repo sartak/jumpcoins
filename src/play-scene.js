@@ -1267,7 +1267,7 @@ export default class PlayScene extends SuperScene {
     hud.jumpcoins.push(img);
     const x = 2 * prop('config.tile_width') + img.width * player.jumpcoins + hud.lifeIsText.width;
     const y = this.yBorder / 2;
-    img.setDepth(6);
+    img.setDepth(9);
 
     img.hudTween = this.tweens.add({
       targets: img,
@@ -2114,6 +2114,7 @@ export default class PlayScene extends SuperScene {
 
     const backgroundScreen = this.add.image(this.game.config.width / 2, this.game.config.height / 2, 'effectBackgroundScreen');
     hud.backgroundScreen = backgroundScreen;
+    backgroundScreen.setDepth(9);
 
     const text = this.add.text(
       this.xBorder * 2,
@@ -2126,6 +2127,7 @@ export default class PlayScene extends SuperScene {
       },
     );
     hud.lifeIsText = text;
+    text.setDepth(10);
 
     text.setStroke('#000000', 6);
     text.x -= text.width / 2;
@@ -2146,6 +2148,7 @@ export default class PlayScene extends SuperScene {
       this.yBorder / 2,
       'spriteLifecoin',
     );
+    hud.lifecoin.setDepth(9);
 
     hud.jumpcoins = [];
     level.onRespawn(() => {

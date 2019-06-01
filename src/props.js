@@ -193,6 +193,7 @@ export const propSpecs = {
     quantity: 5,
     frequency: 70,
     lifespan: 3000,
+    preemit: true,
   }],
 
   'effects.floodlights.particles': [{
