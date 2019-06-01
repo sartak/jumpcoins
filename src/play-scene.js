@@ -356,6 +356,28 @@ export default class PlayScene extends SuperScene {
     this.scheduleMover(mover, true);
   }
 
+  randomizeEyeTargets() {
+    const {level} = this;
+
+    const screenWidth = this.game.config.width;
+    const screenHeight = this.game.config.height;
+
+    const pupilTarget = {};
+
+    level.objects.eyes.forEach((eye) => {
+      const {pupil} = eye;
+
+      if (!(eye.config.y in pupilTarget)) {
+        pupilTarget[eye.config.y] = [
+          this.randBetween('pupil', 0, screenWidth),
+          this.randBetween('pupil', 0, screenHeight),
+        ];
+      }
+
+      [pupil.wanderX, pupil.wanderY] = pupilTarget[eye.config.y];
+    });
+  }
+
   setupEye(eye) {
     const {level} = this;
     const {statics, objects} = level;
@@ -371,6 +393,9 @@ export default class PlayScene extends SuperScene {
     pupil.pupilOriginX = x;
     pupil.pupilOriginY = y;
     pupil.setDepth(2);
+
+    eye.pupil = pupil;
+    pupil.eye = eye;
 
     objects.pupils.push(pupil);
   }
@@ -661,7 +686,7 @@ export default class PlayScene extends SuperScene {
       const {
         group, dynamic, image,
       } = tile;
-      if (isRespawn && (group === 'exits' || group === 'pupils' || group === 'jumpcoins')) {
+      if (isRespawn && (group === 'exits' || group === 'eyes' || group === 'pupils' || group === 'jumpcoins')) {
         return;
       }
 
@@ -683,6 +708,7 @@ export default class PlayScene extends SuperScene {
 
     if (isRespawn) {
       objects.exits = level.objects.exits;
+      objects.eyes = level.objects.eyes;
       objects.pupils = level.objects.pupils;
       objects.jumpcoins = level.objects.jumpcoins;
     }
@@ -698,11 +724,16 @@ export default class PlayScene extends SuperScene {
       objects.exits.forEach((exit) => this.setupExit(exit));
       objects.eyes.forEach((eye) => this.setupEye(eye));
       objects.jumpcoins.forEach((jumpcoin) => this.setupJumpcoin(jumpcoin));
+
+      this.randomizeEyeTargets();
+      level.onRespawn(() => {
+        this.randomizeEyeTargets();
+      });
     }
 
     level.onRespawn(() => {
       Object.entries(level.objects).forEach(([type, list]) => {
-        if (type === 'exits' || type === 'pupils' || type === 'jumpcoins') {
+        if (type === 'exits' || type === 'eyes' || type === 'pupils' || type === 'jumpcoins') {
           return;
         }
 
@@ -1834,15 +1865,19 @@ export default class PlayScene extends SuperScene {
       let x = pupil.pupilOriginX;
       let y = pupil.pupilOriginY;
 
-      const dx = player.x - x;
-      const dy = player.y - y;
+      const tx = player.alpha >= 1 ? player.x : pupil.wanderX;
+      const ty = player.alpha >= 1 ? player.y : pupil.wanderY;
+      const speed = player.alpha >= 1 ? 0.05 : 0.02;
+
+      const dx = tx - x;
+      const dy = ty - y;
 
       const theta = Math.atan2(dy, dx);
       x += tileWidth / 5 * Math.cos(theta);
       y += tileHeight / 5 * Math.sin(theta);
 
-      pupil.x += 0.05 * (x - pupil.x);
-      pupil.y += 0.05 * (y - pupil.y);
+      pupil.x += speed * (x - pupil.x);
+      pupil.y += speed * (y - pupil.y);
     });
 
     if (player.body.touching.down) {
