@@ -185,23 +185,31 @@ export const propSpecs = {
   'effects.jumpShake.execute': [(scene) => scene.jumpShake()],
   'effects.jumpShake.executeRepeatedly': [false],
 
-  'effects.exit.particles': [{
-    image: 'effectImageSpark',
-    scaleX: 0.1,
-    scaleY: 0.1,
-    blendMode: 'SCREEN',
-    quantity: 5,
-    frequency: 70,
-    lifespan: 3000,
-    preemit: true,
-  }],
-
   'effects.floodlights.particles': [{
     image: 'effectImageFloodlight',
     blendMode: 'SCREEN',
     quantity: 3,
     frequency: 1500,
     lifespan: 50000,
+    preemit: true,
+  }],
+
+  'effects.exitSpark.particles': [{
+    image: 'effectImageSpark',
+    scaleX: 0.1,
+    scaleY: 0.1,
+    blendMode: 'SCREEN',
+    quantity: 2,
+    frequency: 70,
+    lifespan: 3000,
+    preemit: true,
+  }],
+  'effects.exitGlow.particles': [{
+    image: 'effectImageFloodlight',
+    quantity: 1,
+    frequency: 3000,
+    lifespan: 10000,
+    blendMode: 'SCREEN',
     preemit: true,
   }],
 

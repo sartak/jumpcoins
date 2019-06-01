@@ -564,7 +564,9 @@ export default class PlayScene extends SuperScene {
         },
       },
     );
+  }
 
+  jumpcoinSpark(jumpcoin) {
     this.particleSystem(
       'effects.jumpcoinSpark',
       {
@@ -588,6 +590,7 @@ export default class PlayScene extends SuperScene {
 
     this.jumpcoinBob(jumpcoin);
     this.jumpcoinGlow(jumpcoin);
+    this.jumpcoinSpark(jumpcoin);
 
     level.onRespawn(() => {
       if (!jumpcoin.collected) {
@@ -620,8 +623,11 @@ export default class PlayScene extends SuperScene {
   }
 
   setupExit(exit) {
-    const {level} = this;
+    this.exitSparks(exit);
+    this.exitGlow(exit);
+  }
 
+  exitSparks(exit) {
     const speed = {};
     const mapWidth = prop('config.map_width');
     const mapHeight = prop('config.map_height');
@@ -651,18 +657,33 @@ export default class PlayScene extends SuperScene {
     }
 
     this.particleSystem(
-      'effects.exit',
+      'effects.exitSpark',
       {
         ...speed,
         tint: [0xF6C456, 0xEC5B55, 0x8EEA83, 0x4397F7, 0xCC4BE4],
         alpha: {start: 0, end: 1, ease: (t) => (t < 0.1 ? 10 * t : 1 - (t - 0.1))},
         onAdd: (particles, emitter) => {
           particles.setDepth(5);
+        },
+      },
+    );
+  }
 
-          if (!level.exitParticles) {
-            level.exitParticles = [];
-          }
-          level.exitParticles.push({particles, emitter});
+  exitGlow(exit) {
+    const {level} = this;
+    const alpha = level.lightExitGlow ? 0.05 : 0.2;
+
+    this.particleSystem(
+      'effects.exitGlow',
+      {
+        x: exit.x,
+        y: exit.y,
+        scaleX: {min: 0.7, max: 1.0},
+        scaleY: {min: 0.7, max: 1.0},
+        alpha: {start: 0, end: alpha, ease: (t) => (t < 0.2 ? 5 * t : 1 - (t - 0.2))},
+        tint: [0xF6C456, 0xEC5B55, 0x8EEA83, 0x4397F7, 0xCC4BE4],
+        onAdd: (particles, emitter) => {
+          particles.setDepth(-1);
         },
       },
     );
@@ -2647,7 +2668,7 @@ export default class PlayScene extends SuperScene {
 
     if (isLeft || isRight) {
       [primary, secondary] = ['x', 'y'];
-      tween.x = object.x + (isLeft ? -1 : 1) * 2.5 * tileWidth;
+      tween.x = object.x + (isLeft ? -1 : 1) * 3 * tileWidth;
       [, tween.y] = this.positionToScreenCoordinate(exit.config.x, exit.config.y);
       if (map[exit.config.y + 1][exit.config.x].group === 'exits') {
         tween.y += tileHeight;
@@ -2657,7 +2678,7 @@ export default class PlayScene extends SuperScene {
 
     if (isBottom || isTop) {
       [primary, secondary] = ['y', 'x'];
-      tween.y = object.y + (isTop ? -1 : 1) * 2.5 * tileHeight;
+      tween.y = object.y + (isTop ? -1 : 1) * 3 * tileHeight;
       [tween.x] = this.positionToScreenCoordinate(exit.config.x, exit.config.y);
       if (map[exit.config.y][exit.config.x + 1].group === 'exits') {
         tween.x += tileWidth;
@@ -2673,12 +2694,14 @@ export default class PlayScene extends SuperScene {
       ease: 'Cubic.easeIn',
     });
 
-    this.tweens.add({
-      targets: object,
-      [secondary]: tween[secondary],
-      duration: secondaryDuration,
-      ease: 'Cubic.easeOut',
-    });
+    if (!level.skipSecondaryExitTractor) {
+      this.tweens.add({
+        targets: object,
+        [secondary]: tween[secondary],
+        duration: secondaryDuration,
+        ease: 'Cubic.easeOut',
+      });
+    }
   }
 
   renderOutro(callback) {

@@ -28,6 +28,8 @@
   "hint2": "for Ludum Dare 44",
   "hint3": "\"Your life is currency\"",
   "badgeBirdie": true,
-  "facingLeft": true
+  "facingLeft": true,
+  "skipSecondaryExitTractor": true,
+  "lightExitGlow": true
 }
 
