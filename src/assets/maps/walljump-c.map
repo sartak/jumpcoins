@@ -25,6 +25,7 @@
   "name": "Flip it and reverse it",
   "music": "musicWorld2",
   "badgeBirdie": true,
-  "badgeKiller": true
+  "badgeKiller": true,
+  "facingLeft": true
 }
 

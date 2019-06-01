@@ -27,6 +27,7 @@
   "hint": "Made by Shawn M Moore (@sartak)",
   "hint2": "for Ludum Dare 44",
   "hint3": "\"Your life is currency\"",
-  "badgeBirdie": true
+  "badgeBirdie": true,
+  "facingLeft": true
 }
 

@@ -735,8 +735,9 @@ export default class PlayScene extends SuperScene {
       player.destroy();
     });
 
-    player.facingLeft = false;
-    player.setFlipX(true);
+    player.facingLeft = level.facingLeft;
+    player.setFlipX(!player.facingLeft);
+
     return player;
   }
 
