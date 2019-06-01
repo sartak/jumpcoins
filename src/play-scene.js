@@ -2009,7 +2009,11 @@ export default class PlayScene extends SuperScene {
     const scaleX = player.scaleX + prop('player.squish_speed') * (vy - player.scaleX) * dt / 16.667;
     const scaleY = player.scaleY + prop('player.squish_speed') * (vx - player.scaleY) * dt / 16.667;
 
-    player.setScale(scaleX, scaleY); // intentionally flipped
+    if (prop('player.squish_max_enabled')) {
+      player.setScale(scaleX, scaleY); // intentionally flipped
+    } else {
+      player.setScale(1, 1); // intentionally flipped
+    }
 
     this.updateEnemies();
   }
@@ -2020,6 +2024,10 @@ export default class PlayScene extends SuperScene {
   }
 
   jumpShake(type) {
+    if (!prop('effects.jumpShake.visible')) {
+      return;
+    }
+
     this.reactFloodlightsToJump();
     if (type !== JumpNormal) {
       this.cameras.main.shake(
@@ -2154,7 +2162,7 @@ export default class PlayScene extends SuperScene {
     const {level, shader} = this;
     const {player} = level;
 
-    if (!shader) {
+    if (!shader || !prop('effects.damageBlur.visible')) {
       return;
     }
 
@@ -2316,6 +2324,10 @@ export default class PlayScene extends SuperScene {
   shockwave() {
     const {level, shader} = this;
     const {player} = level;
+
+    if (!prop('effects.shockwave.visible')) {
+      return;
+    }
 
     this.reactFloodlightsToDie();
 

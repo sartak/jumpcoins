@@ -138,6 +138,7 @@ export const propSpecs = {
   'level.earnedBadges.badgeBirdie': [false, null],
   'level.earnedBadges.badgeKiller': [false, null],
 
+  'player.squish_max_enabled': [true],
   'player.squish_max': [0.10, 0, 1],
   'player.squish_speed': [0.2, 0, 1],
   'player.jumpcoins': [0, null],
@@ -168,6 +169,7 @@ export const propSpecs = {
   'effects.damageBlur.amount': [2.5, 0, 50],
   'effects.damageBlur.in_ms': [100, 0, 2000],
   'effects.damageBlur.out_ms': [200, 0, 2000],
+  'effects.damageBlur.visible': [true],
   'effects.damageBlur.execute': [(scene) => scene.damageBlur()],
   'effects.damageBlur.executeRepeatedly': [false],
 
@@ -177,11 +179,13 @@ export const propSpecs = {
   'effects.shockwave.speed': [3.0, 0, 50, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveSpeed', value)],
   'effects.shockwave.inner': [0.09, 0, 1, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveInner', value)],
   'effects.shockwave.dropoff': [40.0, 0, 500, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveDropoff', value)],
+  'effects.shockwave.visible': [true],
   'effects.shockwave.execute': [(scene) => scene.shockwave()],
   'effects.shockwave.executeRepeatedly': [false],
 
   'effects.jumpShake.amount': [0.01, 0, 0.1],
   'effects.jumpShake.duration_ms': [75, 0, 1000],
+  'effects.jumpShake.visible': [true],
   'effects.jumpShake.execute': [(scene) => scene.jumpShake()],
   'effects.jumpShake.executeRepeatedly': [false],
 
