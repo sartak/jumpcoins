@@ -212,6 +212,7 @@ export const propSpecs = {
     lifespan: 10000,
     blendMode: 'SCREEN',
     tint: 0x4397F7,
+    preemit: true,
   }],
 
   'effects.jumpcoinSpark.particles': [{
@@ -224,6 +225,7 @@ export const propSpecs = {
     quantity: 6,
     frequency: 3000,
     lifespan: 5000,
+    preemit: true,
   }],
 
   'effects.jumpPuff.particles': [{
