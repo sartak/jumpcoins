@@ -313,6 +313,8 @@ export default class PlayScene extends SuperScene {
 
   setupEnemy(enemy) {
     enemy.anims.play(enemy.config.walkAnimation, true);
+    // 0.5 feels better than 1.0
+    enemy.body.setGravityY(prop('rules.base_gravity') * prop('rules.jump.down_gravity') * 0.5);
   }
 
   scheduleMover(mover, isFirst) {
