@@ -428,6 +428,10 @@ export default class SuperScene extends Phaser.Scene {
   beginTimeSightAlphaAnimation() {
     const frames = this._timeSightFrames;
 
+    if (!frames.length) {
+      return;
+    }
+
     overrideProps(frames[0].props);
 
     let loopAlpha;
@@ -542,6 +546,8 @@ export default class SuperScene extends Phaser.Scene {
       if (this._timeSightRemoveFocusTimer) {
         this._timeSightRemoveFocusTimer.destroy();
       }
+
+      this.game.canvas.style.cursor = '';
 
       const replay = this._replay;
 

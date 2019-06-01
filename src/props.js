@@ -1,5 +1,6 @@
 import {
   builtinPropSpecs, ManageableProps, PropLoader, makePropsWithPrefix,
+  preprocessTileDefinitions,
 } from './scaffolding/lib/props';
 
 const particleImages = [
@@ -246,7 +247,7 @@ export const propSpecs = {
   }],
 };
 
-export const tileDefinitions = {
+export const tileDefinitions = preprocessTileDefinitions({
   '.': null, // background
   '#': {
     image: 'tileWall',
@@ -389,7 +390,7 @@ export const tileDefinitions = {
     walkAnimation: 'spriteEnemyBWalk',
     killAnimation: 'spriteEnemyBDie',
   },
-};
+});
 
 export const manageableProps = new ManageableProps(propSpecs, particleImages);
 export const propsWithPrefix = makePropsWithPrefix(propSpecs, manageableProps);
