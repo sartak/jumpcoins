@@ -186,13 +186,12 @@ export const propSpecs = {
 
   'effects.exit.particles': [{
     image: 'effectImageSpark',
-    scaleX: 0.3,
-    scaleY: 0.3,
+    scaleX: 0.1,
+    scaleY: 0.1,
     blendMode: 'SCREEN',
     quantity: 5,
-    frequency: 150,
-    lifespan: 2000,
-    preemit: true,
+    frequency: 70,
+    lifespan: 3000,
   }],
 
   'effects.floodlights.particles': [{

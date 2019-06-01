@@ -607,18 +607,22 @@ export default class PlayScene extends SuperScene {
       speed.speedX = {min: -60, max: -40};
       speed.x = exit.x + tileWidth / 2;
       speed.y = {min: exit.y - tileHeight / 2, max: exit.y + tileHeight / 2};
+      speed.accelerationX = 25;
     } else if (exit.config.x <= 1) {
       speed.speedX = {min: 40, max: 60};
       speed.x = exit.x - tileWidth / 2;
       speed.y = {min: exit.y - tileHeight / 2, max: exit.y + tileHeight / 2};
+      speed.accelerationX = -25;
     } else if (exit.config.y >= mapHeight - 2) {
       speed.speedY = {min: -60, max: -40};
       speed.x = {min: exit.x - tileWidth / 2, max: exit.x + tileWidth / 2};
       speed.y = exit.y + tileHeight / 2;
+      speed.accelerationY = 25;
     } else if (exit.config.y <= 1) {
       speed.speedY = {min: 40, max: 60};
       speed.x = {min: exit.x - tileWidth / 2, max: exit.x + tileWidth / 2};
       speed.y = exit.y - tileHeight / 2;
+      speed.accelerationY = -25;
     }
 
     this.particleSystem(
