@@ -1158,7 +1158,7 @@ export default class PlayScene extends SuperScene {
       coin.x = player.x;
       coin.y = player.y;
 
-      if (applyLeftVelocity === undefined) {
+      if (applyLeftVelocity === undefined || !player.spentLifecoin) {
         const dy = -tileHeight;
         this.tweens.add({
           targets: coin,
