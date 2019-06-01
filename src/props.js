@@ -254,6 +254,18 @@ export const tileDefinitions = {
     group: 'ground',
     combineVertical: true,
   },
+  '{': {
+    image: 'tileWall',
+    group: 'ground',
+    combineVertical: true,
+    leftEdge: true,
+  },
+  '}': {
+    image: 'tileWall',
+    group: 'ground',
+    combineVertical: true,
+    rightEdge: true,
+  },
   '+': {
     image: 'tileTransparent',
     group: 'exits',
@@ -308,6 +320,24 @@ export const tileDefinitions = {
     dynamic: true,
     speed: 40,
     distance: 3,
+  },
+  '(': {
+    image: 'tileWall',
+    group: 'movers',
+    object: true,
+    dynamic: true,
+    speed: 40,
+    distance: 3,
+    leftEdge: true,
+  },
+  ')': {
+    image: 'tileWall',
+    group: 'movers',
+    object: true,
+    dynamic: true,
+    speed: 40,
+    distance: 3,
+    rightEdge: true,
   },
   '@': null, // player
   '*': {

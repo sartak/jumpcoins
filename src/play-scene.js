@@ -1410,6 +1410,12 @@ export default class PlayScene extends SuperScene {
     });
   }
 
+  enemyFloorCollision(enemy, ground) {
+    // this assumes we only ever get one callback per enemy, rather than
+    // one callback per (enemy, ground) pair
+    enemy.floorCollision = ground;
+  }
+
   setupLevelPhysics() {
     const {level, physics} = this;
     const {
@@ -1417,13 +1423,13 @@ export default class PlayScene extends SuperScene {
     } = level;
 
     physics.add.collider(player, statics.ground);
-    physics.add.collider(enemies, statics.ground);
+    physics.add.collider(enemies, statics.ground, null, (...args) => this.enemyFloorCollision(...args));
 
     physics.add.collider(player, statics.semiground, null, (...args) => this.checkSemiground(...args));
-    physics.add.collider(enemies, statics.semiground);
+    physics.add.collider(enemies, statics.semiground, null, (...args) => this.enemyFloorCollision(...args));
 
     physics.add.collider(player, objects.movers);
-    physics.add.collider(enemies, objects.movers);
+    physics.add.collider(enemies, objects.movers, null, (...args) => this.enemyFloorCollision(...args));
 
     physics.add.overlap(player, statics.exits, () => this.winLevel());
     physics.add.collider(enemies, statics.exits);
@@ -1744,20 +1750,20 @@ export default class PlayScene extends SuperScene {
           enemy.movingLeft = true;
         }
 
-        enemy.setFlipX(!enemy.movingLeft);
-
         if (enemy.config.edgeCareful) {
-          if (enemy.body.velocity.y > 0) {
-            enemy.movingLeft = !enemy.movingLeft;
-            enemy.setAccelerationY(0);
-            enemy.setVelocityY(0);
-            enemy.x = enemy.oldX;
-            enemy.y = enemy.oldY;
+          const ground = enemy.floorCollision;
+          if (ground) {
+            // colliders seem to use the right edge, so that's why this is
+            // assymmetrical
+            if (ground.config.leftEdge && enemy.movingLeft && enemy.x <= ground.x) {
+              enemy.movingLeft = false;
+            } else if (ground.config.rightEdge && !enemy.movingLeft) {
+              enemy.movingLeft = true;
+            }
           }
-
-          enemy.oldX = enemy.x;
-          enemy.oldY = enemy.y;
         }
+
+        enemy.setFlipX(!enemy.movingLeft);
 
         if (enemy.movingLeft) {
           enemy.setVelocityX(-enemy.config.speed);
@@ -1765,6 +1771,8 @@ export default class PlayScene extends SuperScene {
           enemy.setVelocityX(enemy.config.speed);
         }
       }
+
+      enemy.floorCollision = null;
     });
   }
 
