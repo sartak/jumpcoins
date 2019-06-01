@@ -204,7 +204,6 @@ export const propSpecs = {
     preemit: true,
   }],
 
-  'effects.jumpcoinGlow.followJumpcoin': [true],
   'effects.jumpcoinGlow.particles': [{
     image: 'effectImageFloodlight',
     quantity: 1,
@@ -214,7 +213,6 @@ export const propSpecs = {
     tint: 0x4397F7,
   }],
 
-  'effects.jumpcoinSpark.followJumpcoin': [true],
   'effects.jumpcoinSpark.particles': [{
     image: 'effectImageSpark',
     speed: 5,

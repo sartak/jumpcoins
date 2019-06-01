@@ -499,59 +499,15 @@ export default class PlayScene extends SuperScene {
     return [x * tileWidth + this.xBorder, y * tileHeight + this.yBorder];
   }
 
-  jumpcoinGlow(jumpcoin) {
-    const {level} = this;
-
-    this.particleSystem(
-      'effects.jumpcoinGlow',
-      {
-        alpha: {start: 0, end: 0.4, ease: (t) => (t < 0.2 ? 5 * t : 1 - (t - 0.2))},
-        scale: {start: 0.4, end: 0.8},
-        onAdd: (particles, emitter) => {
-          if (prop('effects.jumpcoinGlow.followJumpcoin')) {
-            emitter.startFollow(jumpcoin);
-          }
-
-          particles.setDepth(4);
-          jumpcoin.glowParticles = particles;
-          jumpcoin.glowEmitter = emitter;
-
-          level.onRespawn(() => {
-            particles.destroy();
-          });
-        },
-      },
-    );
-
-    this.particleSystem(
-      'effects.jumpcoinSpark',
-      {
-        alpha: {start: 0, end: 1, ease: (t) => (t < 0.1 ? 10 * t : 1 - (t - 0.1))},
-        onAdd: (particles, emitter) => {
-          if (prop('effects.jumpcoinSpark.followJumpcoin')) {
-            emitter.startFollow(jumpcoin);
-          }
-
-          emitter.startFollow(jumpcoin);
-          particles.setDepth(5);
-          jumpcoin.sparkParticles = particles;
-          jumpcoin.sparkEmitter = emitter;
-
-          level.onRespawn(() => {
-            particles.destroy();
-          });
-        },
-      },
-    );
-  }
-
-  setupJumpcoin(jumpcoin) {
-    this.timer(
-      () => {
+  jumpcoinBob(jumpcoin) {
+    jumpcoin.bobTween = this.tweens.add({
+      targets: jumpcoin,
+      delay: this.randBetween('jumpcoinBob', 0, 500),
+      onComplete: () => {
         jumpcoin.bobTween = this.tweens.add({
           targets: jumpcoin,
           duration: 1000,
-          y: jumpcoin.y + 8,
+          y: jumpcoin.originalY + 8,
           ease: 'Cubic.easeInOut',
           yoyo: true,
           loop: -1,
@@ -562,9 +518,78 @@ export default class PlayScene extends SuperScene {
           },
         });
       },
-      this.randBetween('jumpcoinBob', 0, 500),
+    });
+  }
+
+  jumpcoinGlow(jumpcoin) {
+    this.particleSystem(
+      'effects.jumpcoinGlow',
+      {
+        alpha: {start: 0, end: 0.4, ease: (t) => (t < 0.2 ? 5 * t : 1 - (t - 0.2))},
+        scale: {start: 0.4, end: 0.8},
+        onAdd: (particles, emitter) => {
+          particles.x = jumpcoin.x;
+          particles.y = jumpcoin.y;
+
+          particles.setDepth(4);
+          jumpcoin.glowParticles = particles;
+          jumpcoin.glowEmitter = emitter;
+        },
+      },
     );
+
+    this.particleSystem(
+      'effects.jumpcoinSpark',
+      {
+        alpha: {start: 0, end: 1, ease: (t) => (t < 0.1 ? 10 * t : 1 - (t - 0.1))},
+        onAdd: (particles, emitter) => {
+          particles.x = jumpcoin.x;
+          particles.y = jumpcoin.y;
+
+          particles.setDepth(5);
+          jumpcoin.sparkParticles = particles;
+          jumpcoin.sparkEmitter = emitter;
+        },
+      },
+    );
+  }
+
+  setupJumpcoin(jumpcoin) {
+    const {level} = this;
+
+    jumpcoin.originalY = jumpcoin.y;
+
+    this.jumpcoinBob(jumpcoin);
     this.jumpcoinGlow(jumpcoin);
+
+    level.onRespawn(() => {
+      if (!jumpcoin.collected) {
+        return;
+      }
+
+      if (jumpcoin.respawnTween) {
+        jumpcoin.respawnTween.stop();
+      }
+
+      jumpcoin.collected = false;
+      jumpcoin.collectTween.stop();
+
+      jumpcoin.glowParticles.moribund = false;
+      jumpcoin.glowEmitter.start();
+
+      jumpcoin.sparkParticles.moribund = false;
+      jumpcoin.sparkEmitter.start();
+      jumpcoin.respawnTween = this.tweens.add({
+        targets: jumpcoin,
+        duration: 1000,
+        y: jumpcoin.originalY,
+        ease: 'Cubic.easeOut',
+        alpha: 1,
+        onComplete: () => {
+          this.jumpcoinBob(jumpcoin);
+        },
+      });
+    });
   }
 
   setupExit(exit) {
@@ -630,7 +655,7 @@ export default class PlayScene extends SuperScene {
       const {
         group, dynamic, image,
       } = tile;
-      if (isRespawn && (group === 'exits' || group === 'pupils')) {
+      if (isRespawn && (group === 'exits' || group === 'pupils' || group === 'jumpcoins')) {
         return;
       }
 
@@ -653,6 +678,7 @@ export default class PlayScene extends SuperScene {
     if (isRespawn) {
       objects.exits = level.objects.exits;
       objects.pupils = level.objects.pupils;
+      objects.jumpcoins = level.objects.jumpcoins;
     }
 
     level.enemies = objects.enemies;
@@ -661,16 +687,16 @@ export default class PlayScene extends SuperScene {
 
     objects.movers.forEach((mover) => this.setupMover(mover));
     objects.enemies.forEach((enemy) => this.setupEnemy(enemy));
-    objects.jumpcoins.forEach((jumpcoin) => this.setupJumpcoin(jumpcoin));
 
     if (!isRespawn) {
       objects.exits.forEach((exit) => this.setupExit(exit));
       objects.eyes.forEach((eye) => this.setupEye(eye));
+      objects.jumpcoins.forEach((jumpcoin) => this.setupJumpcoin(jumpcoin));
     }
 
     level.onRespawn(() => {
       Object.entries(level.objects).forEach(([type, list]) => {
-        if (type === 'exits' || type === 'pupils') {
+        if (type === 'exits' || type === 'pupils' || type === 'jumpcoins') {
           return;
         }
 
@@ -1173,23 +1199,22 @@ export default class PlayScene extends SuperScene {
 
     jumpcoin.collected = true;
 
-    // may not be set yet if the jumpcoin is right at the start of the level
-    if (jumpcoin.bobTween) {
-      jumpcoin.bobTween.stop();
-    }
+    jumpcoin.bobTween.stop();
 
     jumpcoin.glowParticles.moribund = true;
     jumpcoin.glowEmitter.stop();
-    jumpcoin.glowEmitter.stopFollow();
 
     jumpcoin.sparkParticles.moribund = true;
     jumpcoin.sparkEmitter.stop();
-    jumpcoin.sparkEmitter.stopFollow();
 
-    this.tweens.add({
+    if (jumpcoin.respawnTween) {
+      jumpcoin.respawnTween.stop();
+    }
+
+    jumpcoin.collectTween = this.tweens.add({
       targets: jumpcoin,
       duration: 1000,
-      y: jumpcoin.y - 8,
+      y: jumpcoin.originalY + 8,
       ease: 'Cubic.easeOut',
       alpha: 0.4,
     });
