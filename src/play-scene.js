@@ -1422,6 +1422,11 @@ export default class PlayScene extends SuperScene {
     enemy.floorCollision = ground;
   }
 
+  touchExit(player, exit) {
+    player.touchedExit = exit;
+    this.winLevel();
+  }
+
   setupLevelPhysics() {
     const {level, physics} = this;
     const {
@@ -1437,7 +1442,7 @@ export default class PlayScene extends SuperScene {
     physics.add.collider(player, objects.movers);
     physics.add.collider(enemies, objects.movers, null, (...args) => this.enemyFloorCollision(...args));
 
-    physics.add.overlap(player, statics.exits, () => this.winLevel());
+    physics.add.overlap(player, statics.exits, (...args) => this.touchExit(...args));
     physics.add.collider(enemies, statics.exits);
 
     physics.add.collider(player, statics.spikes, (...args) => this.takeSpikeDamage(...args));
@@ -2591,10 +2596,45 @@ export default class PlayScene extends SuperScene {
 
     player.disableBody(true, false);
 
+    let {x, y} = player;
+
+    if (player.touchedExit) {
+      const exit = player.touchedExit;
+      const mapWidth = prop('config.map_width');
+      const mapHeight = prop('config.map_height');
+      const tileWidth = prop('config.tile_width');
+      const tileHeight = prop('config.tile_height');
+      const {map} = level;
+
+      const isLeft = exit.config.x <= 1;
+      const isRight = exit.config.x >= mapWidth - 2;
+      const isBottom = exit.config.y >= mapHeight - 2;
+      const isTop = exit.config.y <= 1;
+
+      if (isLeft || isRight) {
+        x = player.x + (isLeft ? -1 : 1) * 2 * tileWidth;
+        [, y] = this.positionToScreenCoordinate(exit.config.x, exit.config.y);
+        if (map[exit.config.y + 1][exit.config.x].group === 'exits') {
+          y += tileHeight;
+        }
+      }
+
+      if (isBottom || isTop) {
+        y = player.y + (isTop ? -1 : 1) * 2 * tileHeight;
+        [x] = this.positionToScreenCoordinate(exit.config.x, exit.config.y);
+        if (map[exit.config.y][exit.config.x + 1].group === 'exits') {
+          x += tileWidth;
+        }
+      }
+    }
+
     this.tweens.add({
       targets: player,
       alpha: 0,
+      x,
+      y,
       duration: 2000,
+      ease: 'Quad.easeIn',
     });
 
     const banner = this.renderBanner();
