@@ -1498,7 +1498,7 @@ export default class PlayScene extends SuperScene {
     physics.add.collider(enemies, objects.movers, null, (...args) => this.enemyFloorCollision(...args));
 
     physics.add.overlap(player, statics.exits, (...args) => this.touchExit(...args));
-    physics.add.collider(enemies, statics.exits);
+    physics.add.collider(enemies, statics.exits, (enemy, exit) => this.exitTractorBeam(enemy, exit));
 
     physics.add.collider(player, statics.spikes, (...args) => this.takeSpikeDamage(...args));
     physics.add.collider(enemies, statics.spikes);
@@ -2703,6 +2703,8 @@ export default class PlayScene extends SuperScene {
       }
       secondaryDuration *= Math.abs(object.x - tween.x) / tileWidth;
     }
+
+    object.disableBody(true, false);
 
     this.tweens.add({
       targets: object,
