@@ -747,6 +747,9 @@ export default class PlayScene extends SuperScene {
       objects.jumpcoins.forEach((jumpcoin) => this.setupJumpcoin(jumpcoin));
 
       this.randomizeEyeTargets();
+
+      objects.pupils.forEach((pupil) => this.lerpPupil(pupil, true));
+
       level.onRespawn(() => {
         this.randomizeEyeTargets();
       });
@@ -1235,8 +1238,8 @@ export default class PlayScene extends SuperScene {
     this.timer(
       () => {
         level.respawnCallbacks.forEach((callback) => callback());
-        this.createLevelObjects(true);
         this.createPlayer();
+        this.createLevelObjects(true);
         this.renderHud(true);
         this.setupLevelPhysics();
         this.spawnPlayer(500);
@@ -1515,8 +1518,8 @@ export default class PlayScene extends SuperScene {
     this.level = this.createLevel(levelIndex);
     this.setupBackgroundScreen();
     this.createMap();
-    this.createLevelObjects(false);
     this.createPlayer();
+    this.createLevelObjects(false);
     this.renderHud(false);
     this.setupLevelPhysics();
 
@@ -1839,6 +1842,36 @@ export default class PlayScene extends SuperScene {
     });
   }
 
+  lerpPupil(pupil, instant) {
+    const {level} = this;
+    const {player} = level;
+
+    const tileWidth = prop('config.tile_width');
+    const tileHeight = prop('config.tile_height');
+
+    let x = pupil.pupilOriginX;
+    let y = pupil.pupilOriginY;
+
+    const tx = player.alpha >= 1 ? player.x : pupil.wanderX;
+    const ty = player.alpha >= 1 ? player.y : pupil.wanderY;
+    const speed = player.alpha >= 1 ? 0.05 : 0.02;
+
+    const dx = tx - x;
+    const dy = ty - y;
+
+    const theta = Math.atan2(dy, dx);
+    x += tileWidth / 5 * Math.cos(theta);
+    y += tileHeight / 5 * Math.sin(theta);
+
+    if (instant) {
+      pupil.x = x;
+      pupil.y = y;
+    } else {
+      pupil.x += speed * (x - pupil.x);
+      pupil.y += speed * (y - pupil.y);
+    }
+  }
+
   frameUpdates(time, dt) {
     const {level, command} = this;
     const {player} = level;
@@ -1883,22 +1916,7 @@ export default class PlayScene extends SuperScene {
     }
 
     level.objects.pupils.forEach((pupil) => {
-      let x = pupil.pupilOriginX;
-      let y = pupil.pupilOriginY;
-
-      const tx = player.alpha >= 1 ? player.x : pupil.wanderX;
-      const ty = player.alpha >= 1 ? player.y : pupil.wanderY;
-      const speed = player.alpha >= 1 ? 0.05 : 0.02;
-
-      const dx = tx - x;
-      const dy = ty - y;
-
-      const theta = Math.atan2(dy, dx);
-      x += tileWidth / 5 * Math.cos(theta);
-      y += tileHeight / 5 * Math.sin(theta);
-
-      pupil.x += speed * (x - pupil.x);
-      pupil.y += speed * (y - pupil.y);
+      this.lerpPupil(pupil);
     });
 
     if (player.body.touching.down) {
