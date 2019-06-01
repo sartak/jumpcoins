@@ -1058,7 +1058,7 @@ export default class PlayScene extends SuperScene {
     this.setPlayerInvincible();
   }
 
-  spendCoin(isVoluntary) {
+  spendCoin(isVoluntary, applyLeftVelocity) {
     const {level, save} = this;
     const {player, hud} = level;
 
@@ -1097,26 +1097,47 @@ export default class PlayScene extends SuperScene {
       coin.x = player.x;
       coin.y = player.y;
 
+      if (applyLeftVelocity === undefined) {
+        const dy = -tileHeight;
+        this.tweens.add({
+          targets: coin,
+          duration: 500,
+          y: coin.y + dy,
+          ease: 'Cubic.easeOut',
+          onComplete: () => {
+            this.tweens.add({
+              targets: coin,
+              duration: 500,
+              y: coin.y + dy / 2,
+              ease: 'Cubic.easeIn',
+            });
+          },
+        });
+      } else {
+        this.tweens.add({
+          targets: coin,
+          duration: 1000,
+          x: coin.x + (applyLeftVelocity ? -100 : 100),
+          ease: 'Cubic.easeOut',
+        });
+        this.tweens.add({
+          targets: coin,
+          duration: 1000,
+          y: coin.y + 50,
+          ease: 'Quad.easeIn',
+        });
+      }
+
       this.tweens.add({
         targets: coin,
-        duration: 500,
-        y: coin.y - tileHeight,
-        ease: 'Cubic.easeOut',
+        duration: 1000,
+        alpha: 0,
         onComplete: () => {
-          this.tweens.add({
-            targets: coin,
-            duration: 500,
-            y: coin.y + tileHeight / 2,
-            alpha: 0,
-            ease: 'Cubic.easeIn',
-            onComplete: () => {
-              if (coin === hud.lifecoin) {
-                delete hud.lifecoin;
-              }
+          if (coin === hud.lifecoin) {
+            delete hud.lifecoin;
+          }
 
-              coin.destroy();
-            },
-          });
+          coin.destroy();
         },
       });
     }
@@ -1582,7 +1603,7 @@ export default class PlayScene extends SuperScene {
         player.wallJumpContinuing = true;
         player.wallJumpHeld = true;
         player.wallJumpContra = false;
-        const suppressSound = this.spendCoin(true);
+        const suppressSound = this.spendCoin(true, player.wallJumpDirectionLeft);
         if (!suppressSound) {
           this.playSound('soundWallJump');
         }
