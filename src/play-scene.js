@@ -1265,7 +1265,7 @@ export default class PlayScene extends SuperScene {
         level.respawnCallbacks.forEach((callback) => callback());
         this.createPlayer();
         this.createLevelObjects(true);
-        this.renderHud(true);
+        this.renderHud(false);
         this.setupLevelPhysics();
         this.spawnPlayer(500);
       },
@@ -1545,7 +1545,7 @@ export default class PlayScene extends SuperScene {
     this.createMap();
     this.createPlayer();
     this.createLevelObjects(false);
-    this.renderHud(false);
+    this.renderHud(!skipIntro);
     this.setupLevelPhysics();
 
     if (!skipIntro) {
@@ -2268,7 +2268,7 @@ export default class PlayScene extends SuperScene {
     text.y -= text.height / 2;
   }
 
-  renderHud(isRespawn) {
+  renderHud(showedIntro) {
     const {level} = this;
     const {hud} = level;
 
@@ -2343,7 +2343,7 @@ export default class PlayScene extends SuperScene {
       label.y += 20;
       label.hintShowTween = this.tweens.add({
         targets: label,
-        delay: isRespawn ? (1000 + 500 * i) : (4000 + 500 * i),
+        delay: showedIntro ? (4000 + 500 * i) : (1000 + 500 * i),
         duration: 500,
         alpha: 1,
         y: label.y - 20,
