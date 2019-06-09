@@ -1954,7 +1954,7 @@ export default class PlayScene extends SuperScene {
       }
     }
 
-    if (!player.body.touching.down && (player.body.velocity.y > -40 || !command.jump.held)) {
+    if (!player.body.touching.down && (player.body.velocity.y > -40 || (!command.jump.held && prop('rules.jump.early_release')))) {
       player.body.setGravityY(prop('rules.base_gravity') * prop('rules.jump.down_gravity'));
     }
 

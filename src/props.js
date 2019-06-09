@@ -104,6 +104,7 @@ export const propSpecs = {
   'rules.jump.down_gravity': [4, 0, 20],
   'rules.jump.terminal_velocity': [500, 0, 1000],
   'rules.jump.coyote_grace_period_ms': [60, 0, 1000],
+  'rules.jump.early_release': [true],
 
   'rules.double_jump.velocity_x': [75, 0, 1000],
   'rules.double_jump.velocity_y': [350, 0, 1000],
