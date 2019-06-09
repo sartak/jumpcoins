@@ -203,7 +203,7 @@ export default class PlayScene extends SuperScene {
 
     if (this._replay) {
       config.skipIntro = this._replay.initData.skipIntro;
-    } else if (config.skipIntro === null) {
+    } else if (config.skipIntro === null || !('skipIntro' in config)) {
       config.skipIntro = prop('level.skip_intro');
     }
 
