@@ -1077,6 +1077,18 @@ export default class PlayScene extends SuperScene {
     );
   }
 
+  identifyEnemy(index) {
+    const {level} = this;
+    const {enemies} = level;
+
+    if (index >= enemies.length) {
+      return;
+    }
+
+    const enemy = enemies[index];
+    this.tween('effects.identifyEnemy', enemy);
+  }
+
   takeSpikeDamage(object1, object2) {
     const {level, command} = this;
     const {player} = level;

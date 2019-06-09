@@ -172,6 +172,42 @@ export const propSpecs = {
   'player.spritesheet': ['', null, 'player.previousStatus'],
 
   'enemies.animationVisible': [true],
+  'enemies.count': [0, null, 'level.enemies.length'],
+
+  'enemies.1.type': ['', null, 'level.enemies[0].config.glyph'],
+  'enemies.1.x': [0, null, 'level.enemies[0].x'],
+  'enemies.1.y': [0, null, 'level.enemies[0].y'],
+  'enemies.1.velocity_x': [0, null, 'level.enemies[0].body.velocity.x'],
+  'enemies.1.animation': ['', null, 'level.enemies[0].anims.currentAnim.key'],
+  'enemies.1.identify': [(scene) => scene.identifyEnemy(0)],
+
+  'enemies.2.type': ['', null, 'level.enemies[1].config.glyph'],
+  'enemies.2.x': [0, null, 'level.enemies[1].x'],
+  'enemies.2.y': [0, null, 'level.enemies[1].y'],
+  'enemies.2.velocity_x': [0, null, 'level.enemies[1].body.velocity.x'],
+  'enemies.2.animation': ['', null, 'level.enemies[1].anims.currentAnim.key'],
+  'enemies.2.identify': [(scene) => scene.identifyEnemy(1)],
+
+  'enemies.3.type': ['', null, 'level.enemies[2].config.glyph'],
+  'enemies.3.x': [0, null, 'level.enemies[2].x'],
+  'enemies.3.y': [0, null, 'level.enemies[2].y'],
+  'enemies.3.velocity_x': [0, null, 'level.enemies[2].body.velocity.x'],
+  'enemies.3.animation': ['', null, 'level.enemies[2].anims.currentAnim.key'],
+  'enemies.3.identify': [(scene) => scene.identifyEnemy(2)],
+
+  'enemies.4.type': ['', null, 'level.enemies[4].config.glyph'],
+  'enemies.4.x': [0, null, 'level.enemies[3].x'],
+  'enemies.4.y': [0, null, 'level.enemies[3].y'],
+  'enemies.4.velocity_x': [0, null, 'level.enemies[3].body.velocity.x'],
+  'enemies.4.animation': ['', null, 'level.enemies[3].anims.currentAnim.key'],
+  'enemies.4.identify': [(scene) => scene.identifyEnemy(3)],
+
+  'enemies.5.type': ['', null, 'level.enemies[5].config.glyph'],
+  'enemies.5.x': [0, null, 'level.enemies[4].x'],
+  'enemies.5.y': [0, null, 'level.enemies[4].y'],
+  'enemies.5.velocity_x': [0, null, 'level.enemies[4].body.velocity.x'],
+  'enemies.5.animation': ['', null, 'level.enemies[4].anims.currentAnim.key'],
+  'enemies.5.identify': [(scene) => scene.identifyEnemy(4)],
 
   'effects.damageBlur.amount': [2.5, 0, 50],
   'effects.damageBlur.in_ms': [100, 0, 2000],
@@ -266,6 +302,13 @@ export const propSpecs = {
     alpha: 0.5,
     lifespan: 200,
     x: 10,
+  }],
+
+  'effects.identifyEnemy.tween': [{
+    duration: 200,
+    alpha: 0.1,
+    loop: 1,
+    yoyo: true,
   }],
 };
 
