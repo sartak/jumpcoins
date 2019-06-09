@@ -138,6 +138,8 @@ export const propSpecs = {
   'level.earnedBadges.badgeBirdie': [false, null],
   'level.earnedBadges.badgeKiller': [false, null],
 
+  'player.animationVisible': [true],
+  'player.statusVisible': [true],
   'player.squish_max_enabled': [true],
   'player.squish_max': [0.10, 0, 1],
   'player.squish_speed': [0.2, 0, 1],

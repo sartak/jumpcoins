@@ -1788,12 +1788,22 @@ export default class PlayScene extends SuperScene {
     }
   }
 
-  setPlayerAnimation(type = this.level.player.previousAnimation) {
+  setPlayerAnimation(type) {
     const {level} = this;
     const {player} = level;
 
-    const status = player.jumpcoins > 0 ? 'Shielded' : 'Default';
-    const animation = `spritePlayer${status}${type}`;
+    let frame = type || this.level.player.previousAnimation;
+    if (!prop('player.animationVisible')) {
+      frame = 'Neutral';
+    }
+
+    let status = player.jumpcoins > 0 ? 'Shielded' : 'Default';
+    if (!prop('player.statusVisible')) {
+      status = 'Default';
+    }
+
+    const animation = `spritePlayer${status}${frame}`;
+
     player.anims.play(animation, type === player.previousAnimation && status === player.previousStatus);
     player.previousAnimation = type;
     player.previousStatus = status;
