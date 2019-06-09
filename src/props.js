@@ -306,6 +306,215 @@ export const propSpecs = {
     x: 10,
   }],
 
+  'effects.spikeJitter.tween': [{
+    duration: 500,
+    dx: 4,
+    dy: 4,
+    yoyo: true,
+    loop: -1,
+  }],
+
+  'effects.jumpcoinBob.tween': [{
+    duration: 1000,
+    ease: 'Cubic.easeInOut',
+    dy: 8,
+    yoyo: true,
+    loop: -1,
+    refreshPhysics: true,
+  }],
+
+  'effects.jumpcoinRespawn.tween': [{
+    duration: 1000,
+    ease: 'Cubic.easeOut',
+    alpha: 1,
+  }],
+
+  'effects.enemyKill.1.tween': [{
+    duration: 1000,
+    ease: 'Back.easeIn',
+    dy: 800,
+    destroyOnComplete: true,
+  }],
+
+  'effects.enemyKill.2.tween': [{
+    duration: 1000,
+    ease: 'Quad.easeIn',
+    dx: 24 * 3,
+    rotation: 2,
+    alpha: 0.0,
+    scaleX: 1.5,
+    scaleY: 1.5,
+  }],
+
+  'effects.spendCoin.up1.tween': [{
+    duration: 300,
+    dy: -12,
+    ease: 'Quad.easeOut',
+  }],
+
+  'effects.spendCoin.up2.tween': [{
+    delay: 300,
+    duration: 500,
+    dy: 6,
+    ease: 'Quad.easeIn',
+  }],
+
+  'effects.spendCoin.side1.tween': [{
+    duration: 1000,
+    dx: 100,
+    ease: 'Cubic.easeOut',
+  }],
+
+  'effects.spendCoin.side2.tween': [{
+    duration: 1000,
+    dy: 50,
+    ease: 'Quad.easeIn',
+  }],
+
+  'effects.spendCoin.fade.tween': [{
+    duration: 1000,
+    alpha: 0,
+    destroyOnComplete: true,
+  }],
+
+  'effects.spawnPlayer.tween': [{
+    duration: 500,
+    alpha: 1,
+  }],
+
+  'effects.jumpcoinCollect.tween': [{
+    duration: 1000,
+    dy: 8,
+    ease: 'Cubic.easeOut',
+    alpha: 0.4,
+  }],
+
+  'effects.jumpcoinToHud.tween': [{
+    duration: 800,
+    ease: 'Cubic.easeInOut',
+  }],
+
+  'effects.hint.show.tween': [{
+    delay: 500,
+    duration: 500,
+    alpha: 1,
+    dy: -20,
+    ease: 'Cubic.easeOut',
+  }],
+
+  'effects.hint.attract.tween': [{
+    duration: 2000,
+    dy: 8,
+    ease: 'Quad.easeInOut',
+    yoyo: true,
+    loop: -1,
+  }],
+
+  'effects.hint.remove.tween': [{
+    delay: 300,
+    duration: 500,
+    alpha: 0,
+    dy: 20,
+    ease: 'Cubic.easeIn',
+    destroyOnComplete: true,
+  }],
+
+  'effects.banner.introBannerIn.tween': [{
+    ease: 'Cubic.easeIn',
+    duration: 500,
+  }],
+
+  'effects.banner.titleIn.tween': [{
+    alpha: 1,
+    dy: -20,
+    ease: 'Cubic.easeOut',
+    duration: 500,
+  }],
+
+  'effects.banner.badgeIn.tween': [{
+    delay: 50,
+    dy: 20,
+    ease: 'Cubic.easeOut',
+    duration: 500,
+  }],
+
+  'effects.banner.speedrunIn.tween': [{
+    alpha: 1,
+    delay: 500,
+    dy: 20,
+    ease: 'Cubic.easeOut',
+    duration: 500,
+  }],
+
+  'effects.banner.contentsOut.tween': [{
+    duration: 500,
+    alpha: 0,
+  }],
+
+  'effects.banner.introBannerOut.tween': [{
+    delay: 2250,
+    duration: 500,
+    scaleY: 0,
+  }],
+
+  'effects.banner.outroBannerIn.tween': [{
+    ease: 'Cubic.easeIn',
+    duration: 500,
+  }],
+
+  'effects.banner.outroBannerOut.tween': [{
+    delay: 4250,
+    duration: 500,
+    scaleY: 0,
+  }],
+
+  'effects.banner.earnedBadge.fadeBlankOut.tween': [{
+    delay: 500,
+    alpha: 0,
+    duration: 500,
+  }],
+
+  'effects.banner.earnedBadge.fadeRealIn.tween': [{
+    delay: 500,
+    alpha: 1,
+    duration: 500,
+  }],
+
+  'effects.banner.earnedBadge.bounce.tween': [{
+    ease: 'Cubic.easeOut',
+    duration: 300,
+    delay: 500,
+    dy: -6,
+    yoyo: true,
+  }],
+
+  'effects.exitTractor.primaryAxis.tween': [{
+    delay: 200,
+    duration: 1000,
+    ease: 'Cubic.easeIn',
+    dx: 96,
+    alpha: 0.7,
+  }],
+
+  'effects.exitTractor.secondaryAxis.tween': [{
+    duration: 1500,
+    ease: 'Cubic.easeOut',
+  }],
+
+  'effects.invincible.initial.tween': [{
+    alpha: 0.5,
+    duration: 300,
+    yoyo: true,
+    loop: -1,
+  }],
+
+  'effects.invincible.end.tween': [{
+    alpha: 0.5,
+    duration: 100,
+    yoyo: true,
+    loop: -1,
+  }],
+
   'effects.identifyEnemy.tween': [{
     duration: 200,
     alpha: 0.1,

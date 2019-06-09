@@ -410,14 +410,16 @@ export default class PlayScene extends SuperScene {
 
       this.timer(
         () => {
-          this.tweens.add({
-            targets: child,
-            x: child.x + animate[0] * 4,
-            y: child.y + animate[1] * 4,
-            duration: 500,
-            yoyo: true,
-            loop: -1,
-          });
+          this.tween(
+            'effects.spikeJitter',
+            child,
+            {
+              massageProps: (props) => {
+                props.dx *= animate[0];
+                props.dy *= animate[1];
+              },
+            },
+          );
         },
         offset ? 500 : 0,
       );
@@ -526,25 +528,21 @@ export default class PlayScene extends SuperScene {
   }
 
   jumpcoinBob(jumpcoin) {
-    jumpcoin.bobTween = this.tweens.add({
-      targets: jumpcoin,
-      delay: this.randBetween('jumpcoinBob', 0, 500),
-      onComplete: () => {
-        jumpcoin.bobTween = this.tweens.add({
-          targets: jumpcoin,
-          duration: 1000,
-          y: jumpcoin.originalY + 8,
-          ease: 'Cubic.easeInOut',
-          yoyo: true,
-          loop: -1,
-          onUpdate: () => {
-            if (jumpcoin.body) {
-              jumpcoin.refreshBody();
-            }
-          },
-        });
+    const delay = this.randBetween('jumpcoinBob', 0, 500);
+    jumpcoin.bobTween = this.tween(
+      null,
+      jumpcoin,
+      {
+        alpha: 1, // force the delay to happen
+        delay,
+        onComplete: () => {
+          jumpcoin.bobTween = this.tween(
+            'effects.jumpcoinBob',
+            jumpcoin,
+          );
+        },
       },
-    });
+    );
   }
 
   jumpcoinGlow(jumpcoin) {
@@ -608,16 +606,17 @@ export default class PlayScene extends SuperScene {
 
       jumpcoin.sparkParticles.moribund = false;
       jumpcoin.sparkEmitter.start();
-      jumpcoin.respawnTween = this.tweens.add({
-        targets: jumpcoin,
-        duration: 1000,
-        y: jumpcoin.originalY,
-        ease: 'Cubic.easeOut',
-        alpha: 1,
-        onComplete: () => {
-          this.jumpcoinBob(jumpcoin);
+
+      jumpcoin.respawnTween = this.tween(
+        'effects.jumpcoinRespawn',
+        jumpcoin,
+        {
+          y: jumpcoin.originalY,
+          onComplete: () => {
+            this.jumpcoinBob(jumpcoin);
+          },
         },
-      });
+      );
     });
   }
 
@@ -981,28 +980,23 @@ export default class PlayScene extends SuperScene {
     const {level} = this;
     const {player} = level;
 
-    const tileWidth = prop('config.tile_width');
-    const duration = 1000;
+    this.tween(
+      'effects.enemyKill.1',
+      enemy,
+    );
 
-    this.tweens.add({
-      targets: enemy,
-      duration,
-      ease: 'Back.easeIn',
-      y: enemy.y + this.game.config.height,
-      onComplete: () => {
-        enemy.destroy();
+    this.tween(
+      'effects.enemyKill.2',
+      enemy,
+      {
+        massageProps: (props) => {
+          if (player.x >= enemy.x) {
+            props.dx *= -1;
+            props.rotation *= -1;
+          }
+        },
       },
-    });
-
-    this.tweens.add({
-      targets: enemy,
-      duration,
-      ease: 'Quad.easeIn',
-      x: enemy.x + (player.x < enemy.x ? tileWidth * 3 : tileWidth * -3),
-      alpha: 0,
-      rotation: player.x < enemy.x ? 2 : -2,
-      scale: 1.5,
-    });
+    );
   }
 
   killEnemy(enemy) {
@@ -1038,27 +1032,25 @@ export default class PlayScene extends SuperScene {
     player.fastInvincible = false;
     player.alpha = 1;
 
-    player.invincibleTween = this.tweens.add({
-      targets: player,
-      alpha: 0.5,
-      duration: 300,
-      ease: (t) => (t < 0.8 ? 0 : 1),
-      yoyo: true,
-      loop: -1,
-      onUpdate: () => {
-        if (player.fastInvincible && player.alpha >= 1) {
-          player.invincibleTween.stop();
-          player.invincibleTween = this.tweens.add({
-            targets: player,
-            alpha: 0.5,
-            duration: 100,
-            ease: (t) => (t < 0.8 ? 0 : 1),
-            yoyo: true,
-            loop: -1,
-          });
-        }
+    player.invincibleTween = this.tween(
+      'effects.invincible.initial',
+      player,
+      {
+        ease: (t) => (t < 0.8 ? 0 : 1),
+        onUpdate: () => {
+          if (player.fastInvincible && player.alpha >= 1) {
+            player.invincibleTween.stop();
+            player.invincibleTween = this.tween(
+              'effects.invincible.end',
+              player,
+              {
+                ease: (t) => (t < 0.8 ? 0 : 1),
+              },
+            );
+          }
+        },
       },
-    });
+    );
 
     this.timer(
       () => {
@@ -1179,53 +1171,53 @@ export default class PlayScene extends SuperScene {
         coin.hudTween.stop();
       }
 
-      const tileHeight = prop('config.tile_height');
       coin.x = player.x;
       coin.y = player.y;
 
-      if (applyLeftVelocity === undefined || !player.spentLifecoin) {
-        const dy = -tileHeight;
-        this.tweens.add({
-          targets: coin,
-          duration: 500,
-          y: coin.y + dy,
-          ease: 'Cubic.easeOut',
-          onComplete: () => {
-            this.tweens.add({
-              targets: coin,
-              duration: 500,
-              y: coin.y + dy / 2,
-              ease: 'Cubic.easeIn',
-            });
-          },
-        });
-      } else {
-        this.tweens.add({
-          targets: coin,
-          duration: 1000,
-          x: coin.x + (applyLeftVelocity ? -100 : 100),
-          ease: 'Cubic.easeOut',
-        });
-        this.tweens.add({
-          targets: coin,
-          duration: 1000,
-          y: coin.y + 50,
-          ease: 'Quad.easeIn',
-        });
+      if (!prop('effects.spendCoin.fade.animated')) {
+        coin.alpha = 0;
       }
 
-      this.tweens.add({
-        targets: coin,
-        duration: 1000,
-        alpha: 0,
-        onComplete: () => {
-          if (coin === hud.lifecoin) {
-            delete hud.lifecoin;
-          }
+      if (applyLeftVelocity === undefined || !player.spentLifecoin) {
+        this.tween('effects.spendCoin.up1', coin);
+        this.tween('effects.spendCoin.up2', coin);
+      } else {
+        this.tween(
+          'effects.spendCoin.side1',
+          coin,
+          {
+            massageProps: (props) => {
+              if (applyLeftVelocity) {
+                props.dx *= -1;
+              }
+            },
+          },
+        );
 
-          coin.destroy();
+        this.tween(
+          'effects.spendCoin.side2',
+          coin,
+          {
+            massageProps: (props) => {
+              if (applyLeftVelocity) {
+                props.dx *= -1;
+              }
+            },
+          },
+        );
+      }
+
+      this.tween(
+        'effects.spendCoin.fade',
+        coin,
+        {
+          onComplete: () => {
+            if (coin === hud.lifecoin) {
+              delete hud.lifecoin;
+            }
+          },
         },
-      });
+      );
     }
 
     if (player.spentLifecoin) {
@@ -1284,16 +1276,17 @@ export default class PlayScene extends SuperScene {
     player.alpha = 0;
     command.ignoreAll(this, 'spawn', true);
 
-    this.tweens.add({
-      targets: player,
-      alpha: 1,
-      delay,
-      duration: 500,
-      onComplete: () => {
-        command.ignoreAll(this, 'spawn', false);
-        level.startedAt = physics.time;
+    this.tween(
+      'effects.spawnPlayer',
+      player,
+      {
+        delay,
+        onComplete: () => {
+          command.ignoreAll(this, 'spawn', false);
+          level.startedAt = physics.time;
+        },
       },
-    });
+    );
   }
 
   collectJumpcoin(object1, object2) {
@@ -1319,13 +1312,15 @@ export default class PlayScene extends SuperScene {
       jumpcoin.respawnTween.stop();
     }
 
-    jumpcoin.collectTween = this.tweens.add({
-      targets: jumpcoin,
-      duration: 1000,
-      y: jumpcoin.originalY + 8,
-      ease: 'Cubic.easeOut',
-      alpha: 0.4,
-    });
+    jumpcoin.collectTween = this.tween(
+      'effects.jumpcoinCollect',
+      jumpcoin,
+      {
+        massageProps: (props) => {
+          props.y = jumpcoin.originalY + props.dy;
+        },
+      },
+    );
 
     this.playSound('soundCoin');
 
@@ -1349,13 +1344,14 @@ export default class PlayScene extends SuperScene {
     const y = this.yBorder / 2;
     img.setDepth(9);
 
-    img.hudTween = this.tweens.add({
-      targets: img,
-      duration: 800,
-      x,
-      y,
-      ease: 'Cubic.easeInOut',
-    });
+    img.hudTween = this.tween(
+      'effects.jumpcoinToHud',
+      img,
+      {
+        x,
+        y,
+      },
+    );
 
     return false;
   }
@@ -1383,17 +1379,15 @@ export default class PlayScene extends SuperScene {
     hud.hints.forEach((hint, i) => {
       hint.hintShowTween.stop();
 
-      this.tweens.add({
-        targets: hint,
-        delay: 300 * i,
-        duration: 500,
-        alpha: 0,
-        y: hint.y + 20,
-        ease: 'Cubic.easeIn',
-        onComplete: () => {
-          hint.destroy();
+      this.tween(
+        'effects.hint.remove',
+        hint,
+        {
+          massageProps: (props) => {
+            props.delay *= i;
+          },
         },
-      });
+      );
     });
 
     return false;
@@ -2347,29 +2341,25 @@ export default class PlayScene extends SuperScene {
 
       label.alpha = 0;
       label.y += 20;
-      label.hintShowTween = this.tweens.add({
-        targets: label,
-        delay: showedIntro ? (4000 + 500 * i) : (1000 + 500 * i),
-        duration: 500,
-        alpha: 1,
-        y: label.y - 20,
-        ease: 'Cubic.easeOut',
-        onComplete: () => {
-          this.timer(
-            () => {
-              label.hintShowTween = this.tweens.add({
-                targets: label,
-                duration: 2000,
-                y: label.y + 8,
-                ease: 'Quad.easeInOut',
-                yoyo: true,
-                loop: -1,
-              });
-            },
-            500,
-          );
+
+      label.hintShowTween = this.tween(
+        'effects.hint.show',
+        label,
+        {
+          massageProps: (props) => {
+            props.delay *= i;
+            props.delay += showedIntro ? 4000 : 1000;
+          },
+          onComplete: () => {
+            this.timer(
+              () => {
+                label.hintShowTween = this.tween('effects.hint.attract', label);
+              },
+              500,
+            );
+          },
         },
-      });
+      );
     });
 
     level.onRespawn(() => {
@@ -2501,13 +2491,7 @@ export default class PlayScene extends SuperScene {
     title.alpha = 0;
     title.y += 20;
 
-    this.tweens.add({
-      targets: title,
-      alpha: 1,
-      y: title.y - 20,
-      ease: 'Cubic.easeOut',
-      duration: 500,
-    });
+    this.tween('effects.banner.titleIn', title);
 
     return title;
   }
@@ -2554,15 +2538,17 @@ export default class PlayScene extends SuperScene {
         alpha = 0.3;
       }
 
-      this.tweens.add({
-        targets: badge,
-        delay: i * 50,
-        alpha,
-        x,
-        y: badge.y + 20,
-        ease: 'Cubic.easeOut',
-        duration: 500,
-      });
+      this.tween(
+        'effects.banner.badgeIn',
+        badge,
+        {
+          alpha,
+          x,
+          massageProps: (props) => {
+            props.delay *= i;
+          },
+        },
+      );
 
       if (level.earnedBadges[badgeName]) {
         earnedBadges += 1;
@@ -2578,53 +2564,54 @@ export default class PlayScene extends SuperScene {
 
         const thisEarnedBadge = earnedBadges;
 
-        this.tweens.add({
-          targets: empty,
-          delay: i * 50,
-          alpha: 0.3,
-          x,
-          y: badge.y + 20,
-          ease: 'Cubic.easeOut',
-          duration: 500,
-          onComplete: () => {
-            this.timer(
-              () => {
-                this.playSound('soundBadge');
-              },
-              250 + (earnedBadges - thisEarnedBadge) * 500,
-            );
+        this.tween(
+          'effects.banner.badgeIn',
+          empty,
+          {
+            alpha: 0.3,
+            x,
+            massageProps: (props) => {
+              props.delay *= i;
+            },
+            onComplete: () => {
+              this.tween(
+                'effects.banner.earnedBadge.fadeBlankOut',
+                empty,
+                {
+                  massageProps: (props) => {
+                    props.delay *= (earnedBadges - thisEarnedBadge);
+                  },
+                },
+              );
 
-            this.tweens.add({
-              targets: empty,
-              delay: (earnedBadges - thisEarnedBadge) * 500,
-              alpha: 0,
-              duration: 500,
-            });
-            this.tweens.add({
-              targets: badge,
-              delay: (earnedBadges - thisEarnedBadge) * 500,
-              alpha: 1,
-              duration: 500,
-              onComplete: () => {
-              },
-            });
-            this.tweens.add({
-              targets: [empty, badge],
-              ease: 'Cubic.easeOut',
-              duration: 300,
-              delay: 250 + (earnedBadges - thisEarnedBadge) * 500,
-              y: badge.y - 6,
-              onComplete: () => {
-                this.tweens.add({
-                  targets: [empty, badge],
-                  ease: 'Cubic.easeOut',
-                  duration: 300,
-                  y: badge.y + 6,
-                });
-              },
-            });
+              this.tween(
+                'effects.banner.earnedBadge.fadeRealIn',
+                badge,
+                {
+                  massageProps: (props) => {
+                    props.delay *= (earnedBadges - thisEarnedBadge);
+                  },
+                  onComplete: () => {
+                    this.playSound('soundBadge');
+                  },
+                },
+              );
+
+              [empty, badge].forEach((target) => {
+                this.tween(
+                  'effects.banner.earnedBadge.bounce',
+                  target,
+                  {
+                    massageProps: (props) => {
+                      props.delay *= (earnedBadges - thisEarnedBadge);
+                      props.delay += 250;
+                    },
+                  },
+                );
+              });
+            },
           },
-        });
+        );
       }
     });
 
@@ -2672,14 +2659,7 @@ export default class PlayScene extends SuperScene {
     speedrunLabel.alpha = 0;
     speedrunLabel.y -= 20;
 
-    this.tweens.add({
-      targets: speedrunLabel,
-      alpha: 1,
-      delay: 500,
-      y: speedrunLabel.y + 20,
-      ease: 'Cubic.easeOut',
-      duration: 500,
-    });
+    this.tween('effects.banner.speedrunIn', speedrunLabel);
 
     return speedrunLabel;
   }
@@ -2697,42 +2677,46 @@ export default class PlayScene extends SuperScene {
     banner.scaleY = scaleY / 5;
     banner.x += banner.scaleX * banner.width;
 
-    this.tweens.add({
-      targets: banner,
-      scaleY,
-      x,
-      ease: 'Cubic.easeIn',
-      duration: 500,
-      onComplete: () => {
-        const title = this.renderTitle(level.name);
-        hud.intro.push(title);
+    this.tween(
+      'effects.banner.introBannerIn',
+      banner,
+      {
+        scaleY,
+        x,
+        onComplete: () => {
+          const title = this.renderTitle(level.name);
+          hud.intro.push(title);
 
-        const badges = this.renderBadges();
-        hud.intro.push(...badges);
+          const badges = this.renderBadges();
+          hud.intro.push(...badges);
 
-        const speedrunLabel = this.renderSpeedrunLabel(null, level.previous_best_ms);
-        hud.intro.push(speedrunLabel);
+          const speedrunLabel = this.renderSpeedrunLabel(null, level.previous_best_ms);
+          hud.intro.push(speedrunLabel);
 
-        [title, ...badges, speedrunLabel].forEach((object) => {
-          this.tweens.add({
-            targets: object,
-            delay: 2000,
-            duration: 500,
-            alpha: 0,
+          [title, ...badges, speedrunLabel].forEach((object) => {
+            this.tween(
+              'effects.banner.contentsOut',
+              object,
+              {
+                massageProps: (props) => {
+                  props.delay = (props.delay || 0) + 2000;
+                },
+              },
+            );
           });
-        });
 
-        this.tweens.add({
-          targets: banner,
-          delay: 2250,
-          duration: 500,
-          scaleY: 0,
-          onComplete: () => {
-            command.ignoreAll(this, 'intro', false);
-          },
-        });
+          this.tween(
+            'effects.banner.introBannerOut',
+            banner,
+            {
+              onComplete: () => {
+                command.ignoreAll(this, 'intro', false);
+              },
+            },
+          );
+        },
       },
-    });
+    );
   }
 
   exitTractor(object, exit) {
@@ -2749,48 +2733,64 @@ export default class PlayScene extends SuperScene {
     const isBottom = exit.config.y >= mapHeight - 2;
     const isTop = exit.config.y <= 1;
 
-    const tween = {};
-    let primary;
-    let secondary;
-    let secondaryDuration = 1500;
-
-    if (isLeft || isRight) {
-      [primary, secondary] = ['x', 'y'];
-      tween.x = object.x + (isLeft ? -1 : 1) * 3 * tileWidth;
-      [, tween.y] = this.positionToScreenCoordinate(exit.config.x, exit.config.y);
-      if (map[exit.config.y + 1][exit.config.x].group === 'exits') {
-        tween.y += tileHeight;
-      }
-      secondaryDuration *= Math.abs(object.y - tween.y) / tileHeight;
-    }
-
-    if (isBottom || isTop) {
-      [primary, secondary] = ['y', 'x'];
-      tween.y = object.y + (isTop ? -1 : 1) * 3 * tileHeight;
-      [tween.x] = this.positionToScreenCoordinate(exit.config.x, exit.config.y);
-      if (map[exit.config.y][exit.config.x + 1].group === 'exits') {
-        tween.x += tileWidth;
-      }
-      secondaryDuration *= Math.abs(object.x - tween.x) / tileWidth;
-    }
-
     object.disableBody(true, false);
 
-    this.tweens.add({
-      targets: object,
-      [primary]: tween[primary],
-      delay: 200,
-      duration: 1000,
-      ease: 'Cubic.easeIn',
-    });
+    this.tween(
+      'effects.exitTractor.primaryAxis',
+      object,
+      {
+        massageProps: (props) => {
+          delete props.x;
+          delete props.y;
+
+          if (isRight) {
+            delete props.dy;
+          }
+
+          if (isLeft) {
+            props.dx *= -1;
+            delete props.dy;
+          }
+
+          if (isBottom) {
+            props.dy = props.dx;
+            delete props.dx;
+          }
+
+          if (isTop) {
+            props.dy = -props.dx;
+            delete props.dx;
+          }
+        },
+      },
+    );
 
     if (!level.skipSecondaryExitTractor) {
-      this.tweens.add({
-        targets: object,
-        [secondary]: tween[secondary],
-        duration: secondaryDuration,
-        ease: 'Cubic.easeOut',
-      });
+      this.tween(
+        'effects.exitTractor.secondaryAxis',
+        object,
+        {
+          massageProps: (props) => {
+            const exitPosition = this.positionToScreenCoordinate(exit.config.x, exit.config.y);
+
+            if (isLeft || isRight) {
+              [, props.y] = exitPosition;
+              if (map[exit.config.y + 1][exit.config.x].group === 'exits') {
+                props.y += tileHeight;
+              }
+              props.duration *= Math.abs(object.y - props.y) / tileHeight;
+            }
+
+            if (isBottom || isTop) {
+              [props.x] = exitPosition;
+              if (map[exit.config.y][exit.config.x + 1].group === 'exits') {
+                props.x += tileWidth;
+              }
+              props.duration *= Math.abs(object.x - props.x) / tileWidth;
+            }
+          },
+        },
+      );
     }
   }
 
@@ -2806,12 +2806,6 @@ export default class PlayScene extends SuperScene {
       this.exitTractor(player, player.touchedExit);
     }
 
-    this.tweens.add({
-      targets: player,
-      alpha: 0.7,
-      duration: 2000,
-    });
-
     const banner = this.renderBanner();
     hud.outro.push(banner);
 
@@ -2825,40 +2819,45 @@ export default class PlayScene extends SuperScene {
       encouragement = 'You set a new personal best!!';
     }
 
-    this.tweens.add({
-      targets: banner,
-      scaleX,
-      ease: 'Cubic.easeIn',
-      duration: 500,
-      onComplete: () => {
-        const title = this.renderTitle(encouragement);
-        hud.outro.push(title);
+    this.tween(
+      'effects.banner.outroBannerIn',
+      banner,
+      {
+        scaleX,
+        onComplete: () => {
+          const title = this.renderTitle(encouragement);
+          hud.outro.push(title);
 
-        const badges = this.renderBadges();
-        hud.outro.push(...badges);
+          const badges = this.renderBadges();
+          hud.outro.push(...badges);
 
-        const speedrunLabel = this.renderSpeedrunLabel(level.duration_ms, level.previous_best_ms);
-        hud.outro.push(speedrunLabel);
+          const speedrunLabel = this.renderSpeedrunLabel(level.duration_ms, level.previous_best_ms);
+          hud.outro.push(speedrunLabel);
 
-        [title, ...badges, speedrunLabel].forEach((object) => {
-          this.tweens.add({
-            targets: object,
-            delay: 4000,
-            duration: 500,
-            alpha: 0,
+          [title, ...badges, speedrunLabel].forEach((object) => {
+            this.tween(
+              'effects.banner.contentsOut',
+              object,
+              {
+                massageProps: (props) => {
+                  props.delay = (props.delay || 0) + 4000;
+                },
+              },
+            );
           });
-        });
 
-        this.tweens.add({
-          targets: banner,
-          delay: 4250,
-          duration: 500,
-          scaleY: 0,
-        });
-
-        this.timer(callback, 4750);
+          this.tween(
+            'effects.banner.outroBannerOut',
+            banner,
+            {
+              onComplete: () => {
+                callback();
+              },
+            },
+          );
+        },
       },
-    });
+    );
   }
 
   launchTimeSight() {
