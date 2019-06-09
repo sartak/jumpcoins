@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import {expandParticleProps} from './particles';
+import {expandTweenProps} from './tweens';
 import {freezeStorage, removeAllFields} from './store';
 import {preprocessTileDefinitions} from './level-parser';
 
@@ -42,12 +43,12 @@ export function builtinPropSpecs(commands) {
     'scene.seed': ['', null, 'scene.settings.data.seed'],
     'scene.music': ['', null, 'currentMusicName'],
     'scene.physicsFps': [0.01, null, 'physics.world.fps'],
-    'scene.images_length': [0, null, (scene) => scene.add.displayList.list.filter((node) => node.type === 'Image').length],
-    'scene.sprites_length': [0, null, (scene) => scene.add.displayList.list.filter((node) => node.type === 'Sprite').length],
-    'scene.particles_length': [0, null, (scene) => scene.add.displayList.list.filter((node) => node.type === 'ParticleEmitterManager').length],
-    'scene.text_length': [0, null, (scene) => scene.add.displayList.list.filter((node) => node.type === 'Text').length],
-    'scene.sounds_length': [0, null, 'sounds.length'],
-    'scene.timers_length': [0, null, 'timers.length'],
+    'scene.images': [0, null, (scene) => scene.add.displayList.list.filter((node) => node.type === 'Image').length],
+    'scene.sprites': [0, null, (scene) => scene.add.displayList.list.filter((node) => node.type === 'Sprite').length],
+    'scene.particles': [0, null, (scene) => scene.add.displayList.list.filter((node) => node.type === 'ParticleEmitterManager').length],
+    'scene.text': [0, null, (scene) => scene.add.displayList.list.filter((node) => node.type === 'Text').length],
+    'scene.sounds': [0, null, 'sounds.length'],
+    'scene.timers': [0, null, 'timers.length'],
     'scene.physicsColliders_length': [0, null, 'physics.world.colliders._active.length'],
     'scene.debugDraw': [false, (value, scene) => {
       if (value) {
@@ -181,8 +182,13 @@ export function commandKeyProps(commands) {
 
 export function ManageableProps(propSpecs, particleImages) {
   expandParticleProps(propSpecs, particleImages);
+  expandTweenProps(propSpecs, particleImages);
 
   Object.entries(propSpecs).forEach(([key, spec]) => {
+    if (!Array.isArray(spec)) {
+      throw new Error(`Invalid spec for prop ${key}; expected array, got ${spec}`);
+    }
+
     let [value] = spec;
     // interject the scene and game, and wrap in a try
     if (typeof value === 'function') {

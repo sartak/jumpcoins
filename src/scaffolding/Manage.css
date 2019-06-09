@@ -24,6 +24,20 @@
   width: 40%;
 }
 
+.Manage .dg .disableable {
+  position: relative;
+}
+
+.Manage .dg .disableable .property-name {
+  box-sizing: border-box;
+  padding-right: 26px;
+}
+
+.Manage .dg .disableable .toggle {
+  position: absolute;
+  left: calc(60% - 26px);
+}
+
 .Manage .dg .cr.listen {
   color: #aaa;
 }
@@ -69,4 +83,10 @@
 
 .Manage .dg li.cr.listen:not(.folder):nth-child(even):hover {
   background: #202020;
+}
+
+.Manage .dg .closed li:not(.title),
+.Manage .dg .closed ul li,
+.Manage .dg .closed ul li>* {
+  display: none; /* significant perf boost; Chrome avoids rendering */
 }
