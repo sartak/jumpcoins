@@ -120,6 +120,8 @@ export const propSpecs = {
   'rules.walljump.detach_grace_period_ms': [100, 0, 1000],
   'rules.walljump.forbid': [false],
 
+  'rules.enemy.walk_velocity': [30, 0, 1000],
+
   'level.name': ['', null],
   'level.index': [-1, null],
   'level.filename': ['', null],

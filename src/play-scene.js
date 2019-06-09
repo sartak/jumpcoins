@@ -1841,11 +1841,8 @@ export default class PlayScene extends SuperScene {
 
         enemy.setFlipX(!enemy.movingLeft);
 
-        if (enemy.movingLeft) {
-          enemy.setVelocityX(-enemy.config.speed);
-        } else {
-          enemy.setVelocityX(enemy.config.speed);
-        }
+        const velocity = (enemy.movingLeft ? -1 : 1) * prop('rules.enemy.walk_velocity');
+        enemy.setVelocityX(velocity);
       }
 
       enemy.floorCollision = null;
