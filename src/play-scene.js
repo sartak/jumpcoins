@@ -2297,14 +2297,17 @@ export default class PlayScene extends SuperScene {
     hud.hints = [];
 
     const hintTexts = [];
-    if (level.hint) {
-      hintTexts.push(level.hint);
-    }
-    if (level.hint2) {
-      hintTexts.push(level.hint2);
-    }
-    if (level.hint3) {
-      hintTexts.push(level.hint3);
+
+    if (!prop('level.skip_hints')) {
+      if (level.hint) {
+        hintTexts.push(level.hint);
+      }
+      if (level.hint2) {
+        hintTexts.push(level.hint2);
+      }
+      if (level.hint3) {
+        hintTexts.push(level.hint3);
+      }
     }
 
     level.removedHints = false;
