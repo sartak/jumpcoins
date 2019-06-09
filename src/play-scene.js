@@ -1882,6 +1882,13 @@ export default class PlayScene extends SuperScene {
     const {level} = this;
     const {player} = level;
 
+    if (!prop('level.eye_tracking')) {
+      pupil.alpha = 0;
+      return;
+    } else {
+      pupil.alpha = 1;
+    }
+
     const tileWidth = prop('config.tile_width');
     const tileHeight = prop('config.tile_height');
 
