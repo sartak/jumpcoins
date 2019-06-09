@@ -2009,13 +2009,10 @@ export default class PlayScene extends SuperScene {
     const puffLeft = player.body.touching.left && command.left.held;
     let puffEnabled = false;
     if ((player.body.touching.left && command.left.held) || (player.body.touching.right && command.right.held)) {
-      vx = 0.7;
-      vy = -0.7;
-      const max = prop('rules.walljump.drag_terminal_velocity');
-      // we intentionally don't do this for the other direction because of
-      // jumping against walls being a common case
-      if (player.body.velocity.y >= max) {
-        player.setVelocityY(max);
+      if (player.body.velocity.y >= 0) {
+        vx = 0.7;
+        vy = -0.7;
+
         puffEnabled = true;
         this.setPlayerAnimation('Drag');
         if (command.left.held) {
@@ -2023,6 +2020,13 @@ export default class PlayScene extends SuperScene {
         } else if (command.right.held) {
           player.setFlipX(false);
         }
+      }
+
+      const max = prop('rules.walljump.drag_terminal_velocity');
+      // we intentionally don't do this for the other direction because of
+      // jumping against walls being a common case
+      if (player.body.velocity.y >= max) {
+        player.setVelocityY(max);
       }
     }
 
