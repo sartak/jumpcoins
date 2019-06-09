@@ -1659,11 +1659,16 @@ export default class PlayScene extends SuperScene {
 
     const canJump = player.body.touching.down || (!player.isJumping && (time - player.touchDownTime) < prop('rules.jump.coyote_grace_period_ms'));
 
-    const isTouchingLeftWall = time - player.touchingLeftTime < prop('rules.walljump.detach_grace_period_ms')
-      && command.left.releasedDuration < prop('rules.walljump.detach_grace_period_ms');
+    const walljumpGracePeriod = prop('rules.walljump.detach_grace_period_ms');
 
-    const isTouchingRightWall = time - player.touchingRightTime < prop('rules.walljump.detach_grace_period_ms')
-      && command.right.releasedDuration < prop('rules.walljump.detach_grace_period_ms');
+    let isTouchingLeftWall = time - player.touchingLeftTime < walljumpGracePeriod && command.left.releasedDuration < walljumpGracePeriod;
+
+    let isTouchingRightWall = time - player.touchingRightTime < walljumpGracePeriod && command.right.releasedDuration < walljumpGracePeriod;
+
+    if (!walljumpGracePeriod) {
+      isTouchingLeftWall = player.body.touching.left && command.left.held;
+      isTouchingRightWall = player.body.touching.right && command.right.held;
+    }
 
     if (command.jump.started) {
       player.isJumping = true;
