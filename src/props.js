@@ -170,6 +170,8 @@ export const propSpecs = {
   'player.animation': ['', null, 'player.previousAnimation'],
   'player.spritesheet': ['', null, 'player.previousStatus'],
 
+  'enemies.animationVisible': [true],
+
   'effects.damageBlur.amount': [2.5, 0, 50],
   'effects.damageBlur.in_ms': [100, 0, 2000],
   'effects.damageBlur.out_ms': [200, 0, 2000],
@@ -355,7 +357,7 @@ export const tileDefinitions = preprocessTileDefinitions({
     group: 'enemies',
     object: true,
     dynamic: true,
-    speed: 30,
+    neutralAnimation: 'spriteEnemyANeutral',
     walkAnimation: 'spriteEnemyAWalk',
     killAnimation: 'spriteEnemyADie',
   },
@@ -367,6 +369,7 @@ export const tileDefinitions = preprocessTileDefinitions({
     _inherit: 'A',
     image: 'spriteEnemyB',
     edgeCareful: true,
+    neutralAnimation: 'spriteEnemyBNeutral',
     walkAnimation: 'spriteEnemyBWalk',
     killAnimation: 'spriteEnemyBDie',
   },

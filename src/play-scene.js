@@ -312,7 +312,6 @@ export default class PlayScene extends SuperScene {
   }
 
   setupEnemy(enemy) {
-    enemy.anims.play(enemy.config.walkAnimation, true);
     // 0.5 feels better than 1.0
     enemy.body.setGravityY(prop('rules.base_gravity') * prop('rules.jump.down_gravity') * 0.5);
   }
@@ -805,6 +804,16 @@ export default class PlayScene extends SuperScene {
   createAnimations() {
     ['A', 'B'].forEach((type) => {
       this.anims.create({
+        key: `spriteEnemy${type}Neutral`,
+        frames: [
+          {
+            key: `spriteEnemy${type}`,
+            frame: 2,
+          },
+        ],
+      });
+
+      this.anims.create({
         key: `spriteEnemy${type}Walk`,
         frames: [
           {
@@ -1011,7 +1020,11 @@ export default class PlayScene extends SuperScene {
     }
 
     this.playSound('soundKill');
-    enemy.anims.play(enemy.config.killAnimation, true);
+
+    if (prop('enemies.animationVisible')) {
+      enemy.anims.play(enemy.config.killAnimation, true);
+    }
+
     enemy.disableBody(true, false);
     level.enemies = level.enemies.filter((e) => e !== enemy);
     this.animateEnemyKill(enemy);
@@ -1813,6 +1826,8 @@ export default class PlayScene extends SuperScene {
     const {level} = this;
     const {enemies} = level;
 
+    const animate = prop('enemies.animationVisible');
+
     enemies.forEach((enemy) => {
       // hasn't ever touched the floor yet…
       if (!enemy.body.touching.down && enemy.movingLeft === undefined) {
@@ -1846,6 +1861,8 @@ export default class PlayScene extends SuperScene {
       }
 
       enemy.floorCollision = null;
+
+      enemy.anims.play(animate ? enemy.config.walkAnimation : enemy.config.neutralAnimation, true);
     });
   }
 
