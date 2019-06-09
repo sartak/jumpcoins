@@ -2027,10 +2027,13 @@ export default class PlayScene extends SuperScene {
 
         puffEnabled = true;
         this.setPlayerAnimation('Drag');
-        if (command.left.held) {
-          player.setFlipX(true);
-        } else if (command.right.held) {
-          player.setFlipX(false);
+
+        if (prop('player.animationVisible')) {
+          if (command.left.held) {
+            player.setFlipX(true);
+          } else if (command.right.held) {
+            player.setFlipX(false);
+          }
         }
       }
 
