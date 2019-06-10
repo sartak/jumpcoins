@@ -153,6 +153,7 @@ export const propSpecs = {
   'player.y': [0.01, null],
   'player.velocity_x': [0.01, null, 'player.body.velocity.x'],
   'player.velocity_y': [0.01, null, 'player.body.velocity.y'],
+  'player.respectsPhysics': [true, null, 'player.body.enable'],
   'player.invincible': [false, null],
   'player.canCancelKnockbackIgnore': [false, null],
   'player.isJumping': [false, null],
