@@ -1187,7 +1187,7 @@ export default class PlayScene extends SuperScene {
           coin,
           {
             massageProps: (props) => {
-              if (applyLeftVelocity) {
+              if (applyLeftVelocity && 'dx' in props) {
                 props.dx *= -1;
               }
             },
@@ -1199,7 +1199,7 @@ export default class PlayScene extends SuperScene {
           coin,
           {
             massageProps: (props) => {
-              if (applyLeftVelocity) {
+              if (applyLeftVelocity && 'dx' in props) {
                 props.dx *= -1;
               }
             },
