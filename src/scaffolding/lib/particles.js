@@ -82,7 +82,7 @@ const defaultParticleProps = {
   particleBringToTop: [true],
   quantity: [1, 0, 200, 1],
   radial: [true],
-  rotate: [0, -1000, 1000],
+  rotate: [0, -1080, 1080, 1],
   scaleX: [1, 0, 100],
   scaleY: [1, 0, 100],
   speed: [0, 0, 1000],
@@ -165,6 +165,14 @@ export default function massageParticleProps({...props}) {
     delete props.speedY;
   } else if (props.speed === 0) {
     delete props.speed;
+  }
+
+  // convert degrees to radians
+  if (props.rotate) {
+    if (typeof props.rotate === 'number') {
+      props.rotate *= Math.PI / 180;
+    }
+    // TODO handle other input formats
   }
 
   if (massageProps) {

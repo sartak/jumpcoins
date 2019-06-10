@@ -3,7 +3,7 @@
   background: rgb(215, 215, 228);
   width: auto !important;
   min-width: 200px;
-  max-width: 400px;
+  max-width: 600px;
   margin-top: 8px;
   margin-right: 8px;
   border-radius: 8px;
@@ -12,6 +12,10 @@
 .Replay .button {
   cursor: pointer;
   font-family: Apple Color Emoji;
+}
+
+.Replay .timeSight .repeat {
+  visibility: hidden;
 }
 
 .Replay .repeat-off.button {

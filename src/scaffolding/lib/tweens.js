@@ -35,12 +35,14 @@ const defaultTweenProps = {
   duration: [0, 0, 10000],
   ease: ['Linear', tweenEases],
 
+  dx_enabled: [false],
   dx: [0, -1000, 1000],
+  dy_enabled: [false],
   dy: [0, -1000, 1000],
   alpha_enabled: [false],
   alpha: [1.0, 0, 1, 0.01],
   rotation_enabled: [false],
-  rotation: [0.0, -10, 10, 0.1],
+  rotation: [0, -1080, 1080, 1],
   scaleX_enabled: [false],
   scaleX: [1.0, 0, 10, 0.1],
   scaleY_enabled: [false],
@@ -121,17 +123,18 @@ export default function massageTweenProps(target, {...props}, options) {
     }
   }
 
-  const originalDx = props.dx;
-  if (props.dx) {
+  if ('dx' in props) {
     const {dx} = props;
     props.x = target.x + dx;
   }
 
-  const originalDy = props.dy;
-  if (props.dy) {
+  if ('dy' in props) {
     const {dy} = props;
     props.y = target.y + dy;
   }
+
+  const originalX = props.x;
+  const originalY = props.y;
 
   if (props.refreshPhysics) {
     delete props.refreshPhysics;
@@ -156,22 +159,42 @@ export default function massageTweenProps(target, {...props}, options) {
     massageProps(props);
   }
 
-  if (props.dx !== originalDx) {
+  if ('dx' in props && (!('x' in props) || props.x === originalX)) {
     const {dx} = props;
     props.x = target.x + dx;
   }
   delete props.dx;
 
-  if (props.dy !== originalDy) {
+  if ('dy' in props && (!('y' in props) || props.y === originalY)) {
     const {dy} = props;
     props.y = target.y + dy;
   }
   delete props.dy;
 
+  // convert degrees to radians
+  if (props.rotation) {
+    props.rotation *= Math.PI / 180;
+  }
+
   if (!props.animated) {
     props.duration = 0;
-    delete props.yoyo;
     delete props.loop;
+
+    // yoyo ends up where we began, so just don't animate anything
+    if (props.yoyo) {
+      delete props.x;
+      delete props.y;
+      delete props.dx;
+      delete props.dy;
+      delete props.rotation;
+      delete props.scaleX;
+      delete props.scaleY;
+
+      delete props.yoyo;
+
+      // make sure we animate "something"
+      props.alpha = target.alpha;
+    }
   }
   delete props.animated;
 

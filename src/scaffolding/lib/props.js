@@ -24,6 +24,7 @@ export function builtinPropSpecs(commands) {
   }
 
   return {
+    'engine.debug': [debug, null, () => debug],
     'engine.time': [0.01, null, 'loop.time'],
     'engine.frameTime': [0.01, null, 'loop.delta'],
     'engine.actualFps': [0.01, null, 'loop.actualFps'],
@@ -101,7 +102,6 @@ function commandProps(commands) {
 
     if (config.execute) {
       props[`command.${name}.execute`] = [(scene, game) => config.execute(scene, game)];
-      props[`command.${name}.executeRepeatedly`] = [false];
     }
   });
 
