@@ -2015,7 +2015,7 @@ export default class PlayScene extends SuperScene {
     const puffLeft = player.body.touching.left && command.left.held;
     let puffEnabled = false;
     if ((player.body.touching.left && command.left.held) || (player.body.touching.right && command.right.held)) {
-      if (player.body.velocity.y >= 0) {
+      if (player.body.velocity.y > 0) {
         vx = 0.7;
         vy = -0.7;
 
