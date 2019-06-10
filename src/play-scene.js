@@ -2951,6 +2951,43 @@ export default class PlayScene extends SuperScene {
     return phantoms;
   }
 
+  debugHandlePointerdown(event) {
+    const {command, level} = this;
+    const {player} = level;
+
+    command.ignoreAll(this, 'debugTeleport', true);
+    player.disableBody(true, false);
+
+    this.tween(
+      'effects.debugTeleport.intro',
+      player,
+      {
+        onComplete: () => {
+          this.tween(
+            'effects.debugTeleport.travel',
+            player,
+            {
+              x: event.x,
+              y: event.y,
+              onComplete: () => {
+                this.tween(
+                  'effects.debugTeleport.outro',
+                  player,
+                  {
+                    onComplete: () => {
+                      player.enableBody();
+                      command.ignoreAll(this, 'debugTeleport', false);
+                    },
+                  },
+                );
+              },
+            },
+          );
+        },
+      },
+    );
+  }
+
   _hot() {
   }
 }

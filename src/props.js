@@ -217,7 +217,6 @@ export const propSpecs = {
   'effects.damageBlur.out_ms': [200, 0, 2000],
   'effects.damageBlur.visible': [true],
   'effects.damageBlur.execute': [(scene) => scene.damageBlur()],
-  'effects.damageBlur.executeRepeatedly': [false],
 
   'effects.shockwave.scale': [10.0, 0, 500, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveScale', value)],
   'effects.shockwave.range': [0.8, 0, 10, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveRange', value)],
@@ -227,13 +226,11 @@ export const propSpecs = {
   'effects.shockwave.dropoff': [40.0, 0, 500, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveDropoff', value)],
   'effects.shockwave.visible': [true],
   'effects.shockwave.execute': [(scene) => scene.shockwave()],
-  'effects.shockwave.executeRepeatedly': [false],
 
   'effects.jumpShake.amount': [0.01, 0, 0.1],
   'effects.jumpShake.duration_ms': [75, 0, 1000],
   'effects.jumpShake.visible': [true],
   'effects.jumpShake.execute': [(scene) => scene.jumpShake()],
-  'effects.jumpShake.executeRepeatedly': [false],
 
   'effects.floodlights.particles': [{
     image: 'effectImageFloodlight',
@@ -522,6 +519,27 @@ export const propSpecs = {
     alpha: 0.1,
     loop: 1,
     yoyo: true,
+  }],
+
+  'effects.debugTeleport.intro.tween': [{
+    duration: 200,
+    alpha: 0.5,
+    scaleX: 1.1,
+    scaleY: 1.1,
+    ease: 'Cubic.easeInOut',
+  }],
+
+  'effects.debugTeleport.travel.tween': [{
+    duration: 500,
+    ease: 'Cubic.easeInOut',
+  }],
+
+  'effects.debugTeleport.outro.tween': [{
+    duration: 200,
+    alpha: 1,
+    scaleX: 1,
+    scaleY: 1,
+    ease: 'Cubic.easeInOut',
   }],
 };
 
