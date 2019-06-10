@@ -312,6 +312,7 @@ export const propSpecs = {
     dy: 4,
     yoyo: true,
     loop: -1,
+    ease: 'Cubic.easeInOut',
   }],
 
   'effects.jumpcoinBob.tween': [{
