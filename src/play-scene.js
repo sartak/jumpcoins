@@ -2058,10 +2058,12 @@ export default class PlayScene extends SuperScene {
     const scaleX = player.scaleX + prop('player.squish_speed') * (vy - player.scaleX) * dt / 16.667;
     const scaleY = player.scaleY + prop('player.squish_speed') * (vx - player.scaleY) * dt / 16.667;
 
-    if (prop('player.squish_max_enabled')) {
-      player.setScale(scaleX, scaleY); // intentionally flipped
-    } else {
-      player.setScale(1, 1); // intentionally flipped
+    if (player.body.enable) {
+      if (prop('player.squish_max_enabled')) {
+        player.setScale(scaleX, scaleY); // intentionally flipped
+      } else {
+        player.setScale(1, 1); // intentionally flipped
+      }
     }
 
     this.updateEnemies();
