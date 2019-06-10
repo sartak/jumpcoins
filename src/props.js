@@ -339,7 +339,7 @@ export const propSpecs = {
     duration: 1000,
     ease: 'Quad.easeIn',
     dx: 24 * 3,
-    rotation: 2,
+    rotation: 115,
     alpha: 0.0,
     scaleX: 1.5,
     scaleY: 1.5,
