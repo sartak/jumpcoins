@@ -2964,6 +2964,11 @@ export default class PlayScene extends SuperScene {
       'effects.debugTeleport.intro',
       player,
       {
+        massageProps: (props) => {
+          if (event.x < player.x) {
+            props.rotation *= -1;
+          }
+        },
         onComplete: () => {
           this.tween(
             'effects.debugTeleport.travel',

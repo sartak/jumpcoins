@@ -526,6 +526,7 @@ export const propSpecs = {
     alpha: 0.5,
     scaleX: 1.1,
     scaleY: 1.1,
+    rotation: 10,
     ease: 'Cubic.easeInOut',
   }],
 
@@ -539,6 +540,7 @@ export const propSpecs = {
     alpha: 1,
     scaleX: 1,
     scaleY: 1,
+    rotation: 0,
     ease: 'Cubic.easeInOut',
   }],
 };
