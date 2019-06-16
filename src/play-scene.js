@@ -1371,7 +1371,7 @@ export default class PlayScene extends SuperScene {
       jumpcoin,
       {
         massageProps: (props) => {
-          props.y = jumpcoin.originalY + props.dy;
+          props.y = jumpcoin.originalY + (props.dy || 0);
         },
       },
     );
