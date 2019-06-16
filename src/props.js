@@ -99,6 +99,7 @@ export const propSpecs = {
   'rules.jump.velocity_x': [200, 0, 1000],
   'rules.jump.velocity_y': [260, 0, 1000],
   'rules.jump.down_gravity': [4, 0, 20],
+  'rules.jump.terminal_velocity_enabled': [true],
   'rules.jump.terminal_velocity': [500, 0, 1000],
   'rules.jump.coyote_grace_period_ms': [60, 0, 1000],
   'rules.jump.early_release': [true],
@@ -114,6 +115,7 @@ export const propSpecs = {
   'rules.walljump.velocity_y': [175, 0, 1000],
   'rules.walljump.gravity_y': [-100, -1000, 1000],
   'rules.walljump.ignore_direction_ms': [400, 0, 1000],
+  'rules.walljump.drag_terminal_velocity_enabled': [true],
   'rules.walljump.drag_terminal_velocity': [50, 0, 1000],
   'rules.walljump.detach_grace_period_ms': [100, 0, 1000],
   'rules.walljump.forbid': [false],
@@ -547,7 +549,8 @@ if (GAMEFEEL_DEMO) {
   propSpecs['rules.jump.down_gravity'][0] = 1;
   propSpecs['rules.jump.early_release'][0] = false;
   propSpecs['rules.jump.coyote_grace_period_ms'][0] = 0;
-  propSpecs['rules.walljump.drag_terminal_velocity'][0] = propSpecs['rules.jump.terminal_velocity'][0];
+  propSpecs['rules.jump.terminal_velocity_enabled'][0] = false;
+  propSpecs['rules.walljump.drag_terminal_velocity_enabled'][0] = false;
   propSpecs['rules.walljump.detach_grace_period_ms'][0] = 0;
 
   propSpecs['rules.damage.spike_knockback_x'][0] = 0;

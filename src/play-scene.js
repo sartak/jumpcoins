@@ -1977,7 +1977,7 @@ export default class PlayScene extends SuperScene {
 
     this.physics.world.gravity.y = prop('rules.base_gravity');
 
-    if (player.body.velocity.y > prop('rules.jump.terminal_velocity')) {
+    if (prop('rules.jump.terminal_velocity_enabled') && player.body.velocity.y > prop('rules.jump.terminal_velocity')) {
       player.setVelocityY(prop('rules.jump.terminal_velocity'));
     }
 
@@ -2085,11 +2085,13 @@ export default class PlayScene extends SuperScene {
         }
       }
 
-      const max = prop('rules.walljump.drag_terminal_velocity');
-      // we intentionally don't do this for the other direction because of
-      // jumping against walls being a common case
-      if (player.body.velocity.y >= max) {
-        player.setVelocityY(max);
+      if (prop('rules.walljump.drag_terminal_velocity_enabled')) {
+        const max = prop('rules.walljump.drag_terminal_velocity');
+        // we intentionally don't do this for the other direction because of
+        // jumping against walls being a common case
+        if (player.body.velocity.y >= max) {
+          player.setVelocityY(max);
+        }
       }
     }
 
