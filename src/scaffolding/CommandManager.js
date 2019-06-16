@@ -135,13 +135,23 @@ export default class CommandManager {
       });
     }
 
+    const canvas = document.querySelector('#engine canvas');
+
     ['pointerdown', 'pointerup'].forEach((name) => {
       scene.input.on(name, (pointer) => {
-        this.pointerEvents.push({
-          name,
-          x: pointer.x,
-          y: pointer.y,
-        });
+        // fix issue with dat.gui not releasing focus
+        if (!document.activeElement || !document.activeElement.contains || document.activeElement.contains(canvas)) {
+          this.pointerEvents.push({
+            name,
+            x: pointer.x,
+            y: pointer.y,
+          });
+        } else {
+          // timeout to avoid 2x input events
+          setTimeout(() => {
+            document.activeElement.blur();
+          });
+        }
       });
     });
   }
@@ -319,6 +329,10 @@ export default class CommandManager {
     Object.entries(spec).forEach(([name, config]) => {
       const command = this[name];
 
+      if (ignoreAll && !config.unsuppressable) {
+        command.held = false;
+      }
+
       if (command.held) {
         command.heldFrames += 1;
         command.heldDuration += dt;
@@ -328,6 +342,7 @@ export default class CommandManager {
         command.releasedFrames = 0;
         command.releasedDuration = 0;
       } else {
+        command.held = false;
         command.heldFrames = 0;
         command.heldDuration = 0;
         command.started = false;
@@ -335,13 +350,6 @@ export default class CommandManager {
         command.released = command.releasedFrames === 1;
         command.releasedFrames += 1;
         command.releasedDuration += dt;
-      }
-
-      if (ignoreAll && !config.unsuppressable) {
-        command.held = false;
-        command.started = false;
-        command.continued = false;
-        command.released = true;
       }
 
       if (command.started && config.execute) {

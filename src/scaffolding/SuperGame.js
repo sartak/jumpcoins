@@ -68,7 +68,7 @@ export default class SuperGame extends Phaser.Game {
         }
 
         if (!this.disableDebug && (!topScene._replay || !topScene._replay.timeSight)) {
-          updatePropsFromStep();
+          updatePropsFromStep(false);
         }
 
         if (prop('engine.throttle')) {
@@ -378,4 +378,8 @@ handler to fire outside the game loop with a setTimeout or something?`);
       this.command.readRawGamepad(scenes);
     }
   }
+}
+
+if (module.hot) {
+  module.hot.accept('../props');
 }

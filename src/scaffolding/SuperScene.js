@@ -97,9 +97,8 @@ export default class SuperScene extends Phaser.Scene {
 
             this.game._stepExceptions = (this.game._stepExceptions || 0) + 1;
             if (this.game._stepExceptions > 100) {
-              this.game.loop.sleep();
               // eslint-disable-next-line no-console
-              console.error('Too many errors; pausing game loop until hot reload');
+              console.error('Too many errors; pausing update cycle until hot reload');
             }
           }
         };
@@ -396,19 +395,11 @@ export default class SuperScene extends Phaser.Scene {
         timeSight: false,
         timeSightFrameCallback: (scene, frameTime, frameDt, preflight, isLast) => {
           objectDt += frameDt;
-          const objects = scene.renderTimeSightFrameInto(this, objectDt, frameTime, frameDt, isLast);
-          if (!objects || !objects.length) {
-            return;
+
+          const frame = this.timeSightTargetStep(scene, objectDt, frameTime, frameDt, preflight, isLast);
+          if (frame) {
+            objectDt = 0;
           }
-
-          updatePropsFromStep();
-
-          this._timeSightFrames.push({
-            objects,
-            props: {...manageableProps},
-            preflight: [...preflight],
-          });
-          objectDt = 0;
         },
       },
       {
@@ -424,6 +415,30 @@ export default class SuperScene extends Phaser.Scene {
         },
       },
     );
+  }
+
+  timeSightTargetStep(scene, objectDt, frameTime, frameDt, preflight, isLast) {
+    const objects = scene.renderTimeSightFrameInto(this, objectDt, frameTime, frameDt, isLast);
+    if (!objects || !objects.length) {
+      return;
+    }
+
+    objects.forEach((object) => {
+      if (object.scene !== this) {
+        // eslint-disable-next-line no-console
+        console.error(`renderTimeSightFrameInto rendered this object into the wrong scene: ${JSON.stringify(object)}`);
+      }
+    });
+
+    updatePropsFromStep(true);
+
+    const frame = {
+      objects,
+      props: {...manageableProps},
+      preflight: [...preflight],
+    };
+    this._timeSightFrames.push(frame);
+    return frame;
   }
 
   beginTimeSightAlphaAnimation() {
@@ -693,10 +708,8 @@ export default class SuperScene extends Phaser.Scene {
 
     if (this.game._stepExceptions > 100) {
       // eslint-disable-next-line no-console
-      console.error('Resetting after recovering from errors');
+      console.info('Resetting after recovering from errors');
       this.game._stepExceptions = 0;
-      this.game.loop.wake();
-      this.replaceWithSelf();
       return;
     }
 
@@ -831,4 +844,8 @@ export default class SuperScene extends Phaser.Scene {
   destroy() {
     this.command.detachScene(this);
   }
+}
+
+if (module.hot) {
+  module.hot.accept('../props');
 }
