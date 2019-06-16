@@ -13,9 +13,6 @@ const commands = {
   up: {
     input: ['keyboard.UP', 'gamepad.UP', 'keyboard.W', 'keyboard.NUMPAD_EIGHT', 'gamepad.LSTICK.UP', 'gamepad.RSTICK.UP'],
   },
-  down: {
-    input: ['keyboard.DOWN', 'gamepad.DOWN', 'keyboard.S', 'keyboard.NUMPAD_TWO', 'gamepad.LSTICK.DOWN', 'gamepad.RSTICK.DOWN'],
-  },
   left: {
     input: ['keyboard.LEFT', 'gamepad.LEFT', 'keyboard.A', 'keyboard.NUMPAD_FOUR', 'gamepad.LSTICK.LEFT', 'gamepad.RSTICK.LEFT'],
   },
