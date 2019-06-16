@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
 import {expandParticleProps} from './particles';
 import {expandTweenProps} from './tweens';
-import {freezeStorage, removeAllFields} from './store';
+import {freezeStorage, removeAllFields, loadField} from './store';
 import {preprocessTileDefinitions} from './level-parser';
+
+const savedChangedProps = loadField('changedProps', {});
+export {savedChangedProps};
 
 const rendererName = {
   [Phaser.AUTO]: 'auto',
@@ -180,10 +183,12 @@ export function commandKeyProps(commands) {
   return props;
 }
 
-export function ManageableProps(propSpecs, particleImages) {
+export function preprocessPropSpecs(propSpecs, particleImages) {
   expandParticleProps(propSpecs, particleImages);
   expandTweenProps(propSpecs, particleImages);
+}
 
+export function ManageableProps(propSpecs) {
   Object.entries(propSpecs).forEach(([key, spec]) => {
     if (!Array.isArray(spec)) {
       throw new Error(`Invalid spec for prop ${key}; expected array, got ${spec}`);
@@ -202,6 +207,15 @@ export function ManageableProps(propSpecs, particleImages) {
           console.error(e);
         }
       };
+    }
+
+    if (savedChangedProps[key]) {
+      const [current, original] = savedChangedProps[key];
+      if (value === original) {
+        value = current;
+      } else {
+        delete savedChangedProps[key];
+      }
     }
 
     this[key] = value;
