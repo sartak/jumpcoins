@@ -770,6 +770,7 @@ export default class PlayScene extends SuperScene {
     }
 
     level.enemies = objects.enemies;
+    level.enemyList = [...level.enemies];
     level.livingEnemies = level.enemies.length;
     level.objects = objects;
 
@@ -1058,6 +1059,7 @@ export default class PlayScene extends SuperScene {
 
     enemy.disableBody(true, false);
     level.enemies = level.enemies.filter((e) => e !== enemy);
+    level.enemyList = level.enemyList.map((e) => (e === enemy ? null : e));
     this.animateEnemyKill(enemy);
   }
 
@@ -1108,13 +1110,13 @@ export default class PlayScene extends SuperScene {
 
   identifyEnemy(index) {
     const {level} = this;
-    const {enemies} = level;
+    const {enemyList} = level;
+    const enemy = enemyList[index];
 
-    if (index >= enemies.length) {
+    if (!enemy) {
       return;
     }
 
-    const enemy = enemies[index];
     this.tween('effects.identifyEnemy', enemy);
   }
 
