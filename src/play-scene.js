@@ -102,6 +102,38 @@ const Levels = [
   levelBye,
 ];
 
+const Depth = {};
+[
+  'floodlights',
+  'exitGlow',
+
+  'spikes',
+  'ground',
+  'semiground',
+  'pupils',
+
+  'jumpcoin',
+  'player',
+
+  'jumpPuff',
+  'wallDragPuff',
+  'exitSpark',
+  'jumpcoinGlow',
+  'jumpcoinSpark',
+
+  'hint',
+
+  'backgroundScreen',
+  'hudText',
+  'hudLifecoin',
+  'collectedJumpcoin',
+
+  'banner',
+
+].forEach((name, i) => {
+  Depth[name] = i;
+});
+
 const JumpNormal = 1;
 const JumpDouble = 2;
 const JumpWall = 3;
@@ -391,7 +423,6 @@ export default class PlayScene extends SuperScene {
 
     pupil.pupilOriginX = x;
     pupil.pupilOriginY = y;
-    pupil.setDepth(2);
 
     eye.pupil = pupil;
     pupil.eye = eye;
@@ -403,7 +434,6 @@ export default class PlayScene extends SuperScene {
     const {level} = this;
     const {statics} = level;
 
-    statics.ground.setDepth(2);
     statics.spikes.children.iterate((child) => {
       const {animate} = child.config;
       const offset = (child.config.x + child.config.y) % 2;
@@ -459,7 +489,10 @@ export default class PlayScene extends SuperScene {
 
           const image = this.add.image(x, y, tile.image);
           images.push(image);
-          image.setDepth(2);
+
+          if (Depth[tile.group]) {
+            image.setDepth(Depth[tile.group]);
+          }
         } else if (tile.object) {
           objectDescriptions.push({
             x,
@@ -469,6 +502,10 @@ export default class PlayScene extends SuperScene {
         } else {
           if (!statics[tile.group]) {
             statics[tile.group] = this.physics.add.staticGroup();
+
+            if (Depth[tile.group]) {
+              statics[tile.group].setDepth(Depth[tile.group]);
+            }
           }
 
           const body = statics[tile.group].create(x, y, tile.image);
@@ -555,7 +592,7 @@ export default class PlayScene extends SuperScene {
           particles.x = jumpcoin.x;
           particles.y = jumpcoin.y;
 
-          particles.setDepth(4);
+          particles.setDepth(Depth.jumpcoinGlow);
           jumpcoin.glowParticles = particles;
           jumpcoin.glowEmitter = emitter;
         },
@@ -572,7 +609,7 @@ export default class PlayScene extends SuperScene {
           particles.x = jumpcoin.x;
           particles.y = jumpcoin.y;
 
-          particles.setDepth(5);
+          particles.setDepth(Depth.jumpcoinSpark);
           jumpcoin.sparkParticles = particles;
           jumpcoin.sparkEmitter = emitter;
         },
@@ -661,7 +698,7 @@ export default class PlayScene extends SuperScene {
         tint: [0xF6C456, 0xEC5B55, 0x8EEA83, 0x4397F7, 0xCC4BE4],
         alpha: {start: 0, end: 1, ease: (t) => (t < 0.1 ? 10 * t : 1 - (t - 0.1))},
         onAdd: (particles, emitter) => {
-          particles.setDepth(5);
+          particles.setDepth(Depth.exitSpark);
         },
       },
     );
@@ -681,7 +718,7 @@ export default class PlayScene extends SuperScene {
         alpha: {start: 0, end: alpha, ease: (t) => (t < 0.2 ? 5 * t : 1 - (t - 0.2))},
         tint: [0xF6C456, 0xEC5B55, 0x8EEA83, 0x4397F7, 0xCC4BE4],
         onAdd: (particles, emitter) => {
-          particles.setDepth(-1);
+          particles.setDepth(Depth.exitGlow);
         },
       },
     );
@@ -784,7 +821,7 @@ export default class PlayScene extends SuperScene {
     player.touchingLeftTime = 0;
     player.touchingRightTime = 0;
 
-    player.setDepth(4);
+    player.setDepth(Depth.player);
 
     this.player = level.player = player;
 
@@ -1165,7 +1202,7 @@ export default class PlayScene extends SuperScene {
     this.spentCoin = coin;
 
     if (coin) {
-      coin.setDepth(3);
+      coin.setDepth(Depth.jumpcoin);
 
       if (coin.hudTween) {
         coin.hudTween.stop();
@@ -1342,7 +1379,7 @@ export default class PlayScene extends SuperScene {
     hud.jumpcoins.push(img);
     const x = 2 * prop('config.tile_width') + img.width * player.jumpcoins + hud.lifeIsText.width;
     const y = this.yBorder / 2;
-    img.setDepth(9);
+    img.setDepth(Depth.collectedJumpcoin);
 
     img.hudTween = this.tween(
       'effects.jumpcoinToHud',
@@ -1580,7 +1617,7 @@ export default class PlayScene extends SuperScene {
             }
           },
           onAdd: (particles, emitter) => {
-            particles.setDepth(5);
+            particles.setDepth(Depth.wallDragPuff);
             emitter.startFollow(player);
             player.wallDragPuff = {particles, emitter};
 
@@ -1630,7 +1667,7 @@ export default class PlayScene extends SuperScene {
           }
         },
         onAdd: (particles, emitter) => {
-          particles.setDepth(5);
+          particles.setDepth(Depth.jumpPuff);
 
           level.onRespawn(() => {
             particles.destroy();
@@ -2203,7 +2240,7 @@ export default class PlayScene extends SuperScene {
         onAdd: (particles, emitter) => {
           this.floodlightParticles = particles;
           this.floodlightEmitter = emitter;
-          particles.setDepth(-1);
+          particles.setDepth(Depth.floodlights);
         },
       },
     );
@@ -2247,7 +2284,7 @@ export default class PlayScene extends SuperScene {
 
     const backgroundScreen = this.add.image(this.game.config.width / 2, this.game.config.height / 2, 'effectBackgroundScreen');
     hud.backgroundScreen = backgroundScreen;
-    backgroundScreen.setDepth(9);
+    backgroundScreen.setDepth(Depth.backgroundScreen);
 
     const text = this.add.text(
       this.xBorder * 2,
@@ -2260,7 +2297,7 @@ export default class PlayScene extends SuperScene {
       },
     );
     hud.lifeIsText = text;
-    text.setDepth(10);
+    text.setDepth(Depth.hudText);
 
     text.setStroke('#000000', 6);
     text.x -= text.width / 2;
@@ -2281,7 +2318,7 @@ export default class PlayScene extends SuperScene {
       this.yBorder / 2,
       'spriteLifecoin',
     );
-    hud.lifecoin.setDepth(9);
+    hud.lifecoin.setDepth(Depth.hudLifecoin);
 
     hud.jumpcoins = [];
     level.onRespawn(() => {
@@ -2338,7 +2375,7 @@ export default class PlayScene extends SuperScene {
       label.setStroke('#000000', 6);
       label.x -= label.width / 2;
       label.y -= label.height / 2;
-      label.setDepth(7);
+      label.setDepth(Depth.hint);
       hud.hints.push(label);
 
       label.alpha = 0;
@@ -2464,7 +2501,7 @@ export default class PlayScene extends SuperScene {
     const screenHeight = this.game.config.height;
 
     const banner = this.add.image(screenWidth * 0.5, screenHeight * 0.55, 'effectBlack');
-    banner.setDepth(8);
+    banner.setDepth(Depth.banner);
     banner.setScale(screenWidth / banner.width, screenHeight / banner.height * 0.20);
 
     return banner;
@@ -2488,7 +2525,7 @@ export default class PlayScene extends SuperScene {
     title.setStroke('#000000', 6);
     title.x -= title.width / 2;
     title.y -= title.height / 2;
-    title.setDepth(8);
+    title.setDepth(Depth.banner);
 
     title.alpha = 0;
     title.y += 20;
@@ -2525,7 +2562,7 @@ export default class PlayScene extends SuperScene {
       const badge = this.add.image(screenWidth * 0.5, screenHeight * 0.5 + 30, badgeName);
       badge.x -= (i + 0.5) * (prop('config.tile_width') + 20);
       badge.x += (badgesToRender.length / 2) * (prop('config.tile_width') + 20);
-      badge.setDepth(8);
+      badge.setDepth(Depth.banner);
       badges.push(badge);
 
       const {x} = badge;
@@ -2558,7 +2595,7 @@ export default class PlayScene extends SuperScene {
         hud.outro.push(empty);
         empty.x = badge.x;
         empty.y = badge.y;
-        empty.setDepth(8);
+        empty.setDepth(Depth.banner);
         badges.push(empty);
 
         empty.x = screenWidth * 0.5;
@@ -2656,7 +2693,7 @@ export default class PlayScene extends SuperScene {
     speedrunLabel.setStroke('#000000', 6);
     speedrunLabel.x -= speedrunLabel.width / 2;
     speedrunLabel.y -= speedrunLabel.height / 2;
-    speedrunLabel.setDepth(8);
+    speedrunLabel.setDepth(Depth.banner);
 
     speedrunLabel.alpha = 0;
     speedrunLabel.y -= 20;
