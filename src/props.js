@@ -232,7 +232,7 @@ export const propSpecs = {
   'effects.jumpShake.visible': [true],
   'effects.jumpShake.execute': [(scene) => scene.jumpShake()],
 
-  'effects.floodlights.particles': [{
+  'effects.backgroundFloodlights.particles': [{
     image: 'effectImageFloodlight',
     blendMode: 'SCREEN',
     quantity: 3,

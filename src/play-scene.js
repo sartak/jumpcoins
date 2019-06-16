@@ -104,7 +104,7 @@ const Levels = [
 
 const Depth = {};
 [
-  'floodlights',
+  'backgroundFloodlights',
   'exitGlow',
 
   'spikes',
@@ -1594,7 +1594,7 @@ export default class PlayScene extends SuperScene {
 
     this.createAnimations();
 
-    this.setupFloodlights();
+    this.setupBackgroundFloodlights();
 
     this.setupLevel(levelIndex, skipIntro);
 
@@ -2118,7 +2118,7 @@ export default class PlayScene extends SuperScene {
       return;
     }
 
-    this.reactFloodlightsToJump();
+    this.reactBackgroundFloodlightsToJump();
     if (type !== JumpNormal) {
       this.cameras.main.shake(
         prop('effects.jumpShake.duration_ms'),
@@ -2127,14 +2127,14 @@ export default class PlayScene extends SuperScene {
     }
   }
 
-  reactFloodlightsToDie() {
-    const {floodlightEmitter, level} = this;
+  reactBackgroundFloodlightsToDie() {
+    const {backgroundFloodlightEmitter, level} = this;
     const {player} = level;
 
     const {x, y} = player;
     const {width} = this.game.config;
 
-    floodlightEmitter.forEachAlive((particle) => {
+    backgroundFloodlightEmitter.forEachAlive((particle) => {
       const dx = particle.x - x;
       const dy = particle.y - y;
 
@@ -2178,15 +2178,15 @@ export default class PlayScene extends SuperScene {
     });
   }
 
-  reactFloodlightsToJump() {
-    const {floodlightEmitter, level} = this;
+  reactBackgroundFloodlightsToJump() {
+    const {backgroundFloodlightEmitter, level} = this;
     const {player} = level;
 
     const {x, y} = player;
 
     const tileWidth = prop('config.tile_width');
 
-    floodlightEmitter.forEachAlive((particle) => {
+    backgroundFloodlightEmitter.forEachAlive((particle) => {
       const dx = particle.x - x;
       const dy = particle.y - y;
 
@@ -2229,9 +2229,9 @@ export default class PlayScene extends SuperScene {
     });
   }
 
-  setupFloodlights() {
+  setupBackgroundFloodlights() {
     this.particleSystem(
-      'effects.floodlights',
+      'effects.backgroundFloodlights',
       {
         speed: {min: 10, max: 20},
         x: {min: 0, max: this.game.config.width},
@@ -2240,9 +2240,9 @@ export default class PlayScene extends SuperScene {
         alpha: {start: 0, end: 0.5, ease: (t) => (t < 0.2 ? 5 * t : 1 - (t - 0.2))},
         scale: {min: 0.5, max: 2.0},
         onAdd: (particles, emitter) => {
-          this.floodlightParticles = particles;
-          this.floodlightEmitter = emitter;
-          particles.setDepth(Depth.floodlights);
+          this.backgroundFloodlightParticles = particles;
+          this.backgroundFloodlightEmitter = emitter;
+          particles.setDepth(Depth.backgroundFloodlights);
         },
       },
     );
@@ -2418,7 +2418,7 @@ export default class PlayScene extends SuperScene {
       return;
     }
 
-    this.reactFloodlightsToDie();
+    this.reactBackgroundFloodlightsToDie();
 
     if (!shader) {
       return;
