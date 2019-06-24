@@ -322,53 +322,61 @@ export default class SuperScene extends Phaser.Scene {
     let time = window.performance.now();
     const dt = 1000 / this.physics.world.fps;
 
-    if (replay.preflight) {
-      this.game._replayPreflight += 1;
-      command.beginPreflight(this);
+    this.game._replayPreflight += 1;
 
-      loop.sleep();
-      this.scene.setVisible(false);
-      while (command.hasPreflight(this)) {
+    const manager = this.command.getManager(this);
+
+    loop.sleep();
+    this.scene.setVisible(false);
+    while (command.hasPreflight(this)) {
+      if (replay.timeSightFrameCallback) {
+        replay.timeSightFrameCallback(this, time, dt, manager, true, false, false);
+      }
+
+      time += dt;
+      loop.step(time);
+
+      if (this.game._stepExceptions > 100) {
+        // eslint-disable-next-line no-console
+        console.error('Too many errors in preflight; bailing out…');
+        return;
+      }
+    }
+    loop.resetDelta();
+
+    this.game._replayPreflight -= 1;
+
+    if (replay.timeSight) {
+      this.calculateTimeSight();
+    } else if (replay.timeSightFrameCallback) {
+      this.game._replayPreflight += 1;
+      this._timeSightTargetEnded = () => {
+        replay.timeSightFrameCallback(this, time, dt, manager, false, true, true);
+      };
+
+      let postflightCutoff;
+      if ('postflightCutoff' in replay) {
+        postflightCutoff = replay.postflightCutoff;
+        delete replay.postflightCutoff;
+      }
+
+      while (!this._timeSightTargetDone) {
+        const isPostflight = postflightCutoff !== undefined && manager.tickCount >= postflightCutoff;
+        replay.timeSightFrameCallback(this, time, dt, manager, false, isPostflight, false);
         time += dt;
         loop.step(time);
 
         if (this.game._stepExceptions > 100) {
           // eslint-disable-next-line no-console
-          console.error('Too many errors in preflight; bailing out…');
+          console.error('Too many errors in timeSight; bailing out…');
           return;
         }
       }
-      loop.resetDelta();
-
+      this.scene.remove();
       this.game._replayPreflight -= 1;
-
-      if (replay.timeSight) {
-        this.calculateTimeSight();
-      } else if (replay.timeSightFrameCallback) {
-        this.game._replayPreflight += 1;
-        const manager = this.command.getManager(this);
-
-        this._timeSightTargetEnded = () => {
-          replay.timeSightFrameCallback(this, time, dt, manager.speculativeRecording, true);
-        };
-
-        while (!this._timeSightTargetDone) {
-          replay.timeSightFrameCallback(this, time, dt, manager.speculativeRecording, false);
-          time += dt;
-          loop.step(time);
-
-          if (this.game._stepExceptions > 100) {
-            // eslint-disable-next-line no-console
-            console.error('Too many errors in timeSight; bailing out…');
-            return;
-          }
-        }
-        this.scene.remove();
-        this.game._replayPreflight -= 1;
-      } else {
-        this.scene.setVisible(true);
-        loop.wake();
-      }
+    } else {
+      this.scene.setVisible(true);
+      loop.wake();
     }
   }
 
@@ -393,10 +401,10 @@ export default class SuperScene extends Phaser.Scene {
       {
         ...this._replay,
         timeSight: false,
-        timeSightFrameCallback: (scene, frameTime, frameDt, preflight, isLast) => {
+        timeSightFrameCallback: (scene, frameTime, frameDt, manager, isPreflight, isPostflight, isLast) => {
           objectDt += frameDt;
 
-          const frame = this.timeSightTargetStep(scene, objectDt, frameTime, frameDt, preflight, isLast);
+          const frame = this.timeSightTargetStep(scene, objectDt, frameTime, frameDt, manager, isPreflight, isPostflight, isLast);
           if (frame) {
             objectDt = 0;
           }
@@ -417,38 +425,50 @@ export default class SuperScene extends Phaser.Scene {
     );
   }
 
-  timeSightTargetStep(scene, objectDt, frameTime, frameDt, preflight, isLast) {
+  timeSightTargetStep(scene, objectDt, frameTime, frameDt, manager, isPreflight, isPostflight, isLast) {
     const objects = scene.renderTimeSightFrameInto(this, objectDt, frameTime, frameDt, isLast);
     if (!objects || !objects.length) {
       return;
     }
-
-    objects.forEach((object) => {
-      if (object.scene !== this) {
-        // eslint-disable-next-line no-console
-        console.error(`renderTimeSightFrameInto rendered this object into the wrong scene: ${JSON.stringify(object)}`);
-      }
-    });
 
     updatePropsFromStep(true);
 
     const frame = {
       objects,
       props: {...manageableProps},
-      preflight: [...preflight],
+      commands: [...manager.commands],
+      tickCount: manager.tickCount,
+      isPreflight,
+      isPostflight,
     };
+
+    objects.forEach((object) => {
+      if (object.scene !== this) {
+        // eslint-disable-next-line no-console
+        console.error(`renderTimeSightFrameInto rendered this object into the wrong scene: ${JSON.stringify(object)}`);
+      }
+
+      object._timeSightAlpha = object.alpha;
+      object._timeSightFrame = frame;
+
+      if (isPreflight || isPostflight) {
+        object.alpha = 0;
+      }
+    });
+
     this._timeSightFrames.push(frame);
     return frame;
   }
 
   beginTimeSightAlphaAnimation() {
     const frames = this._timeSightFrames;
+    const activeFrames = frames.filter((frame) => !frame.isPreflight && !frame.isPostflight);
 
-    if (!frames.length) {
+    if (!activeFrames.length) {
       return;
     }
 
-    overrideProps(frames[0].props);
+    overrideProps(activeFrames[0].props);
 
     let loopAlpha;
     // eslint-disable-next-line prefer-const
@@ -470,7 +490,7 @@ export default class SuperScene extends Phaser.Scene {
               onComplete: () => {
                 if (i === 0) {
                   frame.timer = this.time.addEvent({
-                    delay: 100 * frames.length + 1000,
+                    delay: 100 * activeFrames.length + 1000,
                     callback: () => loopAlpha(frame, n),
                   });
                 }
@@ -481,7 +501,7 @@ export default class SuperScene extends Phaser.Scene {
       });
     };
 
-    frames.forEach((frame, n) => {
+    activeFrames.forEach((frame, n) => {
       frame.timer = this.time.addEvent({
         delay: 100 * n + 1000,
         callback: () => {
@@ -491,7 +511,7 @@ export default class SuperScene extends Phaser.Scene {
     });
 
     if (this._timeSightMouseInput) {
-      frames.forEach((frame) => {
+      activeFrames.forEach((frame) => {
         frame.objects.forEach((object) => {
           object.alpha = object._timeSightAlpha;
         });
@@ -504,11 +524,9 @@ export default class SuperScene extends Phaser.Scene {
 
     this.input.topOnly = true;
 
-    frames.forEach((frame) => {
+    activeFrames.forEach((frame) => {
       frame.objects.forEach((object) => {
         object.setInteractive();
-        object._timeSightAlpha = object.alpha;
-        object._timeSightFrame = frame;
       });
     });
 
@@ -520,7 +538,7 @@ export default class SuperScene extends Phaser.Scene {
       this.game.canvas.style.cursor = 'pointer';
 
       let matchedFrame;
-      frames.forEach((frame) => {
+      activeFrames.forEach((frame) => {
         if (frame.timer) {
           frame.timer.destroy();
         }
@@ -572,8 +590,8 @@ export default class SuperScene extends Phaser.Scene {
         ...replay,
         timeSight: false,
         snapshot: true,
-        preflight: activeObject._timeSightFrame.preflight,
-        commands: [],
+        commands: activeObject._timeSightFrame.commands,
+        preflightCutoff: activeObject._timeSightFrame.commands.reduce((cutoff, frame) => cutoff + (frame._repeat || 1), 0),
       });
     });
   }
@@ -647,6 +665,56 @@ export default class SuperScene extends Phaser.Scene {
         });
       },
     });
+  }
+
+  cutoffTimeSightEnter() {
+    const frames = this._timeSightFrames;
+
+    if (this._timeSightRemoveFocusTimer) {
+      this._timeSightRemoveFocusTimer.destroy();
+    }
+
+    frames.forEach((frame) => {
+      if (frame.timer) {
+        frame.timer.destroy();
+      }
+
+      frame.objects.forEach((object) => {
+        if (object._timeSightAlphaTween) {
+          object._timeSightAlphaTween.stop();
+        }
+
+        object.alpha = object._timeSightAlpha;
+      });
+    });
+
+    this.cutoffTimeSightChanged(this._replay.preflightCutoff, this._replay.postflightCutoff);
+  }
+
+  cutoffTimeSightChanged(start, end) {
+    // ordinarily to be avoided, but we don't want to start a new replay
+    // to take the update from Replay.jsx
+    this._replay.preflightCutoff = start;
+    this._replay.postflightCutoff = end;
+
+    this._timeSightFrames.forEach((frame, f) => {
+      frame.isPreflight = frame.tickCount < start;
+      frame.isPostflight = frame.tickCount > end;
+
+      frame.objects.forEach((object) => {
+        object.alpha = frame.tickCount >= start && frame.tickCount <= end ? 1 : object._timeSightAlpha;
+      });
+    });
+  }
+
+  cutoffTimeSightLeave() {
+    this._timeSightFrames.forEach((frame) => {
+      frame.objects.forEach((object) => {
+        object.alpha = (frame.isPreflight || frame.isPostflight) ? 0 : object._timeSightAlpha;
+      });
+    });
+
+    this.beginTimeSightAlphaAnimation();
   }
 
   propDidChange(key, value) {

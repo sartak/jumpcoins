@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import {commandKeys, gamepadKeys} from './lib/props';
+import prop from '../props';
 
 const GamepadButtons = {
   LEFT: '_LCLeft',
@@ -57,7 +58,8 @@ export default class CommandManager {
     this._scenes.set(scene, {
       scene,
       ignoreAlls: {},
-      speculativeRecording: scene.game.debug ? [] : null,
+      commands: scene.game.debug ? [] : null,
+      tickCount: 0,
       suppressRepeatFrames,
     });
   }
@@ -329,7 +331,7 @@ export default class CommandManager {
     Object.entries(spec).forEach(([name, config]) => {
       const command = this[name];
 
-      if (ignoreAll && !config.unsuppressable) {
+      if (!prop(`command.${name}.enabled`) || (ignoreAll && !config.unsuppressable)) {
         command.held = false;
       }
 
@@ -378,36 +380,6 @@ export default class CommandManager {
     }
   }
 
-  injectPreflightFrame(scene) {
-    const manager = this.getManager(scene);
-
-    if (!('preflightFrame' in manager)) {
-      return null;
-    }
-
-    if (manager.preflightFrame >= manager.replay.preflight.length) {
-      this.endPreflight(scene);
-      return null;
-    }
-
-    const frame = manager.replay.preflight[manager.preflightFrame];
-
-    if (frame._repeat) {
-      manager.preflightRepeatRun += 1;
-
-      if (manager.preflightRepeatRun > frame._repeat) {
-        manager.preflightRepeatRun = 0;
-        manager.preflightFrame += 1;
-      }
-    } else {
-      manager.preflightFrame += 1;
-    }
-
-    this.replayFrame(frame);
-    this.heldCommands(true);
-    return {...frame, _repeat: 0};
-  }
-
   injectReplayFrame(scene) {
     const manager = this.getManager(scene);
 
@@ -415,7 +387,7 @@ export default class CommandManager {
       return null;
     }
 
-    if (manager.replayFrame >= manager.replay.commands.length) {
+    if (manager.replayFrame >= manager.replay.commands.length || manager.tickCount >= manager.replay.postflightCutoff) {
       this.endedReplay(scene);
       return null;
     }
@@ -433,35 +405,30 @@ export default class CommandManager {
       manager.replayFrame += 1;
     }
 
+    manager.replayTicks += 1;
+
     this.replayFrame(frame);
     this.heldCommands(true);
     return {...frame, _repeat: 0};
-  }
-
-  captureInputFrame(scene, onlyUnsuppressable) {
-    const manager = this.getManager(scene);
-    const frame = this.heldCommands(onlyUnsuppressable);
-    if (manager.recording) {
-      this.addFrameToList(manager.suppressRepeatFrames, manager.recording.commands, frame);
-    }
-    return frame;
   }
 
   processInput(scene, time, dt, onlyUnsuppressable) {
     const manager = this.getManager(scene);
 
     if (manager.scene.timeSightFrozen) {
-      const frame = this.captureInputFrame(scene, onlyUnsuppressable);
+      const frame = this.heldCommands(onlyUnsuppressable);
       this.processCommands(scene, frame, dt);
       return;
     }
 
-    const frame = this.injectPreflightFrame(scene)
-      || this.injectReplayFrame(scene)
-      || this.captureInputFrame(scene, onlyUnsuppressable);
+    const frame = this.injectReplayFrame(scene)
+      || this.heldCommands(onlyUnsuppressable);
 
-    if (manager.speculativeRecording) {
-      this.addFrameToList(manager.suppressRepeatFrames, manager.speculativeRecording, frame);
+    this.addFrameToList(manager.suppressRepeatFrames, manager.commands, frame);
+    manager.tickCount += 1;
+
+    if (manager.recording) {
+      manager.recording.tickCount += 1;
     }
 
     this.processCommands(scene, frame, dt);
@@ -470,14 +437,15 @@ export default class CommandManager {
   beginRecording(scene, recording) {
     const manager = this.getManager(scene);
     manager.recording = recording;
-    recording.commands = [];
-    recording.preflight = [...manager.speculativeRecording];
+    recording.commands = manager.commands;
+    recording.originalPreflightCutoff = recording.preflightCutoff = recording.tickCount = manager.tickCount;
   }
 
   stopRecording(scene) {
     const manager = this.getManager(scene);
     const {recording} = manager;
     delete manager.recording;
+    recording.postflightCutoff = manager.tickCount;
     return recording;
   }
 
@@ -486,6 +454,7 @@ export default class CommandManager {
     manager.replay = replay;
     manager.replayFrame = 0;
     manager.replayRepeatRun = 0;
+    manager.replayTicks = 0;
     manager.replayOptions = replayOptions;
   }
 
@@ -501,8 +470,7 @@ export default class CommandManager {
     delete manager.replayOptions;
     delete manager.replayFrame;
     delete manager.replayRepeatRun;
-    delete manager.preflightFrame;
-    delete manager.preflightRepeatRun;
+    delete manager.replayTicks;
 
     if (onEnd) {
       onEnd();
@@ -522,31 +490,24 @@ export default class CommandManager {
     delete manager.replayOptions;
     delete manager.replayFrame;
     delete manager.replayRepeatRun;
-    delete manager.preflightFrame;
-    delete manager.preflightRepeatRun;
+    delete manager.replayTicks;
 
     if (onStop) {
       onStop();
     }
   }
 
-  beginPreflight(scene) {
-    const manager = this.getManager(scene);
-
-    manager.preflightFrame = 0;
-    manager.preflightRepeatRun = 0;
-  }
-
-  endPreflight(scene) {
-    const manager = this.getManager(scene);
-
-    delete manager.preflightFrame;
-    delete manager.preflightRepeatRun;
-  }
-
   hasPreflight(scene) {
     const manager = this.getManager(scene);
-    return ('preflightFrame' in manager) && manager.replay && manager.preflightFrame < manager.replay.preflight.length;
+    if (!manager.replay) {
+      return false;
+    }
+
+    if (manager.replayTicks >= manager.replay.postflightCutoff) {
+      return false;
+    }
+
+    return manager.replayTicks < manager.replay.preflightCutoff;
   }
 
   updateCommandsFromReload(next) {

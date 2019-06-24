@@ -103,8 +103,13 @@ function commandProps(commands) {
     props[`command.${name}.heldDuration`] = [0, null];
     props[`command.${name}.releasedDuration`] = [0, null];
 
+    props[`command.${name}.enabled`] = [true];
+
     if (config.execute) {
-      props[`command.${name}.execute`] = [(scene, game) => config.execute(scene, game)];
+      const execute = typeof config.execute === 'function'
+        ? (scene, game) => config.execute(scene, game)
+        : (scene, game) => scene[config.execute](scene, game);
+      props[`command.${name}.execute`] = [execute];
     }
   });
 
@@ -209,7 +214,7 @@ export function ManageableProps(propSpecs) {
       };
     }
 
-    if (savedChangedProps[key]) {
+    if (key in savedChangedProps) {
       const [current, original] = savedChangedProps[key];
       if (value === original) {
         value = current;

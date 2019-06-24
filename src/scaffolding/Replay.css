@@ -66,11 +66,16 @@
 
 .Replay .replays .replay {
   padding: 0.12em 0;
+  display: flex;
+  align-items: center;
+}
+
+.Replay .replays .replay.editing .edit {
+  visibility: hidden !important;
 }
 
 .Replay .replays .replay .drag,
-.Replay .replays .replay .edit,
-.Replay .replays .replay .delete {
+.Replay .replays .replay .edit {
   visibility: hidden;
 }
 
@@ -87,18 +92,8 @@
 }
 
 .Replay .replays .replay:hover .drag,
-.Replay .replays .replay:hover .edit,
-.Replay .replays .replay:hover .delete {
+.Replay .replays .replay:hover .edit {
   visibility: visible;
-}
-
-.Replay .replays .replay.editing .drag,
-.Replay .replays .replay.active .drag,
-.Replay .replays .replay.editing .edit,
-.Replay .replays .replay.active .edit,
-.Replay .replays .replay.editing .delete,
-.Replay .replays .replay.active .delete {
-  visibility: hidden !important;
 }
 
 .Replay form {

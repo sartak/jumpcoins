@@ -4,8 +4,7 @@ import {manageableProps, propSpecs} from '../../props';
 import {saveField} from './store';
 import {savedChangedProps} from './props';
 
-const gui = new dat.GUI({autoPlace: false});
-export default gui;
+let gui;
 
 const folders = {};
 const controllers = {};
@@ -24,8 +23,21 @@ const manageablePropsProxy = new Proxy({}, {
   },
 });
 
-Object.keys(propSpecs).forEach((key) => addNestedFolder(key));
-Object.keys(propSpecs).forEach((key) => addController(key, propSpecs[key], false, key in savedChangedProps || `${key}_enabled` in savedChangedProps));
+export function initializeManage() {
+  if (!gui) {
+    gui = new dat.GUI({autoPlace: false});
+
+    Object.keys(propSpecs).forEach((key) => addNestedFolder(key));
+    Object.keys(propSpecs).forEach((key) => addController(
+      key,
+      propSpecs[key],
+      false,
+      key in savedChangedProps || `${key}_enabled` in savedChangedProps,
+    ));
+  }
+
+  return gui;
+}
 
 function upcase(word) {
   return word.charAt(0).toUpperCase() + word.slice(1);
@@ -106,8 +118,12 @@ function setUnchangedProp(key) {
 }
 
 function addController(key, spec, open, saved) {
-  const [, ...options] = propSpecs[key];
+  const [originalValue, ...options] = propSpecs[key];
   const folder = addNestedFolder(key);
+
+  if (manageablePropsProxy[key] === null) {
+    throw new Error(`Prop ${key} must not be initialized to null`);
+  }
 
   if (key.endsWith('_enabled')) {
     const prefix = key.substr(0, key.length - '_enabled'.length);
@@ -134,8 +150,6 @@ function addController(key, spec, open, saved) {
     if (options.length >= 1 && typeof options[options.length - 1] === 'function') {
       callback = options.pop();
     }
-
-    const [originalValue] = propSpecs[key];
 
     if (key.match(/color/i)) {
       controller = folder.addColor(manageablePropsProxy, key, ...options);
@@ -476,7 +490,7 @@ function updatePropsFromReload(oldValues, nextSpecs) {
       if (!requiresRecreation || requiresRecreation === 'callback') {
         if (requiresRecreation === 'callback') {
           controller.__ldCallback = spec[spec.length - 1];
-        } else if (manageableProps[key] !== oldValues[key]) {
+        } else if (spec[1] !== null && manageableProps[key] !== oldValues[key]) {
           manageableProps[key] = oldValues[key];
           setChangedProp(key);
         }
@@ -553,15 +567,27 @@ export function updateSearch(query, isStarted) {
     });
 
     container.querySelectorAll('li[data-prop]').forEach((node) => {
-      const {prop} = node.dataset;
-      if (prop.match(queryRegex)) {
+      let isFiltered = true;
+
+      if (query.toLowerCase() === 'change') {
+        if (node.classList.contains('changed')) {
+          isFiltered = false;
+        }
+      } else {
+        const {prop} = node.dataset;
+        if (prop.match(queryRegex)) {
+          isFiltered = false;
+        }
+      }
+
+      if (isFiltered) {
+        node.classList.add('filtered');
+      } else {
         let folder = node;
         while (folder) {
           folder.classList.remove('filtered');
           folder = folder.parentNode.closest('.filtered');
         }
-      } else {
-        node.classList.add('filtered');
       }
     });
   }
