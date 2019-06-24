@@ -520,6 +520,8 @@ export const propSpecs = {
     yoyo: true,
   }],
 
+  'effects.debugTeleport.enabled': [true],
+
   'effects.debugTeleport.intro.tween': [{
     duration: 200,
     alpha: 0.5,

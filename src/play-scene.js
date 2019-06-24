@@ -3013,6 +3013,10 @@ export default class PlayScene extends SuperScene {
     const {command, level} = this;
     const {player} = level;
 
+    if (!prop('effects.debugTeleport.enabled')) {
+      return;
+    }
+
     command.ignoreAll(this, 'debugTeleport', true);
     player.disableBody(true, false);
 
