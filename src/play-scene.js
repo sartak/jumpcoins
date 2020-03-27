@@ -113,6 +113,7 @@ const ZOrder = {};
   'eyes',
   'pupils',
 
+  'enemies',
   'jumpcoins',
   'player',
 
