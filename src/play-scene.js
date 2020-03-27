@@ -1410,12 +1410,12 @@ export default class PlayScene extends SuperScene {
     return false;
   }
 
-  checkSemiground(object1, object2) {
-    const {level} = this;
+  collideSemiground(object1, object2) {
+    const {level, command} = this;
     const {player} = level;
 
     const semiground = object1.config && object1.config.group === 'semiground' ? object1 : object2;
-    if (player.body.velocity.y < 0 || player.y + player.height / 2 >= semiground.y) {
+    if (command.down.held || (player.body.velocity.y < 0 || player.y + player.height / 2 >= semiground.y)) {
       return false;
     }
     return true;
@@ -1564,7 +1564,7 @@ export default class PlayScene extends SuperScene {
     physics.add.collider(player, statics.ground);
     physics.add.collider(enemies, statics.ground, null, (...args) => this.enemyFloorCollision(...args));
 
-    physics.add.collider(player, statics.semiground, null, (...args) => this.checkSemiground(...args));
+    physics.add.collider(player, statics.semiground, null, (...args) => this.collideSemiground(...args));
     physics.add.collider(enemies, statics.semiground, null, (...args) => this.enemyFloorCollision(...args));
 
     physics.add.collider(player, objects.movers);
@@ -3056,5 +3056,9 @@ export default class PlayScene extends SuperScene {
   }
 
   _hot() {
+    const {x, y} = this.level.player;
+    const scene = this.replaceWithSelf(false);
+    scene.level.player.x = x;
+    scene.level.player.y = y;
   }
 }

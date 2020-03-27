@@ -19,6 +19,9 @@ const commands = {
   right: {
     input: ['keyboard.RIGHT', 'gamepad.RIGHT', 'keyboard.D', 'keyboard.NUMPAD_SIX', 'gamepad.LSTICK.RIGHT', 'gamepad.RSTICK.RIGHT'],
   },
+  down: {
+    input: ['keyboard.DOWN', 'gamepad.DOWN', 'gamepad.LSTICK.DOWN', 'gamepad.RSTICK.DOWN'],
+  },
   jump: {
     input: ['keyboard.Z', 'keyboard.SPACE', 'gamepad.A', 'gamepad.B', 'gamepad.X', 'gamepad.Y'],
   },
