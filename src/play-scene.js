@@ -152,6 +152,27 @@ export default class PlayScene extends SuperScene {
         },
       },
     });
+
+    this.performanceProps = [
+      (setProp) => {
+        this.backgroundFloodlightEmitter.forEachAlive((particle) => {
+          this.tween(
+            null,
+            particle,
+            {
+              alpha: 0,
+              scale: 0,
+              duration: 1000,
+            },
+          );
+        });
+
+        this.timer(
+          () => { setProp('effects.backgroundFloodlights.visible', false); },
+          1000,
+        );
+      },
+    ];
   }
 
   initialLevelSaveState(stableFilename) {
@@ -2147,6 +2168,11 @@ export default class PlayScene extends SuperScene {
 
   reactBackgroundFloodlightsToDie() {
     const {backgroundFloodlightEmitter, level} = this;
+
+    if (!backgroundFloodlightEmitter) {
+      return;
+    }
+
     const {player} = level;
 
     const {x, y} = player;
@@ -2198,6 +2224,11 @@ export default class PlayScene extends SuperScene {
 
   reactBackgroundFloodlightsToJump() {
     const {backgroundFloodlightEmitter, level} = this;
+
+    if (!backgroundFloodlightEmitter) {
+      return;
+    }
+
     const {player} = level;
 
     const {x, y} = player;
