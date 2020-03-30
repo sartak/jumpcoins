@@ -1,6 +1,6 @@
 import SuperScene from './scaffolding/SuperScene';
-import prop, {tileDefinitions} from './props';
-import parseLevel from './scaffolding/lib/level-parser';
+import prop from './props';
+import parseLevel, {tileSpec} from './scaffolding/lib/level-parser';
 import analytics from './scaffolding/lib/analytics';
 
 import levelHello from './assets/maps/hello.map';
@@ -336,7 +336,7 @@ export default class PlayScene extends SuperScene {
     const {save} = this;
 
     const filename = Levels[levelIndex];
-    const levelDefinition = parseLevel(this.cache.text.get(filename), tileDefinitions, true);
+    const levelDefinition = parseLevel(this.cache.text.get(filename));
 
     const playerTile = levelDefinition.lookups['@'];
     if (!playerTile) {
@@ -497,7 +497,7 @@ export default class PlayScene extends SuperScene {
     map.forEach((row, r) => {
       row.forEach((tile, c) => {
         const {glyph, group, combineVertical} = tile;
-        if (!tile || !tileDefinitions[glyph]) {
+        if (!tile || !tileSpec(glyph)) {
           return;
         }
 

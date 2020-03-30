@@ -1,6 +1,6 @@
 import {
   builtinPropSpecs, ManageableProps, PropLoader, makePropsWithPrefix,
-  preprocessPropSpecs, preprocessTileDefinitions,
+  preprocessPropSpecs,
 } from './scaffolding/lib/props';
 
 const particleImages = [
@@ -587,7 +587,7 @@ if (GAMEFEEL_DEMO) {
   });
 }
 
-export const tileDefinitions = preprocessTileDefinitions({
+export const tileDefinitions = {
   '.': null, // background
   '#': {
     image: 'tileWall',
@@ -696,7 +696,7 @@ export const tileDefinitions = preprocessTileDefinitions({
     _inherit: 'B',
     startsMovingLeft: true,
   },
-});
+};
 
 preprocessPropSpecs(propSpecs, particleImages);
 
