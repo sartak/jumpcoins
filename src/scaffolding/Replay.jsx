@@ -37,7 +37,7 @@ export default class Replay extends React.Component {
       replays,
       activeRecording: null,
       activeReplay: loadField('activeReplay', null),
-      editing: null,
+      editing: loadField('editing', null),
       repeat: loadField('repeat', true),
     };
   }
@@ -92,8 +92,7 @@ export default class Replay extends React.Component {
 
     game.onReplayBegin = (replay) => {
       if (!replay.snapshot) {
-        this.setState({activeReplay: replay});
-        saveField('activeReplay', replay);
+        this.setActiveReplay(replay);
       }
     };
 
@@ -105,14 +104,12 @@ export default class Replay extends React.Component {
           this.beginReplay(this.state.activeReplay);
         });
       } else {
-        this.setState({activeReplay: null});
-        saveField('activeReplay', null);
+        this.setActiveReplay(null);
       }
     };
 
     game.onReplayStop = (replay) => {
-      this.setState({activeReplay: null});
-      saveField('activeReplay', null);
+      this.setActiveReplay(null);
     };
   }
 
@@ -140,8 +137,8 @@ export default class Replay extends React.Component {
         window.game.stopReplay();
       }
 
-      if (clearOtherEditing && editing && editing.timestamp !== replay.timestamp) {
-        this.setState({editing: null});
+      if (clearOtherEditing && editing !== replay.timestamp) {
+        this.setEditing(null);
       }
 
       window.game.beginReplay(replay);
@@ -193,18 +190,26 @@ export default class Replay extends React.Component {
 
   saveReplays() {
     setTimeout(() => {
-      const {replays, activeReplay} = this.state;
+      const {replays, activeReplay, editing} = this.state;
       saveField('replays', replays);
-
-      if (activeReplay) {
-        saveField('activeReplay', activeReplay);
-      }
+      saveField('editing', editing);
+      saveField('activeReplay', activeReplay);
     });
   }
 
   finishEdit(replay, skipFocus) {
-    this.setState({editing: null});
+    this.setEditing(null);
     this.saveReplays();
+  }
+
+  setEditing(editing) {
+    this.setState({editing});
+    saveField('editing', editing);
+  }
+
+  setActiveReplay(activeReplay) {
+    this.setState({activeReplay});
+    saveField('activeReplay', activeReplay);
   }
 
   updateReplay({timestamp}, changes, beginReplay) {
@@ -446,7 +451,7 @@ export default class Replay extends React.Component {
                 this.renderEditReplay(replay)
               )}
               <span className="name" onClick={() => this.beginReplay(replay, true)}>{replay.name}</span>
-              <span className="edit button" title="Edit replay" onClick={() => this.setState({editing: replay.timestamp})}>ℹ</span>
+              <span className="edit button" title="Edit replay" onClick={() => this.setEditing(replay.timestamp)}>ℹ</span>
             </li>
           ))}
         </ul>

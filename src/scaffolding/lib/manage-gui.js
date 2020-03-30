@@ -145,6 +145,10 @@ function addController(key, spec, open, saved) {
         e.preventDefault();
       };
     });
+
+    if (options.length > 1 && typeof options[options.length - 1] === 'function') {
+      controller.__ldListenCallback = options[options.length - 1];
+    }
   } else {
     let callback;
     if (options.length >= 1 && typeof options[options.length - 1] === 'function') {
@@ -157,7 +161,13 @@ function addController(key, spec, open, saved) {
       controller = folder.add(manageablePropsProxy, key, ...options);
     }
 
-    controller.__ldCallback = callback;
+    if (callback) {
+      controller.__ldChangeCallback = callback;
+    }
+
+    if (typeof originalValue === 'function') {
+      controller.__ldActionCallback = originalValue;
+    }
 
     const crNode = controller.domElement.closest('.cr');
 
@@ -311,8 +321,8 @@ function addController(key, spec, open, saved) {
             crNode.classList.remove('changed');
           }
 
-          if (controller.__ldCallback) {
-            ret = controller.__ldCallback(value, scene, game);
+          if (controller.__ldChangeCallback) {
+            ret = controller.__ldChangeCallback(value, scene, game);
           }
         } catch (e) {
           // eslint-disable-next-line no-console
@@ -354,7 +364,7 @@ function removeProp(key) {
   delete controllers[key];
 }
 
-function refreshUI() {
+export function refreshUI() {
   gui.updateDisplay();
   Object.values(folders).forEach((folder) => folder.updateDisplay());
 }
@@ -406,7 +416,7 @@ export function overrideProps(newProps) {
 }
 
 function specDiffers(old, next) {
-  let differsInCallback;
+  let differsInFunction;
 
   if ((!next && old) || (!old && next)) {
     return true;
@@ -418,7 +428,7 @@ function specDiffers(old, next) {
 
   for (let i = next.length - 1; i >= 0; i -= 1) {
     if (i === next.length - 1 && typeof next[i] === 'function' && typeof old[i] === 'function') {
-      differsInCallback = true;
+      differsInFunction = true;
     } else if (i === 1 && Array.isArray(next[i]) && Array.isArray(old[i])) {
       // compare enum values
       const nextArray = next[i];
@@ -438,8 +448,8 @@ function specDiffers(old, next) {
     }
   }
 
-  if (differsInCallback) {
-    return 'callback';
+  if (differsInFunction) {
+    return 'function';
   }
 
   return false;
@@ -472,6 +482,8 @@ function requiresControllerRecreation(key, next) {
 }
 
 function updatePropsFromReload(oldValues, nextSpecs) {
+  const changes = [];
+
   const leftoverKeys = {};
   Object.keys(controllers).forEach((key) => {
     leftoverKeys[key] = true;
@@ -482,21 +494,43 @@ function updatePropsFromReload(oldValues, nextSpecs) {
   Object.entries(nextSpecs).forEach(([key, spec]) => {
     if (!(key in controllers)) {
       addController(key, spec, true);
+
+      if (!key.endsWith('_enabled')) {
+        changes.push(key);
+      }
     } else {
       delete leftoverKeys[key];
       const controller = controllers[key];
 
       const requiresRecreation = requiresControllerRecreation(key, nextSpecs);
-      if (!requiresRecreation || requiresRecreation === 'callback') {
-        if (requiresRecreation === 'callback') {
-          controller.__ldCallback = spec[spec.length - 1];
+      if (!requiresRecreation || requiresRecreation === 'function') {
+        if (!requiresRecreation && spec.length > 1 && spec[1] === null && typeof spec[spec.length - 1] === 'function') {
+          if (String(spec[spec.length - 1]) !== String(controller.__ldListenCallback)) {
+            changes.push(key);
+          }
+          controller.__ldListenCallback = spec[spec.length - 1];
+        } else if (requiresRecreation === 'function') {
+          if (controller.__ldChangeCallback) {
+            if (String(spec[spec.length - 1]) !== String(controller.__ldChangeCallback)) {
+              changes.push(key);
+            }
+            controller.__ldChangeCallback = spec[spec.length - 1];
+          } else {
+            if (String(spec[spec.length - 1]) !== String(controller.__ldActionCallback)) {
+              changes.push(key);
+            }
+            controller.__ldActionCallback = spec[spec.length - 1];
+          }
         } else if (spec[1] !== null && manageableProps[key] !== oldValues[key]) {
           manageableProps[key] = oldValues[key];
           setChangedProp(key);
+          changes.push(key);
         }
 
         return;
       }
+
+      changes.push(key);
 
       setUnchangedProp(`${key}_enabled`);
       setUnchangedProp(key);
@@ -520,11 +554,25 @@ function updatePropsFromReload(oldValues, nextSpecs) {
     }
   });
 
+  changes.forEach((key) => {
+    let f = addNestedFolder(key);
+    while (f) {
+      f.open();
+      f = parentOfFolder.get(f);
+    }
+  });
+
+  if (leftoverKeys.length) {
+    changes.push(...leftoverKeys);
+  }
+
   Object.keys(leftoverKeys).forEach(removeProp);
   removeEmptyFolders();
 
   // refresh UI with new values
   refreshUI();
+
+  return changes;
 }
 
 function queryize(query) {
@@ -544,6 +592,10 @@ function queryize(query) {
   });
 
   const subsequence = escapedCharacters.join('.*');
+
+  if (query.startsWith('/')) {
+    return new RegExp(query.substring(1), hasUppercase ? '' : 'i');
+  }
 
   return new RegExp(subsequence, hasUppercase ? '' : 'i');
 }
@@ -614,12 +666,14 @@ if (module.hot) {
     try {
       const next = require('../../props');
 
-      // eslint-disable-next-line no-console
-      console.info('Hot-loading props');
-
       const oldProps = proxiedManageableProps;
       proxiedManageableProps = next.manageableProps;
-      updatePropsFromReload(oldProps, next.propSpecs);
+      const changes = updatePropsFromReload(oldProps, next.propSpecs);
+
+      if (changes.length) {
+        // eslint-disable-next-line no-console
+        console.info(`Hot-loading props: ${changes.join(', ')}`);
+      }
 
       const {game} = window;
       game.command.updateCommandsFromReload(next.commands);

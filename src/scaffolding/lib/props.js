@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import {expandParticleProps} from './particles';
 import {expandTweenProps} from './tweens';
 import {freezeStorage, removeAllFields, loadField} from './store';
-import {preprocessTileDefinitions} from './level-parser';
 
 const savedChangedProps = loadField('changedProps', {});
 export {savedChangedProps};
@@ -14,8 +13,6 @@ const rendererName = {
 };
 
 const debug = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
-
-export {preprocessTileDefinitions};
 
 export function builtinPropSpecs(commands) {
   if (!debug) {
@@ -33,6 +30,7 @@ export function builtinPropSpecs(commands) {
     'engine.actualFps': [0.01, null, 'loop.actualFps'],
     'engine.targetFps': [0.01, null, 'loop.targetFps'],
     'engine.renderer': [rendererName[Phaser.AUTO], null, (scene, game) => rendererName[game.renderer.type]],
+    'engine.focused': [false, null, 'scene.game.focused'],
     'engine.throttle': [false],
     'engine.stepping': [false, (value, scene, game) => (value ? game.loop.sleep() : game.loop.wake())],
     'engine.step': [(scene, game) => game.prop('engine.stepping') && game.loop.tick()],
