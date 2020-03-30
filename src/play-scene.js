@@ -272,8 +272,8 @@ export default class PlayScene extends SuperScene {
     const tileWidth = prop('config.tile_width');
     const tileHeight = prop('config.tile_height');
 
-    Levels.forEach((levelFile) => {
-      this.load.text(levelFile, levelFile);
+    Levels.forEach((levelFile, index) => {
+      this.load.text(`level-${index}`, levelFile);
     });
 
     this.load.image('tileWall', tileWall);
@@ -336,7 +336,7 @@ export default class PlayScene extends SuperScene {
     const {save} = this;
 
     const filename = Levels[levelIndex];
-    const levelDefinition = parseLevel(this.cache.text.get(filename));
+    const levelDefinition = parseLevel(this.cache.text.get(`level-${levelIndex}`));
 
     const playerTile = levelDefinition.lookups['@'];
     if (!playerTile) {
