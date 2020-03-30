@@ -325,7 +325,7 @@ export default class PlayScene extends SuperScene {
   }
 
   stabilizeFilename(filename) {
-    const match = filename.match(/\/([^/]+)\.\w+\.map$/);
+    const match = filename.match(/\/([^/.]+)(\.\w+)?\.map$/);
     if (match) {
       return `${match[1]}.map`;
     }
@@ -3095,4 +3095,150 @@ export default class PlayScene extends SuperScene {
     scene.level.player.x = x;
     scene.level.player.y = y;
   }
+}
+
+if (module.hot) {
+  const updateLevel = (path, next) => {
+    try {
+      const {game} = window;
+      const scene = game.topScene();
+
+      const filename = scene.stabilizeFilename(path);
+      const index = Levels.findIndex((l) => scene.stabilizeFilename(l) === filename);
+
+      if (index === -1) {
+        throw new Error(`Cannot hot-load level ${path}: stabilized filename ${filename} not found in Levels`);
+      }
+
+      // eslint-disable-next-line no-console
+      console.info(`Hot-loading ${scene.level.index === index ? 'active' : 'inactive'} level: ${path}`);
+
+      fetch(next).then((res) => {
+        res.text().then((text) => {
+          try {
+            scene.cache.text.entries.set(`level-${index}`, text);
+            if (scene.level.index === index) {
+              if (scene._builtinHot) {
+                scene._builtinHot();
+              }
+              if (scene._hot) {
+                scene._hot();
+              }
+            }
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error(e);
+          }
+        });
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
+  };
+
+  module.hot.accept('./assets/maps/hello.map', () => {
+    const next = require('./assets/maps/hello.map');
+    updateLevel('./assets/maps/hello.map', next);
+  });
+
+  module.hot.accept('./assets/maps/doublejump.map', () => {
+    const next = require('./assets/maps/doublejump.map');
+    updateLevel('./assets/maps/doublejump.map', next);
+  });
+
+  module.hot.accept('./assets/maps/doublejump-a.map', () => {
+    const next = require('./assets/maps/doublejump-a.map');
+    updateLevel('./assets/maps/doublejump-a.map', next);
+  });
+
+  module.hot.accept('./assets/maps/doublejump-b.map', () => {
+    const next = require('./assets/maps/doublejump-b.map');
+    updateLevel('./assets/maps/doublejump-b.map', next);
+  });
+
+  module.hot.accept('./assets/maps/doublejump-bb.map', () => {
+    const next = require('./assets/maps/doublejump-bb.map');
+    updateLevel('./assets/maps/doublejump-bb.map', next);
+  });
+
+  module.hot.accept('./assets/maps/doublejump-c.map', () => {
+    const next = require('./assets/maps/doublejump-c.map');
+    updateLevel('./assets/maps/doublejump-c.map', next);
+  });
+
+  module.hot.accept('./assets/maps/doublejump-d.map', () => {
+    const next = require('./assets/maps/doublejump-d.map');
+    updateLevel('./assets/maps/doublejump-d.map', next);
+  });
+
+  module.hot.accept('./assets/maps/doublejump-e.map', () => {
+    const next = require('./assets/maps/doublejump-e.map');
+    updateLevel('./assets/maps/doublejump-e.map', next);
+  });
+
+  module.hot.accept('./assets/maps/doublejump-f.map', () => {
+    const next = require('./assets/maps/doublejump-f.map');
+    updateLevel('./assets/maps/doublejump-f.map', next);
+  });
+
+  module.hot.accept('./assets/maps/doublejump-g.map', () => {
+    const next = require('./assets/maps/doublejump-g.map');
+    updateLevel('./assets/maps/doublejump-g.map', next);
+  });
+
+  module.hot.accept('./assets/maps/walljump.map', () => {
+    const next = require('./assets/maps/walljump.map');
+    updateLevel('./assets/maps/walljump.map', next);
+  });
+
+  module.hot.accept('./assets/maps/walljump-a.map', () => {
+    const next = require('./assets/maps/walljump-a.map');
+    updateLevel('./assets/maps/walljump-a.map', next);
+  });
+
+  module.hot.accept('./assets/maps/walljump-b.map', () => {
+    const next = require('./assets/maps/walljump-b.map');
+    updateLevel('./assets/maps/walljump-b.map', next);
+  });
+
+  module.hot.accept('./assets/maps/walljump-c.map', () => {
+    const next = require('./assets/maps/walljump-c.map');
+    updateLevel('./assets/maps/walljump-c.map', next);
+  });
+
+  module.hot.accept('./assets/maps/walljump-d.map', () => {
+    const next = require('./assets/maps/walljump-d.map');
+    updateLevel('./assets/maps/walljump-d.map', next);
+  });
+
+  module.hot.accept('./assets/maps/walljump-e.map', () => {
+    const next = require('./assets/maps/walljump-e.map');
+    updateLevel('./assets/maps/walljump-e.map', next);
+  });
+
+  module.hot.accept('./assets/maps/walljump-f.map', () => {
+    const next = require('./assets/maps/walljump-f.map');
+    updateLevel('./assets/maps/walljump-f.map', next);
+  });
+
+  module.hot.accept('./assets/maps/walljump-g.map', () => {
+    const next = require('./assets/maps/walljump-g.map');
+    updateLevel('./assets/maps/walljump-g.map', next);
+  });
+
+  module.hot.accept('./assets/maps/walljump-h.map', () => {
+    const next = require('./assets/maps/walljump-h.map');
+    updateLevel('./assets/maps/walljump-h.map', next);
+  });
+
+  module.hot.accept('./assets/maps/stairs.map', () => {
+    const next = require('./assets/maps/stairs.map');
+    updateLevel('./assets/maps/stairs.map', next);
+  });
+
+  module.hot.accept('./assets/maps/bye.map', () => {
+    const next = require('./assets/maps/bye.map');
+    updateLevel('./assets/maps/bye.map', next);
+  });
 }
