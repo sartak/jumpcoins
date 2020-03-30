@@ -4,6 +4,7 @@
   "plugins": ["only-warn"],
   "rules": {
     "class-methods-use-this": ["off"],
-    "no-multi-assign": ["off"]
+    "no-multi-assign": ["off"],
+    "no-lonely-if": ["off"]
   }
 }
