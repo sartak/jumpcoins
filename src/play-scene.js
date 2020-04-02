@@ -1,32 +1,6 @@
 import SuperScene from './scaffolding/SuperScene';
 import prop from './props';
-import parseLevel, {tileSpec} from './scaffolding/lib/level-parser';
 import analytics from './scaffolding/lib/analytics';
-
-import levelHello from './assets/maps/hello.map';
-
-import levelDoubleJump from './assets/maps/doublejump.map';
-import levelDoubleJumpA from './assets/maps/doublejump-a.map';
-import levelDoubleJumpB from './assets/maps/doublejump-b.map';
-import levelDoubleJumpBB from './assets/maps/doublejump-bb.map';
-import levelDoubleJumpC from './assets/maps/doublejump-c.map';
-import levelDoubleJumpD from './assets/maps/doublejump-d.map';
-import levelDoubleJumpE from './assets/maps/doublejump-e.map';
-import levelDoubleJumpF from './assets/maps/doublejump-f.map';
-import levelDoubleJumpG from './assets/maps/doublejump-g.map';
-
-import levelWallJump from './assets/maps/walljump.map';
-import levelWallJumpA from './assets/maps/walljump-a.map';
-import levelWallJumpB from './assets/maps/walljump-b.map';
-import levelWallJumpC from './assets/maps/walljump-c.map';
-import levelWallJumpD from './assets/maps/walljump-d.map';
-import levelWallJumpE from './assets/maps/walljump-e.map';
-import levelWallJumpF from './assets/maps/walljump-f.map';
-import levelWallJumpG from './assets/maps/walljump-g.map';
-import levelWallJumpH from './assets/maps/walljump-h.map';
-
-import levelStairs from './assets/maps/stairs.map';
-import levelBye from './assets/maps/bye.map';
 
 import tileWall from './assets/tiles/wall.png';
 import tileSpikesUp from './assets/tiles/spikes-up.png';
@@ -74,33 +48,6 @@ import soundKill from './assets/sounds/kill.wav';
 import soundWin from './assets/sounds/win.wav';
 import soundDie from './assets/sounds/die.wav';
 import soundBadge from './assets/sounds/badge.wav';
-
-const Levels = [
-  levelHello,
-
-  levelDoubleJump,
-  levelDoubleJumpF,
-  levelDoubleJumpA,
-  levelDoubleJumpB,
-  levelDoubleJumpC,
-  levelDoubleJumpG,
-  levelDoubleJumpD,
-  levelDoubleJumpE,
-  levelDoubleJumpBB,
-
-  levelWallJump,
-  levelWallJumpB,
-  levelWallJumpC,
-  levelWallJumpD,
-  levelWallJumpE,
-  levelWallJumpF,
-  levelWallJumpH,
-  levelWallJumpG,
-  levelWallJumpA,
-
-  levelStairs,
-  levelBye,
-];
 
 const ZOrder = {};
 [
@@ -196,8 +143,8 @@ export default class PlayScene extends SuperScene {
   initialSaveState() {
     const levels = {};
 
-    Levels.forEach((levelFile) => {
-      const key = this.stabilizeFilename(levelFile);
+    this.levelIds().forEach((id) => {
+      const key = `${id}.map`;
       levels[key] = this.initialLevelSaveState(key);
     });
 
@@ -216,8 +163,8 @@ export default class PlayScene extends SuperScene {
     const {levels} = save;
     save.levels = {};
 
-    Levels.forEach((levelFile, i) => {
-      const key = this.stabilizeFilename(levelFile);
+    this.levelIds().forEach((id, i) => {
+      const key = `${id}.map`;
       const level = save.levels[key] = levels[i];
 
       delete level.temp_time_ms;
@@ -271,10 +218,6 @@ export default class PlayScene extends SuperScene {
 
     const tileWidth = prop('config.tile_width');
     const tileHeight = prop('config.tile_height');
-
-    Levels.forEach((levelFile, index) => {
-      this.load.text(`level-${index}`, levelFile);
-    });
 
     this.load.image('tileWall', tileWall);
     this.load.image('tileSpikesUp', tileSpikesUp);
@@ -332,22 +275,17 @@ export default class PlayScene extends SuperScene {
     return filename;
   }
 
-  createLevel(levelIndex) {
+  loadLevel(levelIndex) {
+    const level = super.loadLevel(levelIndex);
+
     const {save} = this;
 
-    const filename = Levels[levelIndex];
-    const levelDefinition = parseLevel(this.cache.text.get(`level-${levelIndex}`));
-
-    const playerTile = levelDefinition.lookups['@'];
+    const playerTile = level.mapLookups['@'];
     if (!playerTile) {
       throw new Error('Missing @ for player location');
     }
 
-    const level = levelDefinition.config;
-    level.map = levelDefinition.map;
-    level.mapLookups = levelDefinition.lookups;
-    level.index = levelIndex;
-    level.filename = this.stabilizeFilename(filename);
+    level.filename = `${level.id}.map`;
 
     save.levelIndex = level.index;
     this.saveState();
@@ -496,8 +434,8 @@ export default class PlayScene extends SuperScene {
 
     map.forEach((row, r) => {
       row.forEach((tile, c) => {
-        const {glyph, group, combineVertical} = tile;
-        if (!tile || !tileSpec(glyph)) {
+        const {group, combineVertical} = tile;
+        if (!tile || !tile.image) {
           return;
         }
 
@@ -1520,8 +1458,9 @@ export default class PlayScene extends SuperScene {
 
     const nextLevel = () => {
       const index = level.index + 1;
+      const count = this.levelIds().length;
       this.replaceWithSelf(true, {
-        levelIndex: index % Levels.length,
+        levelIndex: index % count,
         skipIntro: null,
         save: null,
       });
@@ -1559,8 +1498,9 @@ export default class PlayScene extends SuperScene {
       return;
     }
 
+    const count = this.levelIds().length;
     this.replaceWithSelf(true, {
-      levelIndex: (index + Levels.length) % Levels.length,
+      levelIndex: (index + count) % count,
       skipIntro: true,
       save: null,
     });
@@ -1610,7 +1550,7 @@ export default class PlayScene extends SuperScene {
   }
 
   setupLevel(levelIndex, skipIntro) {
-    this.level = this.createLevel(levelIndex);
+    this.level = this.loadLevel(levelIndex);
     this.setupBackgroundScreen();
     this.createMap();
     this.createPlayer();
@@ -3095,150 +3035,4 @@ export default class PlayScene extends SuperScene {
     scene.level.player.x = x;
     scene.level.player.y = y;
   }
-}
-
-if (module.hot) {
-  const updateLevel = (path, next) => {
-    try {
-      const {game} = window;
-      const scene = game.topScene();
-
-      const filename = scene.stabilizeFilename(path);
-      const index = Levels.findIndex((l) => scene.stabilizeFilename(l) === filename);
-
-      if (index === -1) {
-        throw new Error(`Cannot hot-load level ${path}: stabilized filename ${filename} not found in Levels`);
-      }
-
-      // eslint-disable-next-line no-console
-      console.info(`Hot-loading ${scene.level.index === index ? 'active' : 'inactive'} level: ${path}`);
-
-      fetch(next).then((res) => {
-        res.text().then((text) => {
-          try {
-            scene.cache.text.entries.set(`level-${index}`, text);
-            if (scene.level.index === index) {
-              if (scene._builtinHot) {
-                scene._builtinHot();
-              }
-              if (scene._hot) {
-                scene._hot();
-              }
-            }
-          } catch (e) {
-            // eslint-disable-next-line no-console
-            console.error(e);
-          }
-        });
-      });
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e);
-    }
-  };
-
-  module.hot.accept('./assets/maps/hello.map', () => {
-    const next = require('./assets/maps/hello.map');
-    updateLevel('./assets/maps/hello.map', next);
-  });
-
-  module.hot.accept('./assets/maps/doublejump.map', () => {
-    const next = require('./assets/maps/doublejump.map');
-    updateLevel('./assets/maps/doublejump.map', next);
-  });
-
-  module.hot.accept('./assets/maps/doublejump-a.map', () => {
-    const next = require('./assets/maps/doublejump-a.map');
-    updateLevel('./assets/maps/doublejump-a.map', next);
-  });
-
-  module.hot.accept('./assets/maps/doublejump-b.map', () => {
-    const next = require('./assets/maps/doublejump-b.map');
-    updateLevel('./assets/maps/doublejump-b.map', next);
-  });
-
-  module.hot.accept('./assets/maps/doublejump-bb.map', () => {
-    const next = require('./assets/maps/doublejump-bb.map');
-    updateLevel('./assets/maps/doublejump-bb.map', next);
-  });
-
-  module.hot.accept('./assets/maps/doublejump-c.map', () => {
-    const next = require('./assets/maps/doublejump-c.map');
-    updateLevel('./assets/maps/doublejump-c.map', next);
-  });
-
-  module.hot.accept('./assets/maps/doublejump-d.map', () => {
-    const next = require('./assets/maps/doublejump-d.map');
-    updateLevel('./assets/maps/doublejump-d.map', next);
-  });
-
-  module.hot.accept('./assets/maps/doublejump-e.map', () => {
-    const next = require('./assets/maps/doublejump-e.map');
-    updateLevel('./assets/maps/doublejump-e.map', next);
-  });
-
-  module.hot.accept('./assets/maps/doublejump-f.map', () => {
-    const next = require('./assets/maps/doublejump-f.map');
-    updateLevel('./assets/maps/doublejump-f.map', next);
-  });
-
-  module.hot.accept('./assets/maps/doublejump-g.map', () => {
-    const next = require('./assets/maps/doublejump-g.map');
-    updateLevel('./assets/maps/doublejump-g.map', next);
-  });
-
-  module.hot.accept('./assets/maps/walljump.map', () => {
-    const next = require('./assets/maps/walljump.map');
-    updateLevel('./assets/maps/walljump.map', next);
-  });
-
-  module.hot.accept('./assets/maps/walljump-a.map', () => {
-    const next = require('./assets/maps/walljump-a.map');
-    updateLevel('./assets/maps/walljump-a.map', next);
-  });
-
-  module.hot.accept('./assets/maps/walljump-b.map', () => {
-    const next = require('./assets/maps/walljump-b.map');
-    updateLevel('./assets/maps/walljump-b.map', next);
-  });
-
-  module.hot.accept('./assets/maps/walljump-c.map', () => {
-    const next = require('./assets/maps/walljump-c.map');
-    updateLevel('./assets/maps/walljump-c.map', next);
-  });
-
-  module.hot.accept('./assets/maps/walljump-d.map', () => {
-    const next = require('./assets/maps/walljump-d.map');
-    updateLevel('./assets/maps/walljump-d.map', next);
-  });
-
-  module.hot.accept('./assets/maps/walljump-e.map', () => {
-    const next = require('./assets/maps/walljump-e.map');
-    updateLevel('./assets/maps/walljump-e.map', next);
-  });
-
-  module.hot.accept('./assets/maps/walljump-f.map', () => {
-    const next = require('./assets/maps/walljump-f.map');
-    updateLevel('./assets/maps/walljump-f.map', next);
-  });
-
-  module.hot.accept('./assets/maps/walljump-g.map', () => {
-    const next = require('./assets/maps/walljump-g.map');
-    updateLevel('./assets/maps/walljump-g.map', next);
-  });
-
-  module.hot.accept('./assets/maps/walljump-h.map', () => {
-    const next = require('./assets/maps/walljump-h.map');
-    updateLevel('./assets/maps/walljump-h.map', next);
-  });
-
-  module.hot.accept('./assets/maps/stairs.map', () => {
-    const next = require('./assets/maps/stairs.map');
-    updateLevel('./assets/maps/stairs.map', next);
-  });
-
-  module.hot.accept('./assets/maps/bye.map', () => {
-    const next = require('./assets/maps/bye.map');
-    updateLevel('./assets/maps/bye.map', next);
-  });
 }
