@@ -24,15 +24,18 @@ export default class Game extends SuperGame {
 }
 
 if (module.hot) {
-  {
-    const proxy = proxyClass(PlayScene);
-    module.hot.accept('./play-scene', () => {
+  const proxy = proxyClass(PlayScene);
+  module.hot.accept('./play-scene', () => {
+    try {
       const Next = require('./play-scene').default;
       window.game.scene.scenes.forEach((scene) => {
         if (scene.constructor.name === Next.name) {
           proxyClass(Next, scene, proxy);
         }
       });
-    });
-  }
+    } catch (e) {
+    // eslint-disable-next-line no-console
+      console.error(e);
+    }
+  });
 }
