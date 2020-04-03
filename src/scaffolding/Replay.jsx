@@ -267,7 +267,7 @@ export default class Replay extends React.Component {
     this.updateReplay(replay, {preflightCutoff, postflightCutoff, snapshot}, beginReplay);
   }
 
-  deleteReplay({timestamp}, name) {
+  deleteReplay({timestamp}) {
     this.setState(({activeReplay, replays}) => {
       const newReplays = replays.filter((replay) => replay.timestamp !== timestamp);
 
@@ -278,6 +278,24 @@ export default class Replay extends React.Component {
       if (activeReplay && activeReplay.timestamp === timestamp) {
         setTimeout(() => this.stopReplay());
       }
+
+      return {replays: newReplays};
+    });
+  }
+
+  copyReplay(replay) {
+    const newReplay = {
+      ...replay,
+      timestamp: Date.now(),
+      name: `Copy of ${replay.name}`,
+    };
+
+    this.setState(({replays}) => {
+      const newReplays = [newReplay, ...replays];
+
+      setTimeout(() => {
+        saveField('replays', newReplays);
+      });
 
       return {replays: newReplays};
     });
@@ -310,6 +328,7 @@ export default class Replay extends React.Component {
           value={replay.name}
           onChange={(e) => this.editName(replay, e.target.value)}
         />
+        <span className="copy button" title="Copy replay" onClick={() => this.copyReplay(replay)}>🔃</span>
         <span className="delete button" title="Delete replay" onClick={() => this.deleteReplay(replay)}>🚮</span>
         <br />
         <DoubleEnder

@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import * as dat from 'dat.gui';
-import {manageableProps, propSpecs} from '../../props';
+import prop, {manageableProps, propSpecs} from '../../props';
 import {saveField} from './store';
 import {savedChangedProps} from './props';
 
@@ -11,6 +11,7 @@ const controllers = {};
 const parentOfFolder = new Map();
 const changedProps = {};
 
+const originalProp = prop;
 let proxiedManageableProps = manageableProps;
 const manageablePropsProxy = new Proxy({}, {
   get(target, key) {
@@ -594,13 +595,22 @@ function queryize(query) {
   const subsequence = escapedCharacters.join('.*');
 
   if (query.startsWith('/')) {
-    return new RegExp(query.substring(1), hasUppercase ? '' : 'i');
+    try {
+      return new RegExp(query.substring(1), hasUppercase ? '' : 'i');
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
+    return new RegExp('(?!)');
   }
 
   return new RegExp(subsequence, hasUppercase ? '' : 'i');
 }
 
+let previousQuery = '';
 export function updateSearch(query, isStarted) {
+  previousQuery = query;
+
   const queryRegex = queryize(query);
 
   const container = document.querySelector('.Manage .dg.main');
@@ -670,6 +680,8 @@ if (module.hot) {
       proxiedManageableProps = next.manageableProps;
       const changes = updatePropsFromReload(oldProps, next.propSpecs);
 
+      originalProp(null, next.manageableProps);
+
       if (changes.length) {
         // eslint-disable-next-line no-console
         console.info(`Hot-loading props: ${changes.join(', ')}`);
@@ -679,6 +691,8 @@ if (module.hot) {
       game.command.updateCommandsFromReload(next.commands);
 
       regenerateListenPropsCache();
+
+      updateSearch(previousQuery, true);
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);

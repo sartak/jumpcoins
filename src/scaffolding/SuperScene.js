@@ -300,6 +300,13 @@ export default class SuperScene extends Phaser.Scene {
   }
 
   replaceWithSceneNamed(name, reseed, config = {}) {
+    if (!this.scene.settings) {
+      // this can happen when HMR happens during timeSight; SuperScene's
+      // builtinHot causes the top scene to get replaced out of the scene
+      // graph, but proxy.js still calls _hot on it
+      return;
+    }
+
     let {seed} = this.scene.settings.data;
     if (reseed === true) {
       seed = Math.random() * Date.now();
@@ -1034,18 +1041,20 @@ if (module.hot) {
       fetch(next).then((res) => {
         res.text().then((text) => {
           try {
-            const previous = window.game._ldMapFiles;
+            const {game} = window;
+
+            const previous = game._ldMapFiles;
             const nextMaps = parseMaps(text);
 
             if (!previous || !nextMaps) {
               return;
             }
 
-            window.game._ldMapFiles = nextMaps;
+            game._ldMapFiles = nextMaps;
 
             let reloadCurrent = true;
 
-            const {scene} = window;
+            const scene = game.topScene();
             const activeId = scene.level && scene.level.id;
 
             const prevById = {};
