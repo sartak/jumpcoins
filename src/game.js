@@ -24,7 +24,11 @@ export default class Game extends SuperGame {
 }
 
 if (module.hot) {
-  const proxy = proxyClass(PlayScene);
+  if (!window.PlaySceneProxy) {
+    window.PlaySceneProxy = proxyClass(PlayScene);
+  }
+  const proxy = window.PlaySceneProxy;
+
   module.hot.accept('./play-scene', () => {
     try {
       const Next = require('./play-scene').default;
