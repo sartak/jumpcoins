@@ -1235,15 +1235,7 @@ export default class PlayScene extends SuperScene {
     }
 
     if (player.spentLifecoin) {
-      level.deaths += 1;
-      save.levels[level.filename].deaths += 1;
-      this.shockwave();
-      this.playSound('soundDie');
-      this.saveState();
-
-      this.timer(() => {
-        this.respawn();
-      });
+      this.playerDie();
 
       return true;
     }
@@ -1254,6 +1246,20 @@ export default class PlayScene extends SuperScene {
 
     this.saveState();
     return false;
+  }
+
+  playerDie() {
+    const {level, save} = this;
+
+    level.deaths += 1;
+    save.levels[level.filename].deaths += 1;
+    this.shockwave();
+    this.playSound('soundDie');
+    this.saveState();
+
+    this.timer(() => {
+      this.respawn();
+    });
   }
 
   respawn() {

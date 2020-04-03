@@ -133,6 +133,7 @@ export const propSpecs = {
   'level.skip_outro': [false],
   'level.skip_hints': [false],
   'level.eye_tracking': [true],
+  'level.playerDie': [(scene) => scene.playerDie()],
   'level.respawn': [(scene) => scene.respawn()],
   'level.previous': [(scene) => scene.skipToPreviousLevel()],
   'level.restart': [(scene) => scene.restartCurrentLevel()],
