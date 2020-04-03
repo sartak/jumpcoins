@@ -1,9 +1,13 @@
 import Phaser from 'phaser';
+import deepEqual from 'deep-equal';
 import prop, {propsWithPrefix, manageableProps} from '../props';
 import {updatePropsFromStep, overrideProps, refreshUI} from './lib/manage-gui';
 import massageParticleProps, {injectEmitterOpSeededRandom, isParticleProp} from './lib/particles';
 import massageTweenProps from './lib/tweens';
 import {saveField, loadField} from './lib/store';
+
+import {parseMaps, parseLevelLines} from './lib/level-parser';
+import mapsFile from '../assets/maps.txt';
 
 const baseConfig = {
 };
@@ -230,6 +234,48 @@ export default class SuperScene extends Phaser.Scene {
   }
 
   preload() {
+    this.load.text('_mapsFile', mapsFile);
+  }
+
+  levelIds() {
+    if (!this.game._ldMapFiles) {
+      this.game._ldMapFiles = parseMaps(this.cache.text.get('_mapsFile'));
+    }
+
+    return this.game._ldMapFiles.map(([, config]) => config.id);
+  }
+
+  loadLevel(id) {
+    if (!this.game._ldMapFiles) {
+      this.game._ldMapFiles = parseMaps(this.cache.text.get('_mapsFile'));
+    }
+    const mapFiles = this.game._ldMapFiles;
+
+    let index;
+    let spec = mapFiles[id];
+    if (spec) {
+      index = id;
+    } else {
+      index = mapFiles.findIndex((m) => m[1].id === id);
+      spec = mapFiles[index];
+    }
+
+    if (!spec) {
+      throw new Error(`Cannot find level with id ${id}`);
+    }
+
+    const [lines, config] = spec;
+    const {map, mapText, lookups} = parseLevelLines(lines, this.mapsAreRectangular);
+
+    const level = {
+      ...config,
+      map,
+      mapText,
+      mapLookups: lookups,
+      index,
+    };
+
+    return level;
   }
 
   firstUpdate(time, dt) {
@@ -278,6 +324,8 @@ export default class SuperScene extends Phaser.Scene {
       return;
     }
 
+    const oldScene = this.scene;
+
     const newScene = this.game.scene.add(
       target,
       this.game._sceneConstructors[name],
@@ -289,7 +337,7 @@ export default class SuperScene extends Phaser.Scene {
       },
     );
 
-    this.scene.remove();
+    oldScene.remove();
 
     return newScene;
   }
@@ -979,5 +1027,92 @@ export default class SuperScene extends Phaser.Scene {
 }
 
 if (module.hot) {
-  module.hot.accept('../props');
+  module.hot.accept('../assets/maps.txt', () => {
+    try {
+      const next = require('../assets/maps.txt');
+
+      fetch(next).then((res) => {
+        res.text().then((text) => {
+          try {
+            const previous = window.game._ldMapFiles;
+            const nextMaps = parseMaps(text);
+
+            if (!previous || !nextMaps) {
+              return;
+            }
+
+            window.game._ldMapFiles = nextMaps;
+
+            let reloadCurrent = true;
+
+            const {scene} = window;
+            const activeId = scene.level && scene.level.id;
+
+            const prevById = {};
+            previous.forEach((spec) => { prevById[spec[1].id] = spec; });
+            const nextById = {};
+            nextMaps.forEach((spec) => { nextById[spec[1].id] = spec; });
+
+            const changes = [];
+
+            const leftover = {...prevById};
+
+            Object.entries(nextById).forEach(([id, nextSpec]) => {
+              if (!prevById[id]) {
+                if (id !== activeId) {
+                  changes.push(`+${id}`);
+                }
+              } else {
+                const previousSpec = prevById[id];
+                delete leftover[id];
+
+                if (!deepEqual(previousSpec, nextSpec)) {
+                  if (id !== activeId) {
+                    changes.push(`Δ${id}`);
+                  }
+                }
+              }
+            });
+
+            changes.push(...Object.keys(leftover).filter((id) => id !== activeId).map((id) => `-${id}`));
+
+            if (!deepEqual(previous.map((spec) => spec[1].id), nextMaps.map((spec) => spec[1].id))) {
+              changes.push('(order)');
+            }
+
+            if (activeId) {
+              const p = prevById[activeId];
+              const n = nextById[activeId];
+
+              if (deepEqual(p, n)) {
+                reloadCurrent = false;
+              } else {
+                changes.unshift(`active level ${activeId}`);
+              }
+            }
+
+            // eslint-disable-next-line no-console
+            console.info(`Hot-loading levels: ${changes.join(', ')}`);
+
+            if (!reloadCurrent) {
+              return;
+            }
+
+            if (scene._builtinHot) {
+              scene._builtinHot();
+            }
+            if (scene._hot) {
+              scene._hot();
+            }
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error(e);
+          }
+        });
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
+  });
 }
