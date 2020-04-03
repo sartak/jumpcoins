@@ -1985,6 +1985,12 @@ export default class PlayScene extends SuperScene {
 
     if (player.body.touching.down) {
       player.touchDownTime = time;
+
+      if (!player.landedTime) {
+        player.landedTime = time;
+      }
+    } else {
+      player.landedTime = null;
     }
 
     if (command.ignoreAll(this, 'knockback') && player.canCancelKnockbackIgnore) {
