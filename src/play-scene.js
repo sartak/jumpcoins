@@ -209,8 +209,11 @@ export default class PlayScene extends SuperScene {
       config.skipIntro = prop('level.skip_intro');
     }
 
-    this.xBorder = (this.game.config.width - (prop('config.map_width') * prop('config.tile_width'))) / 2;
-    this.yBorder = (this.game.config.height - (prop('config.map_height') * prop('config.tile_height'))) / 2;
+    const mapWidth = Math.floor(this.game.config.width / (prop('config.tile_width') + 2));
+    const mapHeight = Math.floor(this.game.config.height / (prop('config.tile_height') + 3));
+
+    this.xBorder = (this.game.config.width - (mapWidth * prop('config.tile_width'))) / 2;
+    this.yBorder = (this.game.config.height - (mapHeight * prop('config.tile_height'))) / 2;
   }
 
   preload() {
