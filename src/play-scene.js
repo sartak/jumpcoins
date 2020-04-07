@@ -630,13 +630,13 @@ export default class PlayScene extends SuperScene {
   }
 
   exitSparks(exit) {
+    const {level} = this;
+
     const speed = {};
-    const mapWidth = prop('config.map_width');
-    const mapHeight = prop('config.map_height');
     const tileWidth = prop('config.tile_width');
     const tileHeight = prop('config.tile_height');
 
-    if (exit.config.x >= mapWidth - 2) {
+    if (exit.config.x >= level.tileWidth - 2) {
       speed.speedX = {min: -60, max: -40};
       speed.x = exit.x + tileWidth / 2;
       speed.y = {min: exit.y - tileHeight / 2, max: exit.y + tileHeight / 2};
@@ -646,7 +646,7 @@ export default class PlayScene extends SuperScene {
       speed.x = exit.x - tileWidth / 2;
       speed.y = {min: exit.y - tileHeight / 2, max: exit.y + tileHeight / 2};
       speed.accelerationX = -25;
-    } else if (exit.config.y >= mapHeight - 2) {
+    } else if (exit.config.y >= level.tileHeight - 2) {
       speed.speedY = {min: -60, max: -40};
       speed.x = {min: exit.x - tileWidth / 2, max: exit.x + tileWidth / 2};
       speed.y = exit.y + tileHeight / 2;
@@ -2765,14 +2765,12 @@ export default class PlayScene extends SuperScene {
     const {level} = this;
     const {map} = level;
 
-    const mapWidth = prop('config.map_width');
-    const mapHeight = prop('config.map_height');
     const tileWidth = prop('config.tile_width');
     const tileHeight = prop('config.tile_height');
 
     const isLeft = exit.config.x <= 1;
-    const isRight = exit.config.x >= mapWidth - 2;
-    const isBottom = exit.config.y >= mapHeight - 2;
+    const isRight = exit.config.x >= level.tileWidth - 2;
+    const isBottom = exit.config.y >= level.tileHeight - 2;
     const isTop = exit.config.y <= 1;
 
     object.disableBody(true, false);
