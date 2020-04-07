@@ -202,6 +202,7 @@ export default class SuperScene extends Phaser.Scene {
             uniform vec2      resolution;
             uniform sampler2D u_texture;
             varying vec2      outTexCoord;
+            uniform vec2      cameraScroll;
 
             ${source}
             `,
@@ -219,20 +220,23 @@ export default class SuperScene extends Phaser.Scene {
       const shaderName = this.constructor.name;
 
       if (!this.game.renderer.hasPipeline(shaderName)) {
-        const shaderClass = this.shaderInstantiation(this.constructor.shaderSource());
-        this.game.renderer.addPipeline(shaderName, new shaderClass(this));
+        const source = this.game._shaderSource[shaderName] = this.constructor.shaderSource();
+        if (source) {
+          const shaderClass = this.shaderInstantiation(source);
+          this.game.renderer.addPipeline(shaderName, new shaderClass(this));
+        }
       }
 
       this.shader = this.game.renderer.getPipeline(shaderName);
 
-      if (this.shaderInitialization) {
-        this.shader.setFloat2('resolution', this.game.config.width, this.game.config.height);
-        this.shaderInitialization();
+      if (this.shader) {
+        if (this.shaderInitialization) {
+          this.shader.setFloat2('resolution', this.game.config.width, this.game.config.height);
+          this.shaderInitialization();
+        }
+        this.cameras.main.setRenderToTexture(this.shader);
       }
-      this.cameras.main.setRenderToTexture(this.shader);
     }
-
-    this.cameras.main.setLerp(prop('scene.camera.lerp'));
   }
 
   preload() {
@@ -315,8 +319,21 @@ export default class SuperScene extends Phaser.Scene {
     }
   }
 
+  setCameraDeadzone() {
+    this.cameras.main.setDeadzone(
+      prop('scene.camera.deadzoneX'),
+      prop('scene.camera.deadzoneY'),
+    );
+  }
+
+  setCameraLerp() {
+    this.cameras.main.setLerp(prop('scene.camera.lerp'));
+  }
+
   firstUpdate(time, dt) {
     this.setCameraBounds();
+    this.setCameraDeadzone();
+    this.setCameraLerp();
   }
 
   update(time, dt) {
@@ -332,8 +349,11 @@ export default class SuperScene extends Phaser.Scene {
     if (this.renderUpdate) {
       this.renderUpdate(time, dt);
     }
-    if (this.shader && this.shaderUpdate) {
-      this.shaderUpdate(time, dt);
+    if (this.shader) {
+      this.shader.setFloat2('cameraScroll', this.cameras.main.scrollX / this.game.config.width, this.cameras.main.scrollY / this.game.config.height);
+      if (this.shaderUpdate) {
+        this.shaderUpdate(time, dt);
+      }
     }
   }
 
@@ -887,6 +907,35 @@ export default class SuperScene extends Phaser.Scene {
       this.game.beginReplay(replay);
     } else {
       this.replayParticleSystems();
+    }
+
+    if (this.game.renderer.type === Phaser.WEBGL) {
+      const shaderName = this.constructor.name;
+      const oldSource = this.game._shaderSource[shaderName];
+      const newSource = this.constructor.shaderSource ? this.constructor.shaderSource() : undefined;
+
+      if (oldSource !== newSource) {
+        // eslint-disable-next-line no-console
+        console.info(`Hot-loading shader ${shaderName}`);
+
+        this.game._shaderSource[shaderName] = newSource;
+
+        if (newSource) {
+          const shaderClass = this.shaderInstantiation(newSource);
+          this.game.renderer.removePipeline(shaderName);
+          this.game.renderer.addPipeline(shaderName, new shaderClass(this));
+          this.shader = this.game.renderer.getPipeline(shaderName);
+          if (this.shaderInitialization) {
+            this.shader.setFloat2('resolution', this.game.config.width, this.game.config.height);
+            this.shaderInitialization();
+          }
+        } else {
+          this.game.renderer.removePipeline(shaderName);
+          delete this.shader;
+        }
+
+        this.cameras.main.setRenderToTexture(this.shader);
+      }
     }
   }
 

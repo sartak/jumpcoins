@@ -38,6 +38,8 @@ export default class SuperGame extends Phaser.Game {
 
     this._onDisableDebugUI = [];
 
+    this._shaderSource = {};
+
     this.command = new CommandManager(commands);
 
     this.focused = true;
@@ -57,6 +59,7 @@ export default class SuperGame extends Phaser.Game {
           return game.topScene()[key];
         },
       });
+      window.prop = prop;
     }
 
     this.events.on('step', () => {
