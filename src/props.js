@@ -550,6 +550,9 @@ export const propSpecs = {
   }],
 };
 
+propSpecs['scene.camera.lerp'][0] = 0.05;
+propSpecs['scene.camera.deadzoneX'][0] = 200;
+propSpecs['scene.camera.deadzoneY'][0] = 200;
 
 export const tileDefinitions = {
   '.': null, // background
