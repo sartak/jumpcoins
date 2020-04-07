@@ -1183,6 +1183,7 @@ export default class PlayScene extends SuperScene {
 
     if (coin) {
       coin.setDepth(ZOrder.jumpcoins);
+      coin.setScrollFactor(1);
 
       if (coin.hudTween) {
         coin.hudTween.stop();
@@ -1362,7 +1363,7 @@ export default class PlayScene extends SuperScene {
       this.saveState();
     }
 
-    const img = this.add.image(jumpcoin.x, jumpcoin.y, 'spriteJumpcoin');
+    const img = this.add.image(jumpcoin.x - this.cameras.main.scrollX, jumpcoin.y - this.cameras.main.scrollY, 'spriteJumpcoin');
     hud.jumpcoins.push(img);
     const x = 2 * prop('config.tile_width') + img.width * player.jumpcoins + hud.lifeIsText.width;
     const y = this.yBorder / 2;
