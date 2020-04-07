@@ -1269,11 +1269,11 @@ export default class PlayScene extends SuperScene {
     const {level} = this;
     const {player} = level;
 
-    if (player.isRespawning) {
+    if (level.isRespawning) {
       return;
     }
 
-    player.isRespawning = true;
+    level.isRespawning = true;
 
     this.timer(
       () => {
@@ -1307,6 +1307,7 @@ export default class PlayScene extends SuperScene {
         onComplete: () => {
           command.ignoreAll(this, 'spawn', false);
           level.startedAt = physics.time;
+          level.isRespawning = false;
         },
       },
     );
