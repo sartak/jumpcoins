@@ -1367,6 +1367,7 @@ export default class PlayScene extends SuperScene {
     const x = 2 * prop('config.tile_width') + img.width * player.jumpcoins + hud.lifeIsText.width;
     const y = this.yBorder / 2;
     img.setDepth(ZOrder.collectedJumpcoin);
+    img.setScrollFactor(0);
 
     img.hudTween = this.tween(
       'effects.jumpcoinToHud',
@@ -2292,6 +2293,7 @@ export default class PlayScene extends SuperScene {
     const backgroundScreen = this.add.image(this.game.config.width / 2, this.game.config.height / 2, 'effectBackgroundScreen');
     hud.backgroundScreen = backgroundScreen;
     backgroundScreen.setDepth(ZOrder.backgroundScreen);
+    backgroundScreen.setScrollFactor(0);
 
     const text = this.add.text(
       this.xBorder * 2,
@@ -2305,6 +2307,7 @@ export default class PlayScene extends SuperScene {
     );
     hud.lifeIsText = text;
     text.setDepth(ZOrder.hudText);
+    text.setScrollFactor(0);
 
     text.setStroke('#000000', 6);
     text.x -= text.width / 2;
@@ -2326,6 +2329,7 @@ export default class PlayScene extends SuperScene {
       'spriteLifecoin',
     );
     hud.lifecoin.setDepth(ZOrder.hudLifecoin);
+    hud.lifecoin.setScrollFactor(0);
 
     hud.jumpcoins = [];
     level.onRespawn(() => {
@@ -2383,6 +2387,7 @@ export default class PlayScene extends SuperScene {
       label.x -= label.width / 2;
       label.y -= label.height / 2;
       label.setDepth(ZOrder.hint);
+      label.setScrollFactor(0);
       hud.hints.push(label);
 
       label.alpha = 0;
@@ -2509,6 +2514,7 @@ export default class PlayScene extends SuperScene {
 
     const banner = this.add.image(screenWidth * 0.5, screenHeight * 0.55, 'effectBlack');
     banner.setDepth(ZOrder.banner);
+    banner.setScrollFactor(0);
     banner.setScale(screenWidth / banner.width, screenHeight / banner.height * 0.20);
 
     return banner;
@@ -2533,6 +2539,7 @@ export default class PlayScene extends SuperScene {
     title.x -= title.width / 2;
     title.y -= title.height / 2;
     title.setDepth(ZOrder.banner);
+    title.setScrollFactor(0);
 
     title.alpha = 0;
     title.y += 20;
@@ -2570,6 +2577,7 @@ export default class PlayScene extends SuperScene {
       badge.x -= (i + 0.5) * (prop('config.tile_width') + 20);
       badge.x += (badgesToRender.length / 2) * (prop('config.tile_width') + 20);
       badge.setDepth(ZOrder.banner);
+      badge.setScrollFactor(0);
       badges.push(badge);
 
       const {x} = badge;
@@ -2603,6 +2611,7 @@ export default class PlayScene extends SuperScene {
         empty.x = badge.x;
         empty.y = badge.y;
         empty.setDepth(ZOrder.banner);
+        empty.setScrollFactor(0);
         badges.push(empty);
 
         empty.x = screenWidth * 0.5;
@@ -2701,6 +2710,7 @@ export default class PlayScene extends SuperScene {
     speedrunLabel.x -= speedrunLabel.width / 2;
     speedrunLabel.y -= speedrunLabel.height / 2;
     speedrunLabel.setDepth(ZOrder.banner);
+    speedrunLabel.setScrollFactor(0);
 
     speedrunLabel.alpha = 0;
     speedrunLabel.y -= 20;
