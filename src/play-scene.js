@@ -86,6 +86,7 @@ const ZOrder = {};
 const JumpNormal = 1;
 const JumpDouble = 2;
 const JumpWall = 3;
+const JumpHyper = 3;
 
 export default class PlayScene extends SuperScene {
   constructor() {
@@ -130,6 +131,7 @@ export default class PlayScene extends SuperScene {
       jumps: 0,
       doublejumps: 0,
       walljumps: 0,
+      hyperjumps: 0,
       deaths: 0,
       badgeCompleted: false,
       badgeDeathless: false,
@@ -1701,6 +1703,10 @@ export default class PlayScene extends SuperScene {
 
     const walljumpGracePeriod = prop('rules.walljump.detach_grace_period_ms');
 
+    if (player.landedTime && (time - player.landedTime) > prop('rules.hyperjump.landed_grace_period_ms')) {
+      player.canHyperJump = false;
+    }
+
     let isTouchingLeftWall = time - player.touchingLeftTime < walljumpGracePeriod && command.left.releasedDuration < walljumpGracePeriod;
 
     let isTouchingRightWall = time - player.touchingRightTime < walljumpGracePeriod && command.right.releasedDuration < walljumpGracePeriod;
@@ -1714,7 +1720,25 @@ export default class PlayScene extends SuperScene {
       player.isJumping = true;
       player.hasLiftedOff = false;
       player.body.setGravityY(0);
-      if (canJump) {
+      if (player.canHyperJump) {
+        this.jumpShake(JumpHyper);
+        this.jumpPuff(player.facingLeft);
+        level.hyperjumps += 1;
+        save.levels[level.filename].hyperjumps += 1;
+
+        player.setVelocityY(-prop('rules.hyperjump.velocity_y'));
+        this.playSound('soundDoubleJump');
+
+        player.isHyperJumping = true;
+
+        player.isDoubleJumping = false;
+        player.isWallJumping = false;
+        player.wallJumpIgnoreDirection = false;
+        player.wallJumpContinuing = false;
+        player.wallJumpHeld = false;
+        player.wallJumpContra = false;
+        player.isHyperJumping = true;
+      } else if (canJump) {
         this.jumpShake(JumpNormal);
         this.jumpPuff(false);
         this.jumpPuff(true);
@@ -1747,6 +1771,13 @@ export default class PlayScene extends SuperScene {
           player.setFlipX(true);
         }
 
+        player.isHyperJumping = false;
+        player.canHyperJump = true;
+
+        if (prop('rules.hyperjump.forbid')) {
+          player.canHyperJump = false;
+        }
+
         player.isWallJumping = true;
         player.wallJumpIgnoreDirection = true;
         player.wallJumpContinuing = true;
@@ -1772,6 +1803,7 @@ export default class PlayScene extends SuperScene {
         player.setVelocityY(-prop('rules.double_jump.velocity_y'));
         player.isDoubleJumping = true;
 
+        player.isHyperJumping = false;
         player.isWallJumping = false;
         player.wallJumpIgnoreDirection = false;
         player.wallJumpContinuing = false;
@@ -1790,7 +1822,7 @@ export default class PlayScene extends SuperScene {
 
     const hitLeftWall = player.wallJumpDirectionLeft && player.body.touching.left;
     const hitRightWall = !player.wallJumpDirectionLeft && player.body.touching.right;
-    if (player.isWallJumping && (hitLeftWall || hitRightWall)) {
+    if ((player.isWallJumping || player.isHyperJumping) && (hitLeftWall || hitRightWall)) {
       player.setVelocityX(0);
       player.setAccelerationX(0);
       player.isWallJumping = false;
@@ -1798,6 +1830,8 @@ export default class PlayScene extends SuperScene {
       player.wallJumpContinuing = false;
       player.wallJumpHeld = false;
       player.wallJumpContra = false;
+      player.isHyperJumping = false;
+      player.canHyperJump = false;
     }
 
     const wallJumpContraLeft = player.wallJumpDirectionLeft && command.right.held;
@@ -1810,16 +1844,18 @@ export default class PlayScene extends SuperScene {
     if (player.wallJumpContra) {
       player.wallJumpContinuing = false;
       player.wallJumpHeld = false;
+      player.canHyperJump = false;
     }
 
     const wallJumpReleasedLeft = player.wallJumpDirectionLeft && !command.left.held;
     const wallJumpReleasedRight = !player.wallJumpDirectionLeft && !command.right.held;
     if (!player.wallJumpIgnoreDirection && (wallJumpReleasedLeft || wallJumpReleasedRight)) {
       player.wallJumpHeld = false;
+      player.canHyperJump = false;
     }
 
-    if (player.wallJumpIgnoreDirection || player.wallJumpHeld) {
-      const x = prop('rules.walljump.velocity_x');
+    if (player.wallJumpIgnoreDirection || player.wallJumpHeld || player.isHyperJumping) {
+      const x = player.isHyperJumping ? prop('rules.hyperjump.velocity_x') : prop('rules.walljump.velocity_x');
       if (player.facingLeft) {
         player.setVelocityX(-x);
       } else {
@@ -2057,6 +2093,8 @@ export default class PlayScene extends SuperScene {
       if (prop('rules.walljump.forbid')) {
         player.canWallJump = false;
       }
+
+      player.isHyperJumping = false;
     } else if (!player.body.touching.down) {
       player.hasLiftedOff = true;
     }
@@ -2105,7 +2143,7 @@ export default class PlayScene extends SuperScene {
     if (player.isDoubleJumping) {
       vy += 0.7;
       vx -= 0.7;
-    } else if (player.isWallJumping) {
+    } else if (player.isWallJumping || player.isHyperJumping || player.canHyperJump) {
       vx += 0.7;
       vy -= 0.7;
     }

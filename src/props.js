@@ -123,6 +123,11 @@ export const propSpecs = {
   'rules.walljump.detach_grace_period_ms': [100, 0, 1000],
   'rules.walljump.forbid': [false],
 
+  'rules.hyperjump.velocity_x': [600, 0, 1000],
+  'rules.hyperjump.velocity_y': [175, 0, 1000],
+  'rules.hyperjump.landed_grace_period_ms': [100, 0, 1000],
+  'rules.hyperjump.forbid': [false],
+
   'rules.enemy.walk_velocity': [30, 0, 1000],
 
   'level.name': ['', null],
@@ -170,6 +175,8 @@ export const propSpecs = {
   'player.wallJumpDirectionLeft': [false, null],
   'player.wallJumpHeld': [false, null],
   'player.wallJumpContra': [false, null],
+  'player.canHyperJump': [false, null],
+  'player.isHyperJumping': [false, null],
   'player.touching_up': [false, null, 'player.body.touching.up'],
   'player.touching_down': [false, null, 'player.body.touching.down'],
   'player.touching_left': [false, null, 'player.body.touching.left'],
