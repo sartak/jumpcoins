@@ -3009,10 +3009,14 @@ export default class PlayScene extends SuperScene {
   debugHandlePointerdown(event) {
     const {command, level} = this;
     const {player} = level;
+    let {x, y} = event;
 
     if (!prop('effects.debugTeleport.enabled')) {
       return;
     }
+
+    x += this.cameras.main.scrollX;
+    y += this.cameras.main.scrollY;
 
     command.ignoreAll(this, 'debugTeleport', true);
     player.disableBody(true, false);
@@ -3022,7 +3026,7 @@ export default class PlayScene extends SuperScene {
       player,
       {
         massageProps: (props) => {
-          if (event.x < player.x) {
+          if (x < player.x) {
             props.rotation *= -1;
           }
         },
@@ -3031,8 +3035,8 @@ export default class PlayScene extends SuperScene {
             'effects.debugTeleport.travel',
             player,
             {
-              x: event.x,
-              y: event.y,
+              x,
+              y,
               onComplete: () => {
                 this.tween(
                   'effects.debugTeleport.outro',
