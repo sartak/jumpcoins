@@ -1720,7 +1720,7 @@ export default class PlayScene extends SuperScene {
       player.isJumping = true;
       player.hasLiftedOff = false;
       player.body.setGravityY(0);
-      if (player.canHyperJump) {
+      if (canJump && player.canHyperJump) {
         this.jumpShake(JumpHyper);
         this.jumpPuff(!player.facingLeft);
         level.hyperjumps += 1;
