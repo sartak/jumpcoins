@@ -1761,15 +1761,11 @@ export default class PlayScene extends SuperScene {
         player.setVelocityY(-prop('rules.walljump.velocity_y'));
         if (player.touchingRightTime > player.touchingLeftTime) {
           player.facingLeft = true;
-          player.wallJumpDirectionLeft = true;
-          this.jumpPuff(true);
-          player.setFlipX(false);
         } else {
           player.facingLeft = false;
-          player.wallJumpDirectionLeft = false;
-          this.jumpPuff(false);
-          player.setFlipX(true);
         }
+        player.wallJumpDirectionLeft = player.facingLeft;
+        player.setFlipX(!player.facingLeft);
 
         player.isHyperJumping = false;
         player.canHyperJump = true;
@@ -1786,6 +1782,7 @@ export default class PlayScene extends SuperScene {
         const suppressSound = this.spendCoin(true, player.wallJumpDirectionLeft);
         if (!suppressSound) {
           this.playSound('soundWallJump');
+          this.jumpPuff(player.facingLeft);
         }
 
         this.timer(
@@ -1810,12 +1807,11 @@ export default class PlayScene extends SuperScene {
         player.wallJumpHeld = false;
         player.wallJumpContra = false;
 
-        this.jumpPuff(true, true);
-        this.jumpPuff(false, true);
-
         const suppressSound = this.spendCoin(true);
         if (!suppressSound) {
           this.playSound('soundDoubleJump');
+          this.jumpPuff(true, true);
+          this.jumpPuff(false, true);
         }
       }
     }
