@@ -1722,6 +1722,13 @@ export default class PlayScene extends SuperScene {
         save.levels[level.filename].jumps += 1;
         player.setVelocityY(-prop('rules.jump.velocity_y'));
         this.playSound('soundJump', 3);
+
+        player.isDoubleJumping = false;
+        player.isWallJumping = false;
+        player.wallJumpIgnoreDirection = false;
+        player.wallJumpContinuing = false;
+        player.wallJumpHeld = false;
+        player.wallJumpContra = false;
       } else if (player.canWallJump && (isTouchingLeftWall || isTouchingRightWall)) {
         this.jumpShake(JumpWall);
         level.walljumps += 1;
