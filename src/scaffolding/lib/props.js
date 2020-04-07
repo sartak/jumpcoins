@@ -52,6 +52,12 @@ export function builtinPropSpecs(commands) {
     'scene.sounds': [0, null, 'sounds.length'],
     'scene.timers': [0, null, 'timers.length'],
     'scene.physicsColliders_length': [0, null, 'physics.world.colliders._active.length'],
+    'scene.musicVolume': [1, 0, 1, (value, scene, game) => {
+      game.changeVolume(game.volume);
+    }],
+    'scene.soundVolume': [1, 0, 1, (value, scene, game) => {
+      game.changeVolume(game.volume);
+    }],
     'scene.debugDraw': [false, (value, scene) => {
       if (value) {
         scene.physics.world.createDebugGraphic();
@@ -60,6 +66,47 @@ export function builtinPropSpecs(commands) {
       }
     }],
     'scene.replaceWithSelf': [(scene) => scene.replaceWithSelf(false)],
+
+    'scene.camera.width': [0, null, 'cameras.main.width'],
+    'scene.camera.height': [0, null, 'cameras.main.height'],
+    'scene.camera.zoom': [0.1, null, 'cameras.main.zoom'],
+    'scene.camera.rotation': [0.1, null, 'cameras.main.rotation'],
+    'scene.camera.x': [0, null, 'cameras.main.x'],
+    'scene.camera.y': [0, null, 'cameras.main.y'],
+    'scene.camera.scrollX': [0, null, 'cameras.main.scrollX'],
+    'scene.camera.scrollY': [0, null, 'cameras.main.scrollY'],
+    'scene.camera.centerX': [0, null, 'cameras.main.centerX'],
+    'scene.camera.centerY': [0, null, 'cameras.main.centerY'],
+    'scene.camera.boundsX': [0, null, 'cameras.main._bounds.x'],
+    'scene.camera.boundsY': [0, null, 'cameras.main._bounds.y'],
+    'scene.camera.boundsWidth': [0, null, 'cameras.main._bounds.width'],
+    'scene.camera.boundsHeight': [0, null, 'cameras.main._bounds.height'],
+    'scene.camera.useBounds': [true, null, 'cameras.main.useBounds'],
+
+    'scene.camera.follow': ['', null, (scene) => {
+      if (!scene.cameras.main._follow) {
+        return undefined;
+      }
+
+      return scene.cameras.main._follow.name || scene.cameras.main._follow.texture.key;
+    }],
+    'scene.camera.followOffsetX': [0, null, 'cameras.main.followOffset.x'],
+    'scene.camera.followOffsetY': [0, null, 'cameras.main.followOffset.y'],
+
+    'scene.camera.lerp': [1, 0, 1, (value, scene) => {
+      scene.cameras.main.setLerp(value);
+    }],
+    'scene.camera.deadzoneX': [0, 0, 1000, (value, scene) => {
+      const dz = scene.cameras.main.deadzone;
+      scene.cameras.main.setDeadzone(value, dz ? dz.height : 0);
+    }],
+    'scene.camera.deadzoneY': [0, 0, 1000, (value, scene) => {
+      const dz = scene.cameras.main.deadzone;
+      scene.cameras.main.setDeadzone(dz ? dz.width : 0, value);
+    }],
+    'scene.camera.hasBounds': [true, (value, scene) => {
+      scene.setCameraBounds();
+    }],
 
     ...commandKeyProps(commands),
 

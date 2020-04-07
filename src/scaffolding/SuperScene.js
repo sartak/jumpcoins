@@ -231,6 +231,8 @@ export default class SuperScene extends Phaser.Scene {
       }
       this.cameras.main.setRenderToTexture(this.shader);
     }
+
+    this.cameras.main.setLerp(prop('scene.camera.lerp'));
   }
 
   preload() {
@@ -267,8 +269,17 @@ export default class SuperScene extends Phaser.Scene {
     const [lines, config] = spec;
     const {map, mapText, lookups} = parseLevelLines(lines, this.mapsAreRectangular);
 
+    const tileHeight = map.length;
+    const height = prop('config.tile_height') * tileHeight;
+    const tileWidth = Math.max(...map.map((a) => a.length));
+    const width = prop('config.tile_height') * tileWidth;
+
     const level = {
       ...config,
+      tileHeight,
+      tileWidth,
+      height,
+      width,
       map,
       mapText,
       mapLookups: lookups,
@@ -278,7 +289,34 @@ export default class SuperScene extends Phaser.Scene {
     return level;
   }
 
+  setCameraBounds() {
+    const {level} = this;
+
+    if (!prop('scene.camera.hasBounds')) {
+      this.cameras.main.removeBounds();
+      return;
+    }
+
+    if (level && level.width && level.height) {
+      const boundsX = 0;
+      const boundsY = 0;
+      let boundsWidth = level.width;
+      let boundsHeight = level.height;
+
+      if (this.xBorder) {
+        boundsWidth += this.xBorder * 2;
+      }
+
+      if (this.yBorder) {
+        boundsHeight += this.yBorder * 2;
+      }
+
+      this.cameras.main.setBounds(boundsX, boundsY, boundsWidth, boundsHeight);
+    }
+  }
+
   firstUpdate(time, dt) {
+    this.setCameraBounds();
   }
 
   update(time, dt) {
@@ -914,7 +952,7 @@ export default class SuperScene extends Phaser.Scene {
 
     sound.requestedVolume = volume;
 
-    sound.setVolume(volume * this.game.volume);
+    sound.setVolume(volume * this.game.volume * prop('scene.soundVolume'));
 
     this.sounds.push(sound);
 
@@ -928,7 +966,9 @@ export default class SuperScene extends Phaser.Scene {
   changeVolume(newVolume) {
     const {sounds} = this;
 
-    sounds.forEach((sound) => sound.setVolume(sound.requestedVolume * newVolume));
+    const multiplier = newVolume * prop('scene.soundVolume');
+
+    sounds.forEach((sound) => sound.setVolume(sound.requestedVolume * multiplier));
   }
 
   playMusic(name, forceRestart) {
@@ -1025,6 +1065,16 @@ export default class SuperScene extends Phaser.Scene {
       if (this[debugMethod]) {
         this[debugMethod](event);
       }
+    }
+  }
+
+  cameraFollow(object, offsetX = 0, offsetY = 0) {
+    if (object) {
+      const lerp = prop('scene.camera.lerp');
+      // true is roundPixels to avoid subpixel rendering
+      this.cameras.main.startFollow(object, true, lerp, lerp, offsetX, offsetY);
+    } else {
+      this.cameras.main.stopFollow();
     }
   }
 
