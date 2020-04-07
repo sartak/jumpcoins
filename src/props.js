@@ -550,43 +550,6 @@ export const propSpecs = {
   }],
 };
 
-const GAMEFEEL_DEMO = false;
-if (GAMEFEEL_DEMO) {
-  propSpecs['rules.jump.down_gravity'][0] = 1;
-  propSpecs['rules.jump.early_release'][0] = false;
-  propSpecs['rules.jump.coyote_grace_period_ms'][0] = 0;
-  propSpecs['rules.jump.terminal_velocity_enabled'][0] = false;
-  propSpecs['rules.walljump.drag_terminal_velocity_enabled'][0] = false;
-  propSpecs['rules.walljump.detach_grace_period_ms'][0] = 0;
-
-  propSpecs['rules.damage.spike_knockback_x'][0] = 0;
-  propSpecs['rules.damage.spike_knockback_y'][0] = 0;
-  propSpecs['rules.damage.knockback_ignore_input_ms'][0] = 0;
-
-  propSpecs['level.skip_intro'][0] = true;
-  propSpecs['level.skip_outro'][0] = true;
-  propSpecs['level.skip_hints'][0] = true;
-  propSpecs['level.eye_tracking'][0] = false;
-
-  propSpecs['player.animationVisible'][0] = false;
-  propSpecs['player.statusVisible'][0] = false;
-  propSpecs['player.squish_max_enabled'][0] = false;
-
-  propSpecs['enemies.animationVisible'][0] = false;
-
-  propSpecs['effects.damageBlur.visible'][0] = false;
-  propSpecs['effects.shockwave.visible'][0] = false;
-  propSpecs['effects.jumpShake.visible'][0] = false;
-
-  Object.entries(propSpecs).forEach(([key, config]) => {
-    if (key.endsWith('.tween') && key !== 'effects.identifyEnemy.tween') {
-      config[0].animated = false;
-    }
-    if (key.endsWith('.particles') && typeof config[0] === 'object') {
-      config[0].visible = false;
-    }
-  });
-}
 
 export const tileDefinitions = {
   '.': null, // background
