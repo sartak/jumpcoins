@@ -87,6 +87,8 @@ export const propSpecs = {
   'config.map_height': [22, null, () => 22],
   'config.tile_width': [24, null, () => 24],
   'config.tile_height': [24, null, () => 24],
+  'config.xBorder': [0, null, (scene) => scene.xBorder],
+  'config.yBorder': [0, null, (scene) => scene.yBorder],
   'config.timesight_jumpcoins': [false],
   'config.timesight_player': [true],
 
