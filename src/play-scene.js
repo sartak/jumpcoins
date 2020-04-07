@@ -2456,7 +2456,7 @@ export default class PlayScene extends SuperScene {
         vec2 uv = outTexCoord;
 
         if (shockwaveTime < 10.0) {
-          float dist = distance(uv, shockwaveCenter);
+          float dist = distance(uv, shockwaveCenter - cameraScroll);
           float t = shockwaveTime * shockwaveSpeed;
 
           if (dist <= t + shockwaveThickness && dist >= t - shockwaveThickness && dist >= shockwaveInner) {
@@ -2464,7 +2464,7 @@ export default class PlayScene extends SuperScene {
             float scaleDiff = 1.0 - pow(abs(diff * shockwaveScale), shockwaveRange);
             float diffTime = diff * scaleDiff;
 
-            vec2 diffTexCoord = normalize(uv - shockwaveCenter);
+            vec2 diffTexCoord = normalize(uv - (shockwaveCenter - cameraScroll));
             uv += (diffTexCoord * diffTime) / (t * dist * shockwaveDropoff);
           }
         }
