@@ -813,6 +813,10 @@ export default class PlayScene extends SuperScene {
     player.facingLeft = level.facingLeft;
     player.setFlipX(!player.facingLeft);
 
+    if (!level.isRespawning) {
+      this.cameraFollow(player);
+    }
+
     return player;
   }
 
@@ -1278,12 +1282,25 @@ export default class PlayScene extends SuperScene {
 
     this.timer(
       () => {
+        this.cameraFollow();
         level.respawnCallbacks.forEach((callback) => callback());
         this.createPlayer();
         this.createLevelObjects(true);
         this.renderHud(false);
         this.setupLevelPhysics();
         this.spawnPlayer(500);
+
+        this.timer(
+          () => {
+            this.cameras.main.pan(
+              this.level.player.x,
+              this.level.player.y,
+              500,
+              'Cubic.easeInOut',
+            );
+          },
+          100,
+        );
       },
     );
   }
@@ -1309,6 +1326,7 @@ export default class PlayScene extends SuperScene {
           command.ignoreAll(this, 'spawn', false);
           level.startedAt = physics.time;
           level.isRespawning = false;
+          this.cameraFollow(player);
         },
       },
     );
@@ -2856,6 +2874,8 @@ export default class PlayScene extends SuperScene {
     command.ignoreAll(this, 'outro', true);
 
     player.disableBody(true, false);
+
+    this.cameraFollow();
 
     if (player.touchedExit) {
       this.exitTractor(player, player.touchedExit);
