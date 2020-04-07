@@ -83,10 +83,10 @@ export const propSpecs = {
   'command.ignore_all.knockback': [false, null, (scene) => scene.command.ignoreAll(scene, 'knockback')],
   'command.ignore_all.outro': [false, null, (scene) => scene.command.ignoreAll(scene, 'outro')],
 
-  'config.map_width': [30, 30, 30],
-  'config.map_height': [22, 22, 22],
-  'config.tile_width': [24, 24, 24],
-  'config.tile_height': [24, 24, 24],
+  'config.map_width': [30, null, () => 30],
+  'config.map_height': [22, null, () => 22],
+  'config.tile_width': [24, null, () => 24],
+  'config.tile_height': [24, null, () => 24],
   'config.timesight_jumpcoins': [false],
   'config.timesight_player': [true],
 
