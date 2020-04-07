@@ -1722,7 +1722,7 @@ export default class PlayScene extends SuperScene {
       player.body.setGravityY(0);
       if (player.canHyperJump) {
         this.jumpShake(JumpHyper);
-        this.jumpPuff(player.facingLeft);
+        this.jumpPuff(!player.facingLeft);
         level.hyperjumps += 1;
         save.levels[level.filename].hyperjumps += 1;
 
