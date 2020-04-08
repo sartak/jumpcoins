@@ -75,8 +75,17 @@ const commands = {
 
 export {commands};
 
+export const shaderUniforms = {
+  shockwaveScale: ['float', 10.0, 0, 500],
+  shockwaveRange: ['float', 0.8, 0, 10],
+  shockwaveThickness: ['float', 0.1, 0, 10],
+  shockwaveSpeed: ['float', 3.0, 0, 50],
+  shockwaveInner: ['float', 0.09, 0, 1],
+  shockwaveDropoff: ['float', 40.0, 0, 500],
+};
+
 export const propSpecs = {
-  ...builtinPropSpecs(commands),
+  ...builtinPropSpecs(commands, shaderUniforms),
 
   'command.ignore_all.intro': [false, null, (scene) => scene.command.ignoreAll(scene, 'intro')],
   'command.ignore_all.spawn': [false, null, (scene) => scene.command.ignoreAll(scene, 'spawn')],
@@ -228,12 +237,6 @@ export const propSpecs = {
   'effects.damageBlur.visible': [true],
   'effects.damageBlur.execute': [(scene) => scene.damageBlur()],
 
-  'effects.shockwave.scale': [10.0, 0, 500, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveScale', value)],
-  'effects.shockwave.range': [0.8, 0, 10, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveRange', value)],
-  'effects.shockwave.thickness': [0.1, 0, 10, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveThickness', value)],
-  'effects.shockwave.speed': [3.0, 0, 50, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveSpeed', value)],
-  'effects.shockwave.inner': [0.09, 0, 1, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveInner', value)],
-  'effects.shockwave.dropoff': [40.0, 0, 500, (value, scene) => scene.shader && scene.shader.setFloat1('shockwaveDropoff', value)],
   'effects.shockwave.visible': [true],
   'effects.shockwave.execute': [(scene) => scene.shockwave()],
 

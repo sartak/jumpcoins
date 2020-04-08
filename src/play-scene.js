@@ -2502,12 +2502,6 @@ export default class PlayScene extends SuperScene {
     return `
       uniform float shockwaveTime;
       uniform vec2  shockwaveCenter;
-      uniform float shockwaveScale;
-      uniform float shockwaveRange;
-      uniform float shockwaveThickness;
-      uniform float shockwaveSpeed;
-      uniform float shockwaveInner;
-      uniform float shockwaveDropoff;
 
       uniform float blurEffect;
 
@@ -2552,13 +2546,6 @@ export default class PlayScene extends SuperScene {
 
   shaderInitialization() {
     this.shockwaveTime = 1000000;
-    this.shader.setFloat1('shockwaveTime', this.shockwaveTime);
-    this.shader.setFloat1('shockwaveScale', prop('effects.shockwave.scale'));
-    this.shader.setFloat1('shockwaveRange', prop('effects.shockwave.range'));
-    this.shader.setFloat1('shockwaveThickness', prop('effects.shockwave.thickness'));
-    this.shader.setFloat1('shockwaveSpeed', prop('effects.shockwave.speed'));
-    this.shader.setFloat1('shockwaveInner', prop('effects.shockwave.inner'));
-    this.shader.setFloat1('shockwaveDropoff', prop('effects.shockwave.dropoff'));
 
     this.shader.setFloat1('blurEffect', 0.0);
   }
