@@ -2169,6 +2169,10 @@ export default class PlayScene extends SuperScene {
     this.frameUpdates(time, dt);
   }
 
+  renderUpdate(time, dt) {
+    this.shockwaveTime += dt / 3333;
+  }
+
   jumpShake(type) {
     if (!prop('effects.jumpShake.visible')) {
       return;
@@ -2481,7 +2485,7 @@ export default class PlayScene extends SuperScene {
   }
 
   shockwave() {
-    const {level, shader} = this;
+    const {level} = this;
     const {player} = level;
 
     if (!prop('effects.shockwave.visible')) {
@@ -2489,19 +2493,12 @@ export default class PlayScene extends SuperScene {
     }
 
     this.reactBackgroundFloodlightsToDie();
-
-    if (!shader) {
-      return;
-    }
-
     this.shockwaveTime = 0;
-    shader.setFloat2('shockwaveCenter', player.x / this.game.config.width, player.y / this.game.config.height);
+    this.shockwaveCenter = [player.x / this.game.config.width, player.y / this.game.config.height];
   }
 
   static shaderSource() {
     return `
-      uniform float shockwaveTime;
-      uniform vec2  shockwaveCenter;
 
       uniform float blurEffect;
 
@@ -2542,17 +2539,6 @@ export default class PlayScene extends SuperScene {
         gl_FragColor = vec4(c.r*c.a, c.g*c.a, c.b*c.a, 1.0);
       }
     `;
-  }
-
-  shaderInitialization() {
-    this.shockwaveTime = 1000000;
-
-    this.shader.setFloat1('blurEffect', 0.0);
-  }
-
-  shaderUpdate(time, dt) {
-    this.shockwaveTime += dt / 3333;
-    this.shader.setFloat1('shockwaveTime', this.shockwaveTime);
   }
 
   renderBanner() {
@@ -2984,8 +2970,8 @@ export default class PlayScene extends SuperScene {
 
     if (shader) {
       shader.setFloat1('blurEffect', 0);
-      shader.setFloat1('shockwaveTime', 1000000);
     }
+    this.shockwaveTime = 1000000.0;
 
     hud.intro.forEach((item) => {
       item.destroy();

@@ -76,6 +76,8 @@ const commands = {
 export {commands};
 
 export const shaderUniforms = {
+  shockwaveTime: ['float', 1000000.0, null],
+  shockwaveCenter: ['vec2', [0.5, 0.5], null],
   shockwaveScale: ['float', 10.0, 0, 500],
   shockwaveRange: ['float', 0.8, 0, 10],
   shockwaveThickness: ['float', 0.1, 0, 10],
