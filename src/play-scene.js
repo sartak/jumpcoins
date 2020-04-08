@@ -2502,6 +2502,7 @@ export default class PlayScene extends SuperScene {
       void main( void ) {
         vec2 uv = outTexCoord;
 
+        // shockwave
         if (shockwaveTime < 10.0) {
           float dist = distance(uv, shockwaveCenter - cameraScroll);
           float t = shockwaveTime * shockwaveSpeed;
@@ -2518,6 +2519,7 @@ export default class PlayScene extends SuperScene {
 
         vec4 c = texture2D(u_texture, uv);
 
+        // blur
         if (blurEffect > 0.0) {
           float b = blurEffect / resolution.x;
           c *= 0.2270270270;
@@ -2533,7 +2535,16 @@ export default class PlayScene extends SuperScene {
           c += texture2D(u_texture, vec2(uv.x + 4.0*b, uv.y + 4.0*b)) * 0.0162162162;
         }
 
-        gl_FragColor = vec4(c.r*c.a, c.g*c.a, c.b*c.a, 1.0);
+        c.r *= c.a;
+        c.g *= c.a;
+        c.b *= c.a;
+
+        // tint
+        c.r *= tint.r * tint.a;
+        c.g *= tint.g * tint.a;
+        c.b *= tint.b * tint.a;
+
+        gl_FragColor = vec4(c.r, c.g, c.b, 1.0);
       }
     `;
   }
