@@ -2319,10 +2319,10 @@ export default class PlayScene extends SuperScene {
   }
 
   damageBlur() {
-    const {level, shader} = this;
+    const {level} = this;
     const {player} = level;
 
-    if (!shader || !prop('effects.damageBlur.visible')) {
+    if (!prop('effects.damageBlur.visible')) {
       return;
     }
 
@@ -2335,7 +2335,7 @@ export default class PlayScene extends SuperScene {
       to: 100,
       duration: prop('effects.damageBlur.in_ms'),
       onUpdate: () => {
-        shader.setFloat1('blurEffect', prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0));
+        this.blurEffect = prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0);
       },
       onComplete: () => {
         player.blurTween = this.tweens.addCounter({
@@ -2343,7 +2343,7 @@ export default class PlayScene extends SuperScene {
           to: 0,
           duration: prop('effects.damageBlur.out_ms'),
           onUpdate: () => {
-            shader.setFloat1('blurEffect', prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0));
+            this.blurEffect = prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0);
           },
         });
       },
@@ -2499,9 +2499,6 @@ export default class PlayScene extends SuperScene {
 
   static shaderSource() {
     return `
-
-      uniform float blurEffect;
-
       void main( void ) {
         vec2 uv = outTexCoord;
 
@@ -2952,7 +2949,7 @@ export default class PlayScene extends SuperScene {
   launchTimeSight() {
     super.launchTimeSight();
 
-    const {level, shader} = this;
+    const {level} = this;
     const {player, hud} = level;
     const {jumpcoins} = level.objects;
 
@@ -2968,9 +2965,7 @@ export default class PlayScene extends SuperScene {
       player.visible = false;
     }
 
-    if (shader) {
-      shader.setFloat1('blurEffect', 0);
-    }
+    this.blurEffect = 0;
     this.shockwaveTime = 1000000.0;
 
     hud.intro.forEach((item) => {

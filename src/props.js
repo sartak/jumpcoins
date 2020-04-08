@@ -84,6 +84,8 @@ export const shaderUniforms = {
   shockwaveSpeed: ['float', 3.0, 0, 50],
   shockwaveInner: ['float', 0.09, 0, 1],
   shockwaveDropoff: ['float', 40.0, 0, 500],
+
+  blurEffect: ['float', 0, null],
 };
 
 export const propSpecs = {
