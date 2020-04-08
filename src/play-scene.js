@@ -2497,55 +2497,47 @@ export default class PlayScene extends SuperScene {
     this.shockwaveCenter = [player.x / this.game.config.width, player.y / this.game.config.height];
   }
 
-  static shaderSource() {
+  static shaderMainCoord() {
     return `
-      void main( void ) {
-        vec2 uv = outTexCoord;
+      // shockwave
+      if (shockwaveTime < 10.0) {
+        float dist = distance(uv, shockwaveCenter - cameraScroll);
+        float t = shockwaveTime * shockwaveSpeed;
 
-        // shockwave
-        if (shockwaveTime < 10.0) {
-          float dist = distance(uv, shockwaveCenter - cameraScroll);
-          float t = shockwaveTime * shockwaveSpeed;
+        if (dist <= t + shockwaveThickness && dist >= t - shockwaveThickness && dist >= shockwaveInner) {
+          float diff = dist - t;
+          float scaleDiff = 1.0 - pow(abs(diff * shockwaveScale), shockwaveRange);
+          float diffTime = diff * scaleDiff;
 
-          if (dist <= t + shockwaveThickness && dist >= t - shockwaveThickness && dist >= shockwaveInner) {
-            float diff = dist - t;
-            float scaleDiff = 1.0 - pow(abs(diff * shockwaveScale), shockwaveRange);
-            float diffTime = diff * scaleDiff;
-
-            vec2 diffTexCoord = normalize(uv - (shockwaveCenter - cameraScroll));
-            uv += (diffTexCoord * diffTime) / (t * dist * shockwaveDropoff);
-          }
+          vec2 diffTexCoord = normalize(uv - (shockwaveCenter - cameraScroll));
+          uv += (diffTexCoord * diffTime) / (t * dist * shockwaveDropoff);
         }
-
-        vec4 c = texture2D(u_texture, uv);
-
-        // blur
-        if (blurEffect > 0.0) {
-          float b = blurEffect / resolution.x;
-          c *= 0.2270270270;
-
-          c += texture2D(u_texture, vec2(uv.x - 4.0*b, uv.y - 4.0*b)) * 0.0162162162;
-          c += texture2D(u_texture, vec2(uv.x - 3.0*b, uv.y - 3.0*b)) * 0.0540540541;
-          c += texture2D(u_texture, vec2(uv.x - 2.0*b, uv.y - 2.0*b)) * 0.1216216216;
-          c += texture2D(u_texture, vec2(uv.x - 1.0*b, uv.y - 1.0*b)) * 0.1945945946;
-
-          c += texture2D(u_texture, vec2(uv.x + 1.0*b, uv.y + 1.0*b)) * 0.1945945946;
-          c += texture2D(u_texture, vec2(uv.x + 2.0*b, uv.y + 2.0*b)) * 0.1216216216;
-          c += texture2D(u_texture, vec2(uv.x + 3.0*b, uv.y + 3.0*b)) * 0.0540540541;
-          c += texture2D(u_texture, vec2(uv.x + 4.0*b, uv.y + 4.0*b)) * 0.0162162162;
-        }
-
-        c.r *= c.a;
-        c.g *= c.a;
-        c.b *= c.a;
-
-        // tint
-        c.r *= tint.r * tint.a;
-        c.g *= tint.g * tint.a;
-        c.b *= tint.b * tint.a;
-
-        gl_FragColor = vec4(c.r, c.g, c.b, 1.0);
       }
+    `;
+  }
+
+  static shaderMainColor() {
+    return `
+      // blur
+      if (blurEffect > 0.0) {
+        float b = blurEffect / resolution.x;
+        c *= 0.2270270270;
+
+        c += texture2D(u_texture, vec2(uv.x - 4.0*b, uv.y - 4.0*b)) * 0.0162162162;
+        c += texture2D(u_texture, vec2(uv.x - 3.0*b, uv.y - 3.0*b)) * 0.0540540541;
+        c += texture2D(u_texture, vec2(uv.x - 2.0*b, uv.y - 2.0*b)) * 0.1216216216;
+        c += texture2D(u_texture, vec2(uv.x - 1.0*b, uv.y - 1.0*b)) * 0.1945945946;
+
+        c += texture2D(u_texture, vec2(uv.x + 1.0*b, uv.y + 1.0*b)) * 0.1945945946;
+        c += texture2D(u_texture, vec2(uv.x + 2.0*b, uv.y + 2.0*b)) * 0.1216216216;
+        c += texture2D(u_texture, vec2(uv.x + 3.0*b, uv.y + 3.0*b)) * 0.0540540541;
+        c += texture2D(u_texture, vec2(uv.x + 4.0*b, uv.y + 4.0*b)) * 0.0162162162;
+      }
+
+      // tint
+      c.r *= tint.r * tint.a;
+      c.g *= tint.g * tint.a;
+      c.b *= tint.b * tint.a;
     `;
   }
 
