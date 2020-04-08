@@ -9,7 +9,7 @@ const particleImages = [
   'effectImagePuff',
 ];
 
-const commands = {
+export const commands = {
   up: {
     input: ['keyboard.UP', 'gamepad.UP', 'keyboard.W', 'keyboard.NUMPAD_EIGHT', 'gamepad.LSTICK.UP', 'gamepad.RSTICK.UP'],
   },
@@ -72,8 +72,6 @@ const commands = {
     },
   },
 };
-
-export {commands};
 
 export const shaderUniforms = {
   tint: ['rgba', [1, 1, 1, 1]],
