@@ -14,7 +14,7 @@ const rendererName = {
 
 const debug = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
 
-export function builtinPropSpecs(commands) {
+export function builtinPropSpecs(commands, shaderUniforms) {
   if (!debug) {
     Object.keys(commands).forEach((key) => {
       if (commands[key].debug) {
@@ -126,6 +126,7 @@ export function builtinPropSpecs(commands) {
     'command.ignore_all.any': [false, null, (scene) => scene.command.ignoreAll(scene)],
 
     ...commandProps(commands),
+    ...shaderProps(shaderUniforms),
   };
 }
 
@@ -183,6 +184,69 @@ const knownInputs = [
   a[b] = true;
   return a;
 }, {});
+
+export const shaderTypeMeta = {
+  float: [1, 'float', 'setFloat1'],
+  vec2: [2, 'vec2', 'setFloat2v', 'x', 'y'],
+  vec3: [3, 'vec3', 'setFloat3v', 'x', 'y', 'z'],
+  vec4: [4, 'vec4', 'setFloat4v', 'x', 'y', 'z', 'w'],
+  rgb: [3, 'vec3', 'setFloat3v', 'r', 'g', 'b'],
+  rgba: [4, 'vec4', 'setFloat4v', 'r', 'g', 'b', 'a'],
+};
+
+function shaderProps(uniforms) {
+  const props = {};
+
+  Object.entries(uniforms).forEach(([name, spec]) => {
+    // eslint-disable-next-line prefer-const
+    let [type, ...config] = spec;
+
+    if (!type) {
+      type = 'float';
+    }
+
+    if (!shaderTypeMeta[type]) {
+      // eslint-disable-next-line no-console
+      console.error(`Unknown type ${type} for shader ${name}`);
+      return;
+    }
+
+    const [count, , setter, ...subvariables] = shaderTypeMeta[type];
+
+    if (count === 1) {
+      if (config[1] === null) {
+        config.push((scene) => scene[name]);
+      } else if (typeof config[config.length - 1] !== 'function') {
+        config.push((value, scene) => scene.shader && scene.shader[setter](name, value));
+      }
+
+      if (config[0] === 0) {
+        config[0] = 0.1;
+      }
+
+      props[`shader.${name}`] = config;
+    } else {
+      subvariables.forEach((sub, i) => {
+        const c = [...config];
+        c[0] = c[0][i];
+
+        if (c[1] === null) {
+          c.push((scene) => scene[name] ? scene[name][i] : undefined);
+        } else if (typeof c[c.length - 1] !== 'function') {
+          // c.push((value, scene) => scene.shader && scene.shader[setter](name, value));
+        }
+
+        if (c[0] === 0) {
+          c[0] = 0.1;
+        }
+
+        props[`shader.${name}_${sub}`] = c;
+      });
+    }
+  });
+
+  return props;
+}
 
 export function keysWithPrefix(commands, prefix, skipWarning) {
   const keys = [];
