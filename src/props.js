@@ -77,7 +77,7 @@ export const shaderCoordFragments = [];
 export const shaderColorFragments = [];
 
 export const propSpecs = {
-  ...builtinPropSpecs(commands, shaderUniforms),
+  ...builtinPropSpecs(commands, shaderCoordFragments, shaderColorFragments),
 
   'command.ignore_all.intro': [false, null, (scene) => scene.command.ignoreAll(scene, 'intro')],
   'command.ignore_all.spawn': [false, null, (scene) => scene.command.ignoreAll(scene, 'spawn')],
