@@ -2170,7 +2170,7 @@ export default class PlayScene extends SuperScene {
   }
 
   renderUpdate(time, dt) {
-    this.shockwaveTime += dt / 3333;
+    this.shockwave_time += dt / 3333;
   }
 
   jumpShake(type) {
@@ -2335,7 +2335,7 @@ export default class PlayScene extends SuperScene {
       to: 100,
       duration: prop('effects.damageBlur.in_ms'),
       onUpdate: () => {
-        this.blurEffect = prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0);
+        this.blur_amount = prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0);
       },
       onComplete: () => {
         player.blurTween = this.tweens.addCounter({
@@ -2343,7 +2343,7 @@ export default class PlayScene extends SuperScene {
           to: 0,
           duration: prop('effects.damageBlur.out_ms'),
           onUpdate: () => {
-            this.blurEffect = prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0);
+            this.blur_amount = prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0);
           },
         });
       },
@@ -2493,52 +2493,8 @@ export default class PlayScene extends SuperScene {
     }
 
     this.reactBackgroundFloodlightsToDie();
-    this.shockwaveTime = 0;
-    this.shockwaveCenter = [player.x / this.game.config.width, player.y / this.game.config.height];
-  }
-
-  static shaderMainCoord() {
-    return `
-      // shockwave
-      if (shockwaveTime < 10.0) {
-        float dist = distance(uv, shockwaveCenter - cameraScroll);
-        float t = shockwaveTime * shockwaveSpeed;
-
-        if (dist <= t + shockwaveThickness && dist >= t - shockwaveThickness && dist >= shockwaveInner) {
-          float diff = dist - t;
-          float scaleDiff = 1.0 - pow(abs(diff * shockwaveScale), shockwaveRange);
-          float diffTime = diff * scaleDiff;
-
-          vec2 diffTexCoord = normalize(uv - (shockwaveCenter - cameraScroll));
-          uv += (diffTexCoord * diffTime) / (t * dist * shockwaveDropoff);
-        }
-      }
-    `;
-  }
-
-  static shaderMainColor() {
-    return `
-      // blur
-      if (blurEffect > 0.0) {
-        float b = blurEffect / resolution.x;
-        c *= 0.2270270270;
-
-        c += texture2D(u_texture, vec2(uv.x - 4.0*b, uv.y - 4.0*b)) * 0.0162162162;
-        c += texture2D(u_texture, vec2(uv.x - 3.0*b, uv.y - 3.0*b)) * 0.0540540541;
-        c += texture2D(u_texture, vec2(uv.x - 2.0*b, uv.y - 2.0*b)) * 0.1216216216;
-        c += texture2D(u_texture, vec2(uv.x - 1.0*b, uv.y - 1.0*b)) * 0.1945945946;
-
-        c += texture2D(u_texture, vec2(uv.x + 1.0*b, uv.y + 1.0*b)) * 0.1945945946;
-        c += texture2D(u_texture, vec2(uv.x + 2.0*b, uv.y + 2.0*b)) * 0.1216216216;
-        c += texture2D(u_texture, vec2(uv.x + 3.0*b, uv.y + 3.0*b)) * 0.0540540541;
-        c += texture2D(u_texture, vec2(uv.x + 4.0*b, uv.y + 4.0*b)) * 0.0162162162;
-      }
-
-      // tint
-      c.r *= tint.r * tint.a;
-      c.g *= tint.g * tint.a;
-      c.b *= tint.b * tint.a;
-    `;
+    this.shockwave_time = 0;
+    this.shockwave_center = [player.x / this.game.config.width, player.y / this.game.config.height];
   }
 
   renderBanner() {
@@ -2968,8 +2924,8 @@ export default class PlayScene extends SuperScene {
       player.visible = false;
     }
 
-    this.blurEffect = 0;
-    this.shockwaveTime = 1000000.0;
+    this.blur_amount = 0;
+    this.shockwave_time = 1000000.0;
 
     hud.intro.forEach((item) => {
       item.destroy();
