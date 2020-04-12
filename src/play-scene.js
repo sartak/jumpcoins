@@ -123,6 +123,8 @@ export default class PlayScene extends SuperScene {
       'shader.shockwave.enabled',
       'shader.blur.enabled',
     ];
+
+    this.mapsAreRectangular = true;
   }
 
   initialLevelSaveState(stableFilename) {
