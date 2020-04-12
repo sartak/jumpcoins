@@ -950,7 +950,7 @@ export default class SuperScene extends Phaser.Scene {
       this.replayParticleSystems();
     }
 
-    this._recompileShader();
+    this.game.recompileShader();
   }
 
   particleSystem(name, options = {}, reloadSeed) {
@@ -996,6 +996,38 @@ export default class SuperScene extends Phaser.Scene {
     };
 
     const tween = this.tweens.add(massageTweenProps(target, props, options));
+
+    return tween;
+  }
+
+  tweenInOut(inDuration, outDuration, update, onMidpoint, onComplete) {
+    let tween;
+
+    tween = this.tweens.addCounter({
+      from: 0,
+      to: 100,
+      duration: inDuration,
+      onUpdate: () => {
+        const factor = tween.getValue() / 100.0;
+        update(factor, true);
+      },
+      onComplete: () => {
+        tween = this.tweens.addCounter({
+          from: 100,
+          to: 0,
+          duration: outDuration,
+          onUpdate: () => {
+            const factor = tween.getValue() / 100.0;
+            update(factor, false);
+          },
+          onComplete,
+        });
+
+        if (onMidpoint) {
+          onMidpoint(tween);
+        }
+      },
+    });
 
     return tween;
   }

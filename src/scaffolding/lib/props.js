@@ -228,6 +228,21 @@ const builtinColorFragments = [
       }
   `],
 
+  ['aberration', {
+    red: ['vec2', [0, 0], null],
+    green: ['vec2', [0, 0], null],
+    blue: ['vec2', [0, 0], null],
+  }, `
+    c.r += texture2D(u_texture, vec2(uv.x - aberration_red.x, uv.y - aberration_red.y)).r;
+    c.r -= texture2D(u_texture, vec2(uv.x + aberration_red.x, uv.y + aberration_red.y)).r;
+
+    c.g += texture2D(u_texture, vec2(uv.x - aberration_green.x, uv.y - aberration_green.y)).g;
+    c.g -= texture2D(u_texture, vec2(uv.x + aberration_green.x, uv.y + aberration_green.y)).g;
+
+    c.b += texture2D(u_texture, vec2(uv.x - aberration_blue.x, uv.y - aberration_blue.y)).b;
+    c.b -= texture2D(u_texture, vec2(uv.x + aberration_blue.x, uv.y + aberration_blue.y)).b;
+  `],
+
   ['tint', {
     color: ['rgba', [1, 1, 1, 1]],
   }, `
@@ -421,7 +436,7 @@ function shaderProps(coordFragments, colorFragments) {
           config.push((value, scene) => scene.shader && scene.shader[setter](name, value));
         }
 
-        if (config[0] === 0) {
+        if (config[0] === 0 && config[1] === null) {
           config[0] = 0.1;
         }
 
@@ -444,7 +459,7 @@ function shaderProps(coordFragments, colorFragments) {
             });
           }
 
-          if (c[0] === 0) {
+          if (c[0] === 0 && c[1] === null) {
             c[0] = 0.1;
           }
 
