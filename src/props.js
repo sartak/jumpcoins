@@ -73,8 +73,12 @@ export const commands = {
   },
 };
 
-export const shaderCoordFragments = [];
-export const shaderColorFragments = [];
+export const shaderCoordFragments = [
+  'shockwave',
+];
+export const shaderColorFragments = [
+  'blur',
+];
 
 export const propSpecs = {
   ...builtinPropSpecs(commands, shaderCoordFragments, shaderColorFragments),
