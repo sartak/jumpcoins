@@ -133,11 +133,14 @@ export default class SuperScene extends Phaser.Scene {
 
     this.sys.events.on('destroy', this.destroy, this);
 
-    const mapWidth = Math.floor(this.game.config.width / (prop('config.tile_width') + 2));
-    const mapHeight = Math.floor(this.game.config.height / (prop('config.tile_height') + 3));
+    const {
+      width, height, tileWidth, tileHeight,
+    } = this.game.config;
+    const mapWidth = Math.floor(width / (tileWidth + 2));
+    const mapHeight = Math.floor(height / (tileHeight + 3));
 
-    this.xBorder = (this.game.config.width - (mapWidth * prop('config.tile_width'))) / 2;
-    this.yBorder = (this.game.config.height - (mapHeight * prop('config.tile_height'))) / 2;
+    this.xBorder = (width - (mapWidth * tileWidth)) / 2;
+    this.yBorder = (height - (mapHeight * tileHeight)) / 2;
   }
 
   saveStateFieldName() {
@@ -254,15 +257,16 @@ export default class SuperScene extends Phaser.Scene {
     const [lines, config] = spec;
     const {map, mapText, lookups} = parseLevelLines(lines, this.mapsAreRectangular);
 
-    const tileHeight = map.length;
-    const height = prop('config.tile_height') * tileHeight;
-    const tileWidth = Math.max(...map.map((a) => a.length));
-    const width = prop('config.tile_height') * tileWidth;
+    const {tileWidth, tileHeight} = this.game.config;
+    const heightInTiles = map.length;
+    const height = tileHeight * heightInTiles;
+    const widthInTiles = Math.max(...map.map((a) => a.length));
+    const width = tileWidth * widthInTiles;
 
     const level = {
       ...config,
-      tileHeight,
-      tileWidth,
+      heightInTiles,
+      widthInTiles,
       height,
       width,
       map,
@@ -379,7 +383,7 @@ export default class SuperScene extends Phaser.Scene {
     const {shader} = this;
 
     if (!shader) {
-      this._shaderUpdate = function () {};
+      this._shaderUpdate = function() {};
     }
 
     // eslint-disable-next-line no-unused-vars
@@ -388,7 +392,7 @@ export default class SuperScene extends Phaser.Scene {
     const shaderUpdate = [
       '(function () {',
       `  shader.setFloat2('camera_scroll', camera.scrollX / ${this.game.config.width}, camera.scrollY / ${this.game.config.height});`,
-      `  shader.setFloat1('scene_time', this.scene_time);`,
+      '  shader.setFloat1(\'scene_time\', this.scene_time);',
     ];
 
     this.game.shaderFragments.forEach(([fragmentName, uniforms]) => {
@@ -1286,8 +1290,7 @@ export default class SuperScene extends Phaser.Scene {
   }
 
   positionToScreenCoordinate(x, y) {
-    const tileWidth = prop('config.tile_width');
-    const tileHeight = prop('config.tile_height');
+    const {tileWidth, tileHeight} = this.game.config;
     return [x * tileWidth + this.xBorder, y * tileHeight + this.yBorder];
   }
 

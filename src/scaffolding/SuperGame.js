@@ -12,6 +12,8 @@ const baseConfig = {
   parent: 'engine',
   width: 800,
   height: 600,
+  tileWidth: 24,
+  tileHeight: 24,
 };
 
 export default class SuperGame extends Phaser.Game {
@@ -22,6 +24,12 @@ export default class SuperGame extends Phaser.Game {
     };
 
     super(config);
+
+    Object.entries(config).forEach(([key, value]) => {
+      if (!(key in this.config)) {
+        this.config[key] = value;
+      }
+    });
 
     this.debug = config.debug;
 
