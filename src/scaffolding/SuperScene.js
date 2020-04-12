@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import deepEqual from 'deep-equal';
-import prop, {propsWithPrefix, manageableProps} from '../props';
+import prop, {propsWithPrefix, manageableProps, propSpecs} from '../props';
 import {updatePropsFromStep, overrideProps, refreshUI} from './lib/manage-gui';
 import massageParticleProps, {injectEmitterOpSeededRandom, isParticleProp} from './lib/particles';
 import massageTweenProps from './lib/tweens';
@@ -1112,7 +1112,10 @@ export default class SuperScene extends Phaser.Scene {
     }
 
     if (this.performanceProps.length) {
-      const change = this.performanceProps.shift();
+      let changes = this.performanceProps.shift();
+      if (!Array.isArray(changes)) {
+        changes = [changes];
+      }
 
       const applyPropChanges = (keys) => {
         if (keys.length) {
@@ -1130,21 +1133,35 @@ export default class SuperScene extends Phaser.Scene {
         changedProps.push(key);
         manageableProps[key] = value;
 
+        const spec = propSpecs[key];
+        if (spec.length > 1 && spec[1] !== null) {
+          if (typeof spec[spec.length - 1] === 'function') {
+            const changeCallback = spec[spec.length - 1];
+            changeCallback(value, this, this.game);
+          }
+        }
+
         if (!batch) {
           applyPropChanges([key]);
         }
       };
 
-      if (typeof change === 'string') {
-        setProp(change, true);
-      } else if (typeof change === 'function') {
-        change(setProp);
-      }
+      changes.forEach((change) => {
+        if (typeof change === 'string') {
+          if (change === 'disableShaders') {
+            this.game.disableShader();
+          } else {
+            setProp(change, !prop(change));
+          }
+        } else if (typeof change === 'function') {
+          change(setProp);
+        }
+      });
 
       batch = false;
 
       // eslint-disable-next-line no-console
-      console.log(`Performance seems iffy; applying ${change}`);
+      console.log(`Performance seems iffy; applying ${changes.join(', ')}`);
 
       applyPropChanges(changedProps);
     }
