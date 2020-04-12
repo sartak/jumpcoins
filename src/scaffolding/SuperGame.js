@@ -224,7 +224,7 @@ export default class SuperGame extends Phaser.Game {
     this.stopRecording();
     this.stopReplay();
 
-    this.destroy();
+    this.destroy(true, true);
 
     const engine = document.querySelector('#engine-container');
     if (engine) {
@@ -502,6 +502,7 @@ handler to fire outside the game loop with a setTimeout or something?`);
 
       uniform vec2 resolution;
       uniform vec2 camera_scroll;
+      uniform float scene_time;
     `;
 
     const uniformNames = [];

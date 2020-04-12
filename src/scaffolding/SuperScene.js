@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import deepEqual from 'deep-equal';
 import prop, {propsWithPrefix, manageableProps, propSpecs} from '../props';
 import {updatePropsFromStep, overrideProps, refreshUI} from './lib/manage-gui';
-import massageParticleProps, {injectEmitterOpSeededRandom, isParticleProp} from './lib/particles';
+import massageParticleProps, {injectEmitterOpSeededRandom, particlePropFromProp} from './lib/particles';
+import {injectAddSpriteTimeScale} from './lib/sprites';
 import massageTweenProps from './lib/tweens';
 import {shaderTypeMeta, propNamesForUniform} from './lib/props';
 import {saveField, loadField} from './lib/store';
@@ -21,10 +22,13 @@ export default class SuperScene extends Phaser.Scene {
     };
     super(config);
 
+    this.timeScale = 1;
     this.sounds = [];
     this.timers = [];
     this.performanceFrames = 0;
     this.performanceAcceptable = true;
+    this.scene_time = 0;
+    this.shockwave_time = 0;
   }
 
   init(config) {
@@ -58,6 +62,8 @@ export default class SuperScene extends Phaser.Scene {
     this._initialSave = JSON.parse(JSON.stringify(this.save));
 
     if (this.physics && this.physics.world) {
+      injectAddSpriteTimeScale(this);
+
       if (prop('scene.debugDraw')) {
         this.physics.world.createDebugGraphic();
       }
@@ -74,11 +80,14 @@ export default class SuperScene extends Phaser.Scene {
         const originalStep = world.step;
         let time = 0;
         physics.time = physics.dt = 0;
-        world.step = (delta) => {
+        world.step = (originalDelta) => {
+          const delta = originalDelta * world.timeScale * world.timeScale;
+
           const dt = delta * 1000;
           time += dt;
           physics.dt = dt;
           physics.time = time;
+          this.scene_time = time;
 
           if (this.game._stepExceptions > 100) {
             return;
@@ -373,6 +382,7 @@ export default class SuperScene extends Phaser.Scene {
     const shaderUpdate = [
       '(function () {',
       `  shader.setFloat2('camera_scroll', camera.scrollX / ${this.game.config.width}, camera.scrollY / ${this.game.config.height});`,
+      `  shader.setFloat1('scene_time', this.scene_time);`,
     ];
 
     this.game.shaderFragments.forEach(([fragmentName, uniforms]) => {
@@ -969,6 +979,8 @@ export default class SuperScene extends Phaser.Scene {
     const emitterProps = massageParticleProps(props);
     const emitter = particles.createEmitter(emitterProps);
 
+    particles.timeScale = this.timeScale;
+
     injectEmitterOpSeededRandom(emitter, reloadSeed || this.randFloat('particles'));
 
     if (onAdd) {
@@ -1117,12 +1129,19 @@ export default class SuperScene extends Phaser.Scene {
         changes = [changes];
       }
 
-      const applyPropChanges = (keys) => {
-        if (keys.length) {
-          refreshUI();
+      const applyPropChanges = (props) => {
+        if (props.length) {
+          if (this.game.debug) {
+            refreshUI();
+          }
 
-          keys.filter((p) => isParticleProp(p)).forEach((p) => {
-            this.replayParticleSystems(p);
+          props.forEach((propName) => {
+            const particleProp = particlePropFromProp(propName);
+            if (particleProp) {
+              propsWithPrefix(`${particleProp}.`, true);
+
+              this.replayParticleSystems(particleProp);
+            }
           });
         }
       };
@@ -1131,9 +1150,14 @@ export default class SuperScene extends Phaser.Scene {
       const changedProps = [];
       const setProp = (key, value) => {
         changedProps.push(key);
-        manageableProps[key] = value;
-
         const spec = propSpecs[key];
+
+        if (this.game.debug) {
+          manageableProps[key] = value;
+        } else {
+          propSpecs[key][0] = value;
+        }
+
         if (spec.length > 1 && spec[1] !== null) {
           if (typeof spec[spec.length - 1] === 'function') {
             const changeCallback = spec[spec.length - 1];
@@ -1188,6 +1212,41 @@ export default class SuperScene extends Phaser.Scene {
     } else {
       this.cameras.main.stopFollow();
     }
+  }
+
+  get timeScale() {
+    return this._timeScale;
+  }
+
+  set timeScale(scale) {
+    this._timeScale = scale;
+
+    if (this.particleSystems) {
+      this.particleSystems.forEach((p) => {
+        p.particles.timeScale = scale;
+      });
+    }
+
+    if (this.physics) {
+      this.physics.world.timeScale = scale;
+      this.physics.world.bodies.entries.forEach((body) => {
+        if (body.gameObject && body.gameObject.anims) {
+          body.gameObject.anims.setTimeScale(scale);
+        }
+      });
+    }
+
+    // None of these are necessary thanks to us rewiring the event loop:
+    /*
+    this.tweens.timeScale = scale;
+    this.time.timeScale = scale;
+    this.anims.globalTimeScale = scale;
+    */
+  }
+
+  shockwave(x, y) {
+    this.shockwave_time = this.scene_time;
+    this.shockwave_center = [x / this.game.config.width, y / this.game.config.height];
   }
 
   destroy() {
