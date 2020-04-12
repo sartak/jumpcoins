@@ -212,12 +212,6 @@ export default class PlayScene extends SuperScene {
     } else if (config.skipIntro === null || !('skipIntro' in config)) {
       config.skipIntro = prop('level.skip_intro');
     }
-
-    const mapWidth = Math.floor(this.game.config.width / (prop('config.tile_width') + 2));
-    const mapHeight = Math.floor(this.game.config.height / (prop('config.tile_height') + 3));
-
-    this.xBorder = (this.game.config.width - (mapWidth * prop('config.tile_width'))) / 2;
-    this.yBorder = (this.game.config.height - (mapHeight * prop('config.tile_height'))) / 2;
   }
 
   preload() {
@@ -530,12 +524,6 @@ export default class PlayScene extends SuperScene {
     if (statics.spikes) {
       this.setupSpikes();
     }
-  }
-
-  positionToScreenCoordinate(x, y) {
-    const tileWidth = prop('config.tile_width');
-    const tileHeight = prop('config.tile_height');
-    return [x * tileWidth + this.xBorder, y * tileHeight + this.yBorder];
   }
 
   jumpcoinBob(jumpcoin) {
