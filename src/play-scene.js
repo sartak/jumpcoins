@@ -2317,28 +2317,16 @@ export default class PlayScene extends SuperScene {
   }
 
   damageBlur() {
-    const {level} = this;
-    const {player} = level;
-
     if (!prop('effects.damageBlur.visible')) {
       return;
     }
 
-    if (player.blurTween) {
-      player.blurTween.stop();
-    }
-
-    player.blurTween = this.tweenInOut(
+    this.tweenInOutExclusive(
+      'blurTween',
       prop('effects.damageBlur.in_ms'),
       prop('effects.damageBlur.out_ms'),
       (factor) => {
         this.blur_amount = prop('effects.damageBlur.amount') * factor;
-      },
-      (tween) => {
-        player.blurTween = tween;
-      },
-      () => {
-        delete player.blurTween;
       },
     );
   }
