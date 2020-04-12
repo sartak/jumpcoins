@@ -296,6 +296,7 @@ export const propSpecs = {
     image: 'effectImagePuff',
     speed: 50,
     quantity: 1,
+    maxParticles: 1,
     lifespan: 500,
     frequency: 1000,
     accelerationY: -200,
