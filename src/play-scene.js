@@ -2330,24 +2330,19 @@ export default class PlayScene extends SuperScene {
       player.blurTween.stop();
     }
 
-    player.blurTween = this.tweens.addCounter({
-      from: 0,
-      to: 100,
-      duration: prop('effects.damageBlur.in_ms'),
-      onUpdate: () => {
-        this.blur_amount = prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0);
+    player.blurTween = this.tweenInOut(
+      prop('effects.damageBlur.in_ms'),
+      prop('effects.damageBlur.out_ms'),
+      (factor) => {
+        this.blur_amount = prop('effects.damageBlur.amount') * factor;
       },
-      onComplete: () => {
-        player.blurTween = this.tweens.addCounter({
-          from: 100,
-          to: 0,
-          duration: prop('effects.damageBlur.out_ms'),
-          onUpdate: () => {
-            this.blur_amount = prop('effects.damageBlur.amount') * (player.blurTween.getValue() / 100.0);
-          },
-        });
+      (tween) => {
+        player.blurTween = tween;
       },
-    });
+      () => {
+        delete player.blurTween;
+      },
+    );
   }
 
   setupBackgroundScreen() {
