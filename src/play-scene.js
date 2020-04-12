@@ -2171,10 +2171,6 @@ export default class PlayScene extends SuperScene {
     this.frameUpdates(time, dt);
   }
 
-  renderUpdate(time, dt) {
-    this.shockwave_time += dt / 3333;
-  }
-
   jumpShake(type) {
     if (!prop('effects.jumpShake.visible')) {
       return;
@@ -2490,8 +2486,8 @@ export default class PlayScene extends SuperScene {
     }
 
     this.reactBackgroundFloodlightsToDie();
-    this.shockwave_time = 0;
-    this.shockwave_center = [player.x / this.game.config.width, player.y / this.game.config.height];
+
+    super.shockwave(player.x, player.y);
   }
 
   renderBanner() {
@@ -2922,7 +2918,7 @@ export default class PlayScene extends SuperScene {
     }
 
     this.blur_amount = 0;
-    this.shockwave_time = 1000000.0;
+    this.shockwave_time = 0;
 
     hud.intro.forEach((item) => {
       item.destroy();
