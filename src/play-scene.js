@@ -120,6 +120,8 @@ export default class PlayScene extends SuperScene {
           1000,
         );
       },
+      'shader.shockwave.enabled',
+      'shader.blur.enabled',
     ];
   }
 
