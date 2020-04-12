@@ -88,10 +88,6 @@ export const propSpecs = {
   'command.ignore_all.knockback': [false, null, (scene) => scene.command.ignoreAll(scene, 'knockback')],
   'command.ignore_all.outro': [false, null, (scene) => scene.command.ignoreAll(scene, 'outro')],
 
-  'config.tile_width': [24, null, () => 24],
-  'config.tile_height': [24, null, () => 24],
-  'config.xBorder': [0, null, (scene) => scene.xBorder],
-  'config.yBorder': [0, null, (scene) => scene.yBorder],
   'config.timesight_jumpcoins': [false],
   'config.timesight_player': [true],
 

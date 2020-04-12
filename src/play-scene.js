@@ -219,8 +219,7 @@ export default class PlayScene extends SuperScene {
   preload() {
     super.preload();
 
-    const tileWidth = prop('config.tile_width');
-    const tileHeight = prop('config.tile_height');
+    const {tileWidth, tileHeight} = this.game.config;
 
     this.load.image('tileWall', tileWall);
     this.load.image('tileSpikesUp', tileSpikesUp);
@@ -314,7 +313,7 @@ export default class PlayScene extends SuperScene {
 
   scheduleMover(mover, isFirst) {
     const {speed} = mover.config;
-    const distance = prop('config.tile_width') * mover.config.distance * (isFirst ? 0.5 : 1);
+    const distance = this.game.config.tileWidth * mover.config.distance * (isFirst ? 0.5 : 1);
     const duration = distance / speed;
 
     this.timer(
@@ -424,8 +423,7 @@ export default class PlayScene extends SuperScene {
     const {level} = this;
     const {map} = level;
 
-    const tileWidth = prop('config.tile_width');
-    const tileHeight = prop('config.tile_height');
+    const {tileWidth, tileHeight} = this.game.config;
 
     const halfWidth = tileWidth / 2;
     const halfHeight = tileHeight / 2;
@@ -630,8 +628,7 @@ export default class PlayScene extends SuperScene {
     const {level} = this;
 
     const speed = {};
-    const tileWidth = prop('config.tile_width');
-    const tileHeight = prop('config.tile_height');
+    const {tileWidth, tileHeight} = this.game.config;
 
     if (exit.config.x >= level.tileWidth - 2) {
       speed.speedX = {min: -60, max: -40};
@@ -1377,7 +1374,7 @@ export default class PlayScene extends SuperScene {
 
     const img = this.add.image(jumpcoin.x - this.cameras.main.scrollX, jumpcoin.y - this.cameras.main.scrollY, 'spriteJumpcoin');
     hud.jumpcoins.push(img);
-    const x = 2 * prop('config.tile_width') + img.width * player.jumpcoins + hud.lifeIsText.width;
+    const x = 2 * this.game.config.tileWidth + img.width * player.jumpcoins + hud.lifeIsText.width;
     const y = this.yBorder / 2;
     img.setDepth(ZOrder.collectedJumpcoin);
     img.setScrollFactor(0);
@@ -1965,8 +1962,7 @@ export default class PlayScene extends SuperScene {
       pupil.alpha = 1;
     }
 
-    const tileWidth = prop('config.tile_width');
-    const tileHeight = prop('config.tile_height');
+    const {tileWidth, tileHeight} = this.game.config;
 
     let x = pupil.pupilOriginX;
     let y = pupil.pupilOriginY;
@@ -1995,8 +1991,7 @@ export default class PlayScene extends SuperScene {
     const {level, command} = this;
     const {player} = level;
 
-    const tileWidth = prop('config.tile_width');
-    const tileHeight = prop('config.tile_height');
+    const {tileWidth, tileHeight} = this.game.config;
 
     this.physics.world.gravity.y = prop('rules.base_gravity');
 
@@ -2242,7 +2237,7 @@ export default class PlayScene extends SuperScene {
 
     const {x, y} = player;
 
-    const tileWidth = prop('config.tile_width');
+    const {tileWidth} = this.game.config;
 
     backgroundFloodlightEmitter.forEachAlive((particle) => {
       const dx = particle.x - x;
@@ -2352,8 +2347,7 @@ export default class PlayScene extends SuperScene {
   renderHud(showedIntro) {
     const {level} = this;
     const {hud} = level;
-
-    const tileWidth = prop('config.tile_width');
+    const {tileWidth} = this.game.config;
 
     hud.intro = [];
     hud.outro = [];
@@ -2516,6 +2510,7 @@ export default class PlayScene extends SuperScene {
 
     const screenWidth = this.game.config.width;
     const screenHeight = this.game.config.height;
+    const {tileWidth} = this.game.config;
 
     const badgesToRender = [];
     ['badgeCompleted', 'badgeDeathless', 'badgeDamageless', 'badgeRich', 'badgeBirdie', 'badgeKiller'].forEach((badgeName) => {
@@ -2534,8 +2529,8 @@ export default class PlayScene extends SuperScene {
     const badges = [];
     badgesToRender.forEach((badgeName, i) => {
       const badge = this.add.image(screenWidth * 0.5, screenHeight * 0.5 + 30, badgeName);
-      badge.x -= (i + 0.5) * (prop('config.tile_width') + 20);
-      badge.x += (badgesToRender.length / 2) * (prop('config.tile_width') + 20);
+      badge.x -= (i + 0.5) * (tileWidth + 20);
+      badge.x += (badgesToRender.length / 2) * (tileWidth + 20);
       badge.setDepth(ZOrder.banner);
       badge.setScrollFactor(0);
       badges.push(badge);
@@ -2739,8 +2734,7 @@ export default class PlayScene extends SuperScene {
     const {level} = this;
     const {map} = level;
 
-    const tileWidth = prop('config.tile_width');
-    const tileHeight = prop('config.tile_height');
+    const {tileWidth, tileHeight} = this.game.config;
 
     const isLeft = exit.config.x <= 1;
     const isRight = exit.config.x >= level.tileWidth - 2;
