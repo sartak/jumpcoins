@@ -630,7 +630,7 @@ export default class PlayScene extends SuperScene {
     const speed = {};
     const {tileWidth, tileHeight} = this.game.config;
 
-    if (exit.config.x >= level.tileWidth - 2) {
+    if (exit.config.x >= level.widthInTiles - 2) {
       speed.speedX = {min: -60, max: -40};
       speed.x = exit.x + tileWidth / 2;
       speed.y = {min: exit.y - tileHeight / 2, max: exit.y + tileHeight / 2};
@@ -640,7 +640,7 @@ export default class PlayScene extends SuperScene {
       speed.x = exit.x - tileWidth / 2;
       speed.y = {min: exit.y - tileHeight / 2, max: exit.y + tileHeight / 2};
       speed.accelerationX = -25;
-    } else if (exit.config.y >= level.tileHeight - 2) {
+    } else if (exit.config.y >= level.heightInTiles - 2) {
       speed.speedY = {min: -60, max: -40};
       speed.x = {min: exit.x - tileWidth / 2, max: exit.x + tileWidth / 2};
       speed.y = exit.y + tileHeight / 2;
@@ -2735,8 +2735,8 @@ export default class PlayScene extends SuperScene {
     const {tileWidth, tileHeight} = this.game.config;
 
     const isLeft = exit.config.x <= 1;
-    const isRight = exit.config.x >= level.tileWidth - 2;
-    const isBottom = exit.config.y >= level.tileHeight - 2;
+    const isRight = exit.config.x >= level.widthInTiles - 2;
+    const isBottom = exit.config.y >= level.heightInTiles - 2;
     const isTop = exit.config.y <= 1;
 
     object.disableBody(true, false);
