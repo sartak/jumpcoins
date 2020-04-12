@@ -811,7 +811,7 @@ export default class PlayScene extends SuperScene {
     return player;
   }
 
-  createAnimations() {
+  setupAnimations() {
     ['A', 'B'].forEach((type) => {
       this.anims.create({
         key: `spriteEnemy${type}Neutral`,
@@ -1589,8 +1589,6 @@ export default class PlayScene extends SuperScene {
 
   create({levelIndex, skipIntro}) {
     super.create();
-
-    this.createAnimations();
 
     this.setupBackgroundFloodlights();
 
