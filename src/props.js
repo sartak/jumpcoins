@@ -29,32 +29,32 @@ export const commands = {
     input: ['keyboard.Q'],
     execute: 'forceQuit',
     debug: true,
-    unsuppressable: true,
+    unignorable: true,
     unreplayable: true,
   },
   next: {
     input: ['keyboard.N', 'gamepad.R2'],
     execute: 'skipToNextLevel',
     debug: true,
-    unsuppressable: true,
+    unignorable: true,
   },
   restart: {
     input: ['keyboard.R', 'gamepad.L1'],
     execute: 'restartCurrentLevel',
     debug: true,
-    unsuppressable: true,
+    unignorable: true,
   },
   previous: {
     input: ['keyboard.P', 'gamepad.L2'],
     execute: 'skipToPreviousLevel',
     debug: true,
-    unsuppressable: true,
+    unignorable: true,
   },
   recordCycle: {
     input: ['gamepad.R1', 'keyboard.T'],
     unreplayable: true,
     debug: true,
-    unsuppressable: true,
+    unignorable: true,
     execute: (scene, game) => {
       const {_replay, _recording} = game;
       if (_replay && _replay.timeSight) {

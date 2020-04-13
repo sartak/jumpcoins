@@ -1511,14 +1511,6 @@ export default class PlayScene extends SuperScene {
 
   jumpToLevel(index) {
     const {game} = this;
-    if (game.stopReplay()) {
-      return;
-    }
-
-    if (game.stopRecording()) {
-      return;
-    }
-
     const count = this.levelIds().length;
     this.replaceWithSelf(true, {
       levelIndex: (index + count) % count,
