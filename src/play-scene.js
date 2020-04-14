@@ -1430,6 +1430,7 @@ export default class PlayScene extends SuperScene {
 
   winLevel() {
     const {level, save, physics} = this;
+    const {player} = level;
     const levelSave = save.levels[level.filename];
 
     if (level.winning) {
@@ -1480,10 +1481,29 @@ export default class PlayScene extends SuperScene {
     const nextLevel = () => {
       const index = level.index + 1;
       const count = this.levelIds().length;
+
+      let animation = 'pushLeft';
+      const exit = player.touchedExit;
+      if (exit) {
+        if (exit.config.x >= level.widthInTiles - 2) {
+          animation = 'pushLeft';
+        } else if (exit.config.x <= 1) {
+          animation = 'pushRight';
+        } else if (exit.config.y >= level.heightInTiles - 2) {
+          animation = 'pushUp';
+        } else if (exit.config.y <= 1) {
+          animation = 'pushDown';
+        }
+      }
+
       this.replaceWithSelf(true, {
         levelIndex: index % count,
         skipIntro: null,
         save: null,
+      }, {
+        duration: 1000,
+        animation,
+        ease: 'Cubic.easeInOut',
       });
     };
 
