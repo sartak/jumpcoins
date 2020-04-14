@@ -3001,12 +3001,11 @@ export default class PlayScene extends SuperScene {
 
   _hot() {
     const {x, y} = this.level.player;
-    const scene = this.replaceWithSelf(false, {
+    this.replaceWithSelf(false, {
       skipIntro: true,
-    });
-    if (scene) {
+    }).then((scene) => {
       scene.level.player.x = x;
       scene.level.player.y = y;
-    }
+    });
   }
 }
