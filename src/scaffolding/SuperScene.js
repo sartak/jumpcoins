@@ -40,6 +40,7 @@ export default class SuperScene extends Phaser.Scene {
     this.command.attachScene(this, config._timeSightTarget);
 
     this.camera = this.cameras.main;
+    this.camera.setBackgroundColor(0);
 
     this.rnd = {};
 
@@ -255,6 +256,13 @@ export default class SuperScene extends Phaser.Scene {
       this.setupAnimations();
     }
 
+    const {transition} = this.scene.settings.data;
+    if (!transition || !transition.delayNewSceneShader) {
+      this._setupShader();
+    }
+  }
+
+  _setupShader() {
     if (!('shaderName' in this)) {
       this.shaderName = 'main';
     }
@@ -501,11 +509,17 @@ export default class SuperScene extends Phaser.Scene {
     const transition = originalTransition ? {
       duration: 1000,
       animation: 'crossFade',
+      ease: 'Linear',
+      delayNewSceneShader: false,
+      removeOldSceneShader: false,
+      suppressShaderCheck: false,
       ...originalTransition,
     } : originalTransition;
 
     const returnPromise = new Promise((resolve, reject) => {
       this.game.onSceneInit(target, (newScene) => {
+        this.willTransitionTo(newScene, transition);
+        newScene.willTransitionFrom(oldScene, transition);
         this._sceneTransition(oldScene, newScene, transition);
         resolve(newScene, transition);
       });
@@ -537,7 +551,7 @@ export default class SuperScene extends Phaser.Scene {
 
   _sceneTransition(oldScene, newScene, transition) {
     if (transition) {
-      const {animation, duration} = transition;
+      const {animation, ease, duration} = transition;
 
       let _hasCutover = false;
       const cutoverPrimary = () => {
@@ -559,9 +573,16 @@ export default class SuperScene extends Phaser.Scene {
           cutoverPrimary();
         }
 
+        oldScene.didTransitionTo(newScene, transition);
+        newScene.didTransitionFrom(oldScene, transition);
         oldScene.scene.remove();
         _hasCompleted = true;
       };
+
+      if (transition.removeOldSceneShader) {
+        oldScene.shader = null;
+        oldScene.camera.clearRenderToTexture();
+      }
 
       if (typeof animation === 'function') {
         animation(oldScene, newScene, cutoverPrimary, completeTransition, transition);
@@ -585,8 +606,16 @@ export default class SuperScene extends Phaser.Scene {
             oldScene.camera.alpha = 0;
             completeTransition();
           },
+          0,
+          ease,
         );
       } else if (animation === 'crossFade') {
+        // crossfade doesn't really care about scene order, so help the
+        // shader out if we can
+        if (!oldScene.shader) {
+          oldScene.game.scene.bringToTop(oldScene.scene.key);
+        }
+
         newScene.camera.alpha = 0;
         oldScene.camera.alpha = 1;
 
@@ -602,8 +631,143 @@ export default class SuperScene extends Phaser.Scene {
           () => {
             newScene.camera.alpha = 1;
             oldScene.camera.alpha = 0;
+
+            if (!transition.suppressShaderCheck && !transition.delayNewSceneShader && oldScene.shader && newScene.shader) {
+              // eslint-disable-next-line no-console, max-len
+              console.error('crossFade transitions do not render correctly if the both scenes have a shader; provide delayNewSceneShader, removeOldSceneShader, or suppressShaderCheck to the transition, or use fadeInOut animation');
+            }
+
             completeTransition();
           },
+          0,
+          ease,
+        );
+      } else if (animation === 'pushRight' || animation === 'pushLeft' || animation === 'pushUp' || animation === 'pushDown') {
+        const {height, width} = this.game.config;
+
+        oldScene.camera.x = 0;
+        oldScene.camera.y = 0;
+
+        let dx = 0;
+        let dy = 0;
+
+        if (animation === 'pushRight') {
+          newScene.camera.x = -width;
+          dx = 1;
+        } else if (animation === 'pushLeft') {
+          newScene.camera.x = width;
+          dx = -1;
+        } else if (animation === 'pushUp') {
+          newScene.camera.y = -height;
+          dy = -1;
+        } else if (animation === 'pushDown') {
+          newScene.camera.y = height;
+          dy = 1;
+        }
+
+        this.tweenPercent(
+          duration,
+          (factor) => {
+            newScene.camera.x = dx * (factor - 1) * width;
+            oldScene.camera.x = dx * factor * width;
+            newScene.camera.y = dy * (factor - 1) * height;
+            oldScene.camera.y = dy * factor * height;
+
+            if (factor >= 0.5) {
+              cutoverPrimary();
+            }
+          },
+          () => {
+            newScene.camera.x = 0;
+            newScene.camera.y = 0;
+            completeTransition();
+          },
+          0,
+          ease,
+        );
+      } else if (animation === 'wipeRight' || animation === 'wipeLeft' || animation === 'wipeUp' || animation === 'wipeDown') {
+        const {height, width} = this.game.config;
+
+        let newCamera;
+        let oldCamera;
+
+        // we cannot wipe with the builtin camera
+        if (animation === 'wipeRight' || animation === 'wipeDown') {
+          newScene.camera.alpha = 0;
+
+          newCamera = newScene.cameras.add(0, 0, width, height);
+          newCamera.setBackgroundColor(0);
+          newCamera.scrollX = newScene.camera.scrollX;
+          newCamera.scrollY = newScene.camera.scrollY;
+
+          if (animation === 'wipeRight') {
+            newCamera.width = 1;
+          } else {
+            newCamera.height = 1;
+          }
+        } else {
+          oldScene.game.scene.bringToTop(oldScene.scene.key);
+          oldScene.camera.alpha = 0;
+
+          oldCamera = oldScene.cameras.add(0, 0, width, height);
+          oldCamera.setBackgroundColor(0);
+          oldCamera.scrollX = oldScene.camera.scrollX;
+          oldCamera.scrollY = oldScene.camera.scrollY;
+
+          if (oldScene.shader) {
+            oldCamera.setRenderToTexture(oldScene.shader);
+          }
+        }
+
+        let firstCall = true;
+
+        this.tweenPercent(
+          duration,
+          (factor) => {
+            if (newCamera && firstCall) {
+              if (newScene.shader) {
+                newCamera.setRenderToTexture(newScene.shader);
+              }
+              firstCall = false;
+            }
+
+            if (animation === 'wipeRight') {
+              newCamera.setSize(Math.max(1, factor * width), height);
+            } else if (animation === 'wipeLeft') {
+              oldCamera.setSize(Math.max(1, (1 - factor) * width), height);
+            } else if (animation === 'wipeUp') {
+              oldCamera.setSize(width, Math.max(1, (1 - factor) * height));
+            } else if (animation === 'wipeDown') {
+              newCamera.setSize(width, Math.max(1, factor * height));
+            }
+
+            if (factor >= 0.5) {
+              cutoverPrimary();
+            }
+          },
+          () => {
+            if (newCamera) {
+              newScene.cameras.main.alpha = 1;
+              newScene.camera.scrollX = newCamera.scrollX;
+              newScene.camera.scrollY = newCamera.scrollY;
+              newScene.cameras.remove(newCamera);
+            }
+
+            if (!transition.suppressShaderCheck) {
+              if (!transition.delayNewSceneShader && newScene.shader && newCamera) {
+                // eslint-disable-next-line no-console, max-len
+                console.error(`${animation} transitions do not render correctly if the new scene has a shader; provide delayNewSceneShader or suppressShaderCheck to the transition, or use a different animation`);
+              }
+              if (oldScene.shader && oldCamera) {
+                // eslint-disable-next-line no-console, max-len
+                console.error(`${animation} transitions do not render correctly if the old scene has a shader; provide removeOldSceneShader or suppressShaderCheck to the transition, or use a different animation`);
+              }
+            }
+
+            completeTransition();
+          },
+          0,
+          ease,
         );
       } else {
         // eslint-disable-next-line no-console
@@ -612,6 +776,8 @@ export default class SuperScene extends Phaser.Scene {
         completeTransition();
       }
     } else {
+      oldScene.didTransitionTo(newScene, transition);
+      newScene.didTransitionFrom(oldScene, transition);
       oldScene.scene.remove();
     }
   }
@@ -1244,13 +1410,11 @@ export default class SuperScene extends Phaser.Scene {
     return tween;
   }
 
-  tweenPercent(duration, update, onComplete, startPoint = 0) {
-    let tween;
-
-    // eslint-disable-next-line prefer-const
-    tween = this.tweens.addCounter({
+  tweenPercent(duration, update, onComplete, startPoint = 0, ease = 'Linear') {
+    const tween = this.tweens.addCounter({
       from: startPoint,
       to: 100,
+      ease,
       duration,
       onUpdate: () => {
         const factor = tween.getValue() / 100.0;
@@ -1262,7 +1426,7 @@ export default class SuperScene extends Phaser.Scene {
     return tween;
   }
 
-  tweenPercentExclusive(fieldName, duration, update, onComplete) {
+  tweenPercentExclusive(fieldName, duration, update, onComplete, ease = 'Linear') {
     let startPoint = 0;
     if (this[fieldName]) {
       startPoint = this[fieldName].getValue();
@@ -1279,17 +1443,19 @@ export default class SuperScene extends Phaser.Scene {
         delete this[fieldName];
       },
       startPoint,
+      ease,
     );
 
     return this[fieldName];
   }
 
-  tweenInOut(inDuration, outDuration, update, onMidpoint, onComplete, startPoint = 0) {
+  tweenInOut(inDuration, outDuration, update, onMidpoint, onComplete, startPoint = 0, inEase = 'Linear', outEase = inEase) {
     let tween;
 
     tween = this.tweens.addCounter({
       from: startPoint,
       to: 100,
+      ease: inEase,
       duration: inDuration,
       onUpdate: () => {
         const factor = tween.getValue() / 100.0;
@@ -1299,6 +1465,7 @@ export default class SuperScene extends Phaser.Scene {
         tween = this.tweens.addCounter({
           from: 100,
           to: 0,
+          ease: outEase,
           duration: outDuration,
           onUpdate: () => {
             const factor = tween.getValue() / 100.0;
@@ -1316,7 +1483,7 @@ export default class SuperScene extends Phaser.Scene {
     return tween;
   }
 
-  tweenInOutExclusive(fieldName, inDuration, outDuration, update, onMidpoint, onComplete) {
+  tweenInOutExclusive(fieldName, inDuration, outDuration, update, onMidpoint, onComplete, inEase = 'Linear', outEase = inEase) {
     let startPoint = 0;
     if (this[fieldName]) {
       startPoint = this[fieldName].getValue();
@@ -1341,6 +1508,8 @@ export default class SuperScene extends Phaser.Scene {
         delete this[fieldName];
       },
       startPoint,
+      inEase,
+      outEase,
     );
 
     return this[fieldName];
@@ -1574,6 +1743,21 @@ export default class SuperScene extends Phaser.Scene {
     } else {
       delete this._timeSightMouseDragX;
       delete this._timeSightMouseDragY;
+    }
+  }
+
+  willTransitionTo(newScene, transition) {
+  }
+
+  willTransitionFrom(oldScene, transition) {
+  }
+
+  didTransitionTo(newScene, transition) {
+  }
+
+  didTransitionFrom(oldScene, transition) {
+    if (transition && transition.delayNewSceneShader) {
+      this._setupShader();
     }
   }
 
