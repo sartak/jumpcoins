@@ -1283,7 +1283,7 @@ export default class PlayScene extends SuperScene {
 
         this.timer(
           () => {
-            this.cameras.main.pan(
+            this.camera.pan(
               this.level.player.x,
               this.level.player.y,
               500,
@@ -1372,7 +1372,7 @@ export default class PlayScene extends SuperScene {
       this.saveState();
     }
 
-    const img = this.add.image(jumpcoin.x - this.cameras.main.scrollX, jumpcoin.y - this.cameras.main.scrollY, 'spriteJumpcoin');
+    const img = this.add.image(jumpcoin.x - this.camera.scrollX, jumpcoin.y - this.camera.scrollY, 'spriteJumpcoin');
     hud.jumpcoins.push(img);
     const x = 2 * this.game.config.tileWidth + img.width * player.jumpcoins + hud.lifeIsText.width;
     const y = this.yBorder / 2;
@@ -2153,7 +2153,7 @@ export default class PlayScene extends SuperScene {
 
     this.reactBackgroundFloodlightsToJump();
     if (type !== JumpNormal) {
-      this.cameras.main.shake(
+      this.camera.shake(
         prop('effects.jumpShake.duration_ms'),
         prop('effects.jumpShake.amount'),
       );
@@ -2958,8 +2958,8 @@ export default class PlayScene extends SuperScene {
       return;
     }
 
-    x += this.cameras.main.scrollX;
-    y += this.cameras.main.scrollY;
+    x += this.camera.scrollX;
+    y += this.camera.scrollY;
 
     command.ignoreAll(this, 'debugTeleport', true);
     player.disableBody(true, false);
