@@ -204,13 +204,13 @@ export default class CommandManager {
     });
   }
 
-  heldCommands(onlyUnsuppressable) {
+  heldCommands(onlyUnignorable) {
     const {gamepad} = this;
     const spec = this._spec;
     const frame = {_repeat: 0};
 
     Object.entries(spec).forEach(([name, config]) => {
-      if (onlyUnsuppressable && !config.unsuppressable) {
+      if (onlyUnignorable && !config.unignorable) {
         return;
       }
 
@@ -257,14 +257,14 @@ export default class CommandManager {
     });
 
     if (this.pointerEvents.length) {
-      if (!onlyUnsuppressable) {
+      if (!onlyUnignorable) {
         frame._pointer = [...this.pointerEvents];
       }
       this.pointerEvents.length = 0;
     }
 
     if (this.executedProps.length) {
-      if (!onlyUnsuppressable) {
+      if (!onlyUnignorable) {
         frame._executedProps = [...this.executedProps];
       }
       this.executedProps.length = 0;
@@ -281,6 +281,16 @@ export default class CommandManager {
         this[name].held = false;
       } else {
         this[name].held = frame[name];
+      }
+    });
+  }
+
+  mergeUnignorable(frame) {
+    const spec = this._spec;
+
+    Object.entries(spec).forEach(([name, config]) => {
+      if (frame[name] && config.unignorable && !config.unreplayable) {
+        this[name].held = true;
       }
     });
   }
@@ -335,14 +345,14 @@ export default class CommandManager {
 
   processCommands(manager, frame, dt) {
     const spec = this._spec;
-    const scene = manager.scene;
+    const {scene} = manager;
 
     const ignoreAll = this.ignoreAll(scene);
 
     Object.entries(spec).forEach(([name, config]) => {
       const command = this[name];
 
-      if (!prop(`command.${name}.enabled`) || (ignoreAll && !config.unsuppressable)) {
+      if (!prop(`command.${name}.enabled`) || (ignoreAll && !config.unignorable)) {
         command.held = false;
       }
 
@@ -390,7 +400,7 @@ export default class CommandManager {
       });
     }
 
-    if (manager.replay && frame._executedProps) {
+    if (this.replay && frame._executedProps) {
       frame._executedProps.forEach((propName) => {
         const fn = prop(propName);
         if (typeof fn === 'function') {
@@ -403,141 +413,144 @@ export default class CommandManager {
     }
   }
 
-  injectReplayFrame(scene) {
-    const manager = this.getManager(scene);
-
-    if (!manager.replay) {
+  injectReplayFrame() {
+    if (!this.replay) {
       return null;
     }
 
-    if (manager.replayFrame >= manager.replay.commands.length || manager.tickCount >= manager.replay.postflightCutoff) {
-      this.endedReplay(scene);
+    if (this.replayFrameIndex >= this.replay.commands.length || this.replayTicks >= this.replay.postflightCutoff) {
+      this.endedReplay();
       return null;
     }
 
-    const frame = manager.replay.commands[manager.replayFrame];
+    const frame = this.replay.commands[this.replayFrameIndex];
 
     if (frame._repeat) {
-      manager.replayRepeatRun += 1;
+      this.replayRepeatRun += 1;
 
-      if (manager.replayRepeatRun > frame._repeat) {
-        manager.replayRepeatRun = 0;
-        manager.replayFrame += 1;
+      if (this.replayRepeatRun > frame._repeat) {
+        this.replayRepeatRun = 0;
+        this.replayFrameIndex += 1;
       }
     } else {
-      manager.replayFrame += 1;
+      this.replayFrameIndex += 1;
     }
 
-    manager.replayTicks += 1;
+    this.replayTicks += 1;
 
     this.replayFrame(frame);
     this.heldCommands(true);
+    this.mergeUnignorable(frame);
+
     return {...frame, _repeat: 0};
   }
 
-  processInput(scene, time, dt, onlyUnsuppressable) {
+  processInput(scene, time, dt, onlyUnignorable) {
     const manager = this.getManager(scene);
 
     if (manager.scene.timeSightFrozen) {
-      const frame = this.heldCommands(onlyUnsuppressable);
+      const frame = this.heldCommands(onlyUnignorable);
       this.processCommands(manager, frame, dt);
       return;
     }
 
-    const frame = this.injectReplayFrame(scene)
-      || this.heldCommands(onlyUnsuppressable);
+    const frame = this.injectReplayFrame()
+      || this.heldCommands(onlyUnignorable);
 
     if (manager.commands) {
       this.addFrameToList(manager.suppressRepeatFrames, manager.commands, frame);
     }
+    if (this.recording) {
+      this.addFrameToList(manager.suppressRepeatFrames, this.recording.commands, frame);
+    }
 
     manager.tickCount += 1;
 
-    if (manager.recording) {
-      manager.recording.tickCount += 1;
+    if (this.recording) {
+      this.recording.tickCount += 1;
     }
 
     this.processCommands(manager, frame, dt);
   }
 
-  recordPropExecution(scene, propName) {
+  recordPropExecution(propName) {
     this.executedProps.push(propName);
   }
 
   beginRecording(scene, recording) {
     const manager = this.getManager(scene);
-    manager.recording = recording;
-    recording.commands = manager.commands;
+    this.recording = recording;
+    recording.commands = [...manager.commands];
     recording.originalPreflightCutoff = recording.preflightCutoff = recording.tickCount = manager.tickCount;
   }
 
-  stopRecording(scene) {
-    const manager = this.getManager(scene);
-    const {recording} = manager;
-    delete manager.recording;
-    recording.postflightCutoff = manager.tickCount;
+  stopRecording() {
+    const {recording} = this;
+    delete this.recording;
+    recording.postflightCutoff = recording.tickCount;
     return recording;
   }
 
-  beginReplay(scene, replay, replayOptions) {
-    const manager = this.getManager(scene);
-    manager.replay = replay;
-    manager.replayFrame = 0;
-    manager.replayRepeatRun = 0;
-    manager.replayTicks = 0;
-    manager.replayOptions = replayOptions;
+  beginReplay(replay, replayOptions) {
+    this.replay = replay;
+    this.replayFrameIndex = 0;
+    this.replayRepeatRun = 0;
+    this.replayTicks = 0;
+    this.replayOptions = replayOptions;
+
+    if (replay.startTick) {
+      for (let i = 0; i < replay.startTick; i += 1) {
+        this.injectReplayFrame();
+      }
+    }
   }
 
-  endedReplay(scene) {
-    const manager = this.getManager(scene);
-    if (!manager.replay) {
+  endedReplay() {
+    if (!this.replay) {
       return;
     }
 
-    const {onEnd} = manager.replayOptions;
+    const {onEnd} = this.replayOptions;
 
-    delete manager.replay;
-    delete manager.replayOptions;
-    delete manager.replayFrame;
-    delete manager.replayRepeatRun;
-    delete manager.replayTicks;
+    delete this.replay;
+    delete this.replayOptions;
+    delete this.replayFrameIndex;
+    delete this.replayRepeatRun;
+    delete this.replayTicks;
 
     if (onEnd) {
       onEnd();
     }
   }
 
-  stopReplay(scene) {
-    const manager = this.getManager(scene);
-
-    if (!manager.replay) {
+  stopReplay() {
+    if (!this.replay) {
       return;
     }
 
-    const {onStop} = manager.replayOptions;
+    const {onStop} = this.replayOptions;
 
-    delete manager.replay;
-    delete manager.replayOptions;
-    delete manager.replayFrame;
-    delete manager.replayRepeatRun;
-    delete manager.replayTicks;
+    delete this.replay;
+    delete this.replayOptions;
+    delete this.replayFrameIndex;
+    delete this.replayRepeatRun;
+    delete this.replayTicks;
 
     if (onStop) {
       onStop();
     }
   }
 
-  hasPreflight(scene) {
-    const manager = this.getManager(scene);
-    if (!manager.replay) {
+  hasPreflight() {
+    if (!this.replay) {
       return false;
     }
 
-    if (manager.replayTicks >= manager.replay.postflightCutoff) {
+    if (this.replayTicks >= this.replay.postflightCutoff) {
       return false;
     }
 
-    return manager.replayTicks < manager.replay.preflightCutoff;
+    return this.replayTicks < (this.replayOptions.preflightCutoff || this.replay.preflightCutoff);
   }
 
   updateCommandsFromReload(next) {

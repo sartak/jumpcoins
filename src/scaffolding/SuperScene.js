@@ -39,6 +39,8 @@ export default class SuperScene extends Phaser.Scene {
     this.command = this.game.command;
     this.command.attachScene(this, config._timeSightTarget);
 
+    this.camera = this.cameras.main;
+
     this.rnd = {};
 
     if (config.save) {
@@ -97,11 +99,16 @@ export default class SuperScene extends Phaser.Scene {
             if (this.timeSightFrozen) {
               this.command.processInput(this, time, dt, true);
               tweens.update(time, dt);
+              this.timeSightMouseDrag();
               return;
             }
 
             originalStep.call(world, delta);
             this.command.processInput(this, time, dt);
+            if (this.game.updateReplayCursor) {
+              this.game.updateReplayCursor(this.command.replayTicks, this._replay);
+            }
+
             this.fixedUpdate(time, dt);
             this.updateTimers(time, dt);
 
@@ -133,6 +140,34 @@ export default class SuperScene extends Phaser.Scene {
 
     this.sys.events.on('destroy', this.destroy, this);
 
+    ['_recording', '_replay', '_replayOptions'].forEach((key) => {
+      this[key] = config[key];
+      delete config[key];
+    });
+
+    if (this._recording) {
+      this._recording.sceneTransitions.push({
+        tickCount: this._recording.tickCount,
+        timestamp: Date.now(),
+        seed: config.seed,
+        sceneName: this.constructor.name,
+        initData: this.scene.settings.data,
+        sceneSaveState: JSON.parse(JSON.stringify(this._initialSave)),
+      });
+    }
+
+    if (this._replay) {
+      const {sceneTransitions} = this._replay;
+      const {replayTicks} = this.command;
+      for (let i = 0; i < sceneTransitions.length; i += 1) {
+        if (sceneTransitions[i].tickCount <= replayTicks) {
+          this._replayLatestTransition = sceneTransitions[i];
+        } else {
+          break;
+        }
+      }
+    }
+
     const {
       width, height, tileWidth, tileHeight,
     } = this.game.config;
@@ -141,6 +176,8 @@ export default class SuperScene extends Phaser.Scene {
 
     this.xBorder = (width - (mapWidth * tileWidth)) / 2;
     this.yBorder = (height - (mapHeight * tileHeight)) / 2;
+
+    this.game.sceneDidInit(this);
   }
 
   saveStateFieldName() {
@@ -218,11 +255,18 @@ export default class SuperScene extends Phaser.Scene {
       this.setupAnimations();
     }
 
-    this.shader = this.game.shaderInstance();
-    if (this.shader) {
-      this._shaderInitialize(true);
-      this._shaderUpdate();
-      this.cameras.main.setRenderToTexture(this.shader);
+    if (!('shaderName' in this)) {
+      this.shaderName = 'main';
+    }
+
+    if (this.shaderName) {
+      this.game.initializeShader(this.shaderName);
+      this.shader = this.game.shaderInstance(this.shaderName);
+      if (this.shader) {
+        this._shaderInitialize(true);
+        this._shaderUpdate();
+        this.camera.setRenderToTexture(this.shader);
+      }
     }
   }
 
@@ -285,7 +329,7 @@ export default class SuperScene extends Phaser.Scene {
     const {level} = this;
 
     if (!prop('scene.camera.hasBounds')) {
-      this.cameras.main.removeBounds();
+      this.camera.removeBounds();
       return;
     }
 
@@ -303,19 +347,19 @@ export default class SuperScene extends Phaser.Scene {
         boundsHeight += this.yBorder * 2;
       }
 
-      this.cameras.main.setBounds(boundsX, boundsY, boundsWidth, boundsHeight);
+      this.camera.setBounds(boundsX, boundsY, boundsWidth, boundsHeight);
     }
   }
 
   setCameraDeadzone() {
-    this.cameras.main.setDeadzone(
+    this.camera.setDeadzone(
       prop('scene.camera.deadzoneX'),
       prop('scene.camera.deadzoneY'),
     );
   }
 
   setCameraLerp() {
-    this.cameras.main.setLerp(prop('scene.camera.lerp'));
+    this.camera.setLerp(prop('scene.camera.lerp'));
   }
 
   firstUpdate(time, dt) {
@@ -383,14 +427,11 @@ export default class SuperScene extends Phaser.Scene {
     // generate this._shaderUpdate based on what's being used
 
     // eslint-disable-next-line no-unused-vars
-    const {shader} = this;
+    const {shader, camera} = this;
 
     if (!shader) {
       this._shaderUpdate = function() {};
     }
-
-    // eslint-disable-next-line no-unused-vars
-    const camera = this.cameras.main;
 
     const shaderUpdate = [
       '(function () {',
@@ -421,7 +462,9 @@ export default class SuperScene extends Phaser.Scene {
     this._shaderUpdate = eval(shaderUpdate.join('\n'));
   }
 
-  replaceWithSceneNamed(name, reseed, config = {}) {
+  replaceWithSceneNamed(name, reseed, config = {}, originalTransition = null) {
+    const {game} = this;
+
     if (!this.scene.settings) {
       // this can happen when HMR happens during timeSight; SuperScene's
       // builtinHot causes the top scene to get replaced out of the scene
@@ -431,7 +474,7 @@ export default class SuperScene extends Phaser.Scene {
 
     let {seed} = this.scene.settings.data;
     if (reseed === true) {
-      seed = Math.random() * Date.now();
+      seed = this.randFloat('replaceWithSceneNamed');
     } else if (reseed) {
       seed = reseed;
     }
@@ -440,39 +483,137 @@ export default class SuperScene extends Phaser.Scene {
     const target = `scene-${id}`;
 
     if (this.scene.settings.data._timeSightTarget) {
-      return;
-    }
-
-    if (this._recording) {
-      this.game.stopRecording();
-      return;
-    }
-
-    if (this._replay) {
       this.endedReplay();
       return;
     }
 
-    const oldScene = this.scene;
+    if (this._isTransitioning) {
+      // eslint-disable-next-line no-console
+      console.error('replaceWithSceneName called again even though this scene is already transitioning. Ignoring.');
+      return;
+    }
 
-    const newScene = this.game.scene.add(
+    this._isTransitioning = true;
+
+    const oldScene = this;
+    const {_replay, _replayOptions, _recording} = this;
+
+    const transition = originalTransition ? {
+      duration: 1000,
+      animation: 'crossFade',
+      ...originalTransition,
+    } : originalTransition;
+
+    const returnPromise = new Promise((resolve, reject) => {
+      this.game.onSceneInit(target, (newScene) => {
+        this._sceneTransition(oldScene, newScene, transition);
+        resolve(newScene, transition);
+      });
+    });
+
+    this.scene.add(
       target,
-      this.game._sceneConstructors[name],
+      game._sceneConstructors[name],
       true,
       {
         ...this.scene.settings.data,
+        ...{
+          _replay,
+          _replayOptions,
+          _recording,
+        },
         ...config,
+        transition,
         seed,
       },
     );
 
-    oldScene.remove();
-
-    return newScene;
+    return returnPromise;
   }
 
-  replaceWithSelf(reseed, config = {}) {
-    return this.replaceWithSceneNamed(this.constructor.name, reseed, config);
+  replaceWithSelf(reseed, config = {}, transition = null) {
+    return this.replaceWithSceneNamed(this.constructor.name, reseed, config, transition);
+  }
+
+  _sceneTransition(oldScene, newScene, transition) {
+    if (transition) {
+      const {animation, duration} = transition;
+
+      let _hasCutover = false;
+      const cutoverPrimary = () => {
+        if (_hasCutover) {
+          return;
+        }
+        _hasCutover = true;
+      };
+
+      let _hasCompleted = false;
+      const completeTransition = () => {
+        if (_hasCompleted) {
+          return;
+        }
+
+        if (!_hasCutover) {
+          // eslint-disable-next-line no-console
+          console.error('completeTransition called, but cutoverPrimary hasn\'t been yet');
+          cutoverPrimary();
+        }
+
+        oldScene.scene.remove();
+        _hasCompleted = true;
+      };
+
+      if (typeof animation === 'function') {
+        animation(oldScene, newScene, cutoverPrimary, completeTransition, transition);
+      } else if (animation === 'fadeInOut') {
+        newScene.camera.alpha = 0;
+        oldScene.camera.alpha = 1;
+
+        this.tweenInOut(
+          duration / 2,
+          duration / 2,
+          (factor, firstHalf) => {
+            if (firstHalf) {
+              oldScene.camera.alpha = 1 - factor;
+            } else {
+              newScene.camera.alpha = 1 - factor;
+            }
+          },
+          cutoverPrimary,
+          () => {
+            newScene.camera.alpha = 1;
+            oldScene.camera.alpha = 0;
+            completeTransition();
+          },
+        );
+      } else if (animation === 'crossFade') {
+        newScene.camera.alpha = 0;
+        oldScene.camera.alpha = 1;
+
+        this.tweenPercent(
+          duration,
+          (factor) => {
+            newScene.camera.alpha = factor;
+            oldScene.camera.alpha = 1 - factor;
+            if (factor >= 0.5) {
+              cutoverPrimary();
+            }
+          },
+          () => {
+            newScene.camera.alpha = 1;
+            oldScene.camera.alpha = 0;
+            completeTransition();
+          },
+        );
+      } else {
+        // eslint-disable-next-line no-console
+        console.error(`Invalid transition animation '${animation}'`);
+        cutoverPrimary();
+        completeTransition();
+      }
+    } else {
+      oldScene.scene.remove();
+    }
   }
 
   preemitEmitter(emitter) {
@@ -488,31 +629,34 @@ export default class SuperScene extends Phaser.Scene {
   }
 
   beginReplay(replay, replayOptions) {
-    const {command} = this;
-    const {loop} = this.game;
+    const {command, game} = this;
+    const {loop} = game;
 
     this._replay = replay;
     this._replayOptions = replayOptions;
+    this._replayLatestTransition = replayOptions.startFromTransition;
 
-    command.beginReplay(this, replay, {
+    command.beginReplay(replay, {
+      ...replayOptions,
+      startTick: replay.startTick,
       onEnd: () => {
-        this.endedReplay();
+        this.game.topScene().endedReplay();
       },
       onStop: () => {
-        this.stopReplay(true);
+        this.game.topScene().stopReplay(true);
       },
     });
 
     let time = window.performance.now();
     const dt = 1000 / this.physics.world.fps;
 
-    this.game._replayPreflight += 1;
+    game._replayPreflight += 1;
 
     const manager = this.command.getManager(this);
 
     loop.sleep();
     this.scene.setVisible(false);
-    while (command.hasPreflight(this)) {
+    while (command.hasPreflight()) {
       if (replay.timeSightFrameCallback) {
         replay.timeSightFrameCallback(this, time, dt, manager, true, false, false);
       }
@@ -520,7 +664,7 @@ export default class SuperScene extends Phaser.Scene {
       time += dt;
       loop.step(time);
 
-      if (this.game._stepExceptions > 100) {
+      if (game._stepExceptions > 100) {
         // eslint-disable-next-line no-console
         console.error('Too many errors in preflight; bailing out…');
         return;
@@ -528,14 +672,19 @@ export default class SuperScene extends Phaser.Scene {
     }
     loop.resetDelta();
 
-    this.game._replayPreflight -= 1;
+    game._replayPreflight -= 1;
+
+    // now that preflight is done, beware that if it had a scene transition,
+    // then `this` may have been removed from the scene graph and instead
+    // should use topScene
+    const topScene = game.topScene();
 
     if (replay.timeSight) {
-      this.calculateTimeSight();
+      topScene.calculateTimeSight();
     } else if (replay.timeSightFrameCallback) {
-      this.game._replayPreflight += 1;
-      this._timeSightTargetEnded = () => {
-        replay.timeSightFrameCallback(this, time, dt, manager, false, true, true);
+      game._replayPreflight += 1;
+      topScene._timeSightTargetEnded = () => {
+        replay.timeSightFrameCallback(topScene, time, dt, manager, false, true, true);
       };
 
       let postflightCutoff;
@@ -544,22 +693,22 @@ export default class SuperScene extends Phaser.Scene {
         delete replay.postflightCutoff;
       }
 
-      while (!this._timeSightTargetDone) {
-        const isPostflight = postflightCutoff !== undefined && manager.tickCount >= postflightCutoff;
-        replay.timeSightFrameCallback(this, time, dt, manager, false, isPostflight, false);
+      while (!topScene._timeSightTargetDone) {
+        const isPostflight = postflightCutoff !== undefined && this.command.replayTicks >= postflightCutoff;
+        replay.timeSightFrameCallback(topScene, time, dt, manager, false, isPostflight, false);
         time += dt;
         loop.step(time);
 
-        if (this.game._stepExceptions > 100) {
+        if (game._stepExceptions > 100) {
           // eslint-disable-next-line no-console
           console.error('Too many errors in timeSight; bailing out…');
           return;
         }
       }
-      this.scene.remove();
-      this.game._replayPreflight -= 1;
+      topScene.scene.remove();
+      game._replayPreflight -= 1;
     } else {
-      this.scene.setVisible(true);
+      topScene.scene.setVisible(true);
       loop.wake();
     }
   }
@@ -585,6 +734,7 @@ export default class SuperScene extends Phaser.Scene {
       {
         ...this._replay,
         timeSight: false,
+        startTick: (this._replayLatestTransition ? this._replayLatestTransition.tickCount : 0) || 0,
         timeSightFrameCallback: (scene, frameTime, frameDt, manager, isPreflight, isPostflight, isLast) => {
           objectDt += frameDt;
 
@@ -653,6 +803,10 @@ export default class SuperScene extends Phaser.Scene {
     }
 
     overrideProps(activeFrames[0].props);
+
+    if (this.game.updateReplayCursor) {
+      this.game.updateReplayCursor();
+    }
 
     let loopAlpha;
     // eslint-disable-next-line prefer-const
@@ -743,6 +897,10 @@ export default class SuperScene extends Phaser.Scene {
 
       if (matchedFrame) {
         overrideProps(matchedFrame.props);
+
+        if (this.game.updateReplayCursor) {
+          this.game.updateReplayCursor(matchedFrame.tickCount, this._replay);
+        }
       }
     });
 
@@ -772,6 +930,7 @@ export default class SuperScene extends Phaser.Scene {
       this.game.stopReplay();
       this.game.beginReplay({
         ...replay,
+        ...(this._replayLatestTransition || {}),
         timeSight: false,
         snapshot: true,
         commands: activeObject._timeSightFrame.commands,
@@ -822,7 +981,7 @@ export default class SuperScene extends Phaser.Scene {
     }
 
     if (!skipDownward) {
-      this.command.stopReplay(this);
+      this.command.stopReplay();
     }
 
     if (onStop) {
@@ -854,6 +1013,10 @@ export default class SuperScene extends Phaser.Scene {
   cutoffTimeSightEnter() {
     const frames = this._timeSightFrames;
 
+    if (!frames) {
+      return;
+    }
+
     if (this._timeSightRemoveFocusTimer) {
       this._timeSightRemoveFocusTimer.destroy();
     }
@@ -876,23 +1039,34 @@ export default class SuperScene extends Phaser.Scene {
   }
 
   cutoffTimeSightChanged(start, end) {
+    const frames = this._timeSightFrames;
+    if (!frames) {
+      return;
+    }
+
     // ordinarily to be avoided, but we don't want to start a new replay
     // to take the update from Replay.jsx
     this._replay.preflightCutoff = start;
     this._replay.postflightCutoff = end;
 
-    this._timeSightFrames.forEach((frame, f) => {
-      frame.isPreflight = frame.tickCount < start;
-      frame.isPostflight = frame.tickCount > end;
+    frames.forEach((frame, f) => {
+      const tick = frame.tickCount + ((this._replayLatestTransition ? this._replayLatestTransition.tickCount : 0) || 0);
+      frame.isPreflight = tick < start;
+      frame.isPostflight = tick > end;
 
       frame.objects.forEach((object) => {
-        object.alpha = frame.tickCount >= start && frame.tickCount <= end ? 1 : object._timeSightAlpha;
+        object.alpha = (frame.isPreflight || frame.isPostflight) ? object._timeSightAlpha : 1;
       });
     });
   }
 
   cutoffTimeSightLeave() {
-    this._timeSightFrames.forEach((frame) => {
+    const frames = this._timeSightFrames;
+    if (!frames) {
+      return;
+    }
+
+    frames.forEach((frame) => {
       frame.objects.forEach((object) => {
         object.alpha = (frame.isPreflight || frame.isPostflight) ? 0 : object._timeSightAlpha;
       });
@@ -909,20 +1083,23 @@ export default class SuperScene extends Phaser.Scene {
     if (this._replay && this._replay.timeSight) {
       const replay = this._replay;
       this.game.stopReplay();
-      this.game.beginReplay(replay);
+      this.game.beginReplay(replay, {
+        startFromTransition: this._replayLatestTransition,
+      });
     }
   }
 
   beginRecording(recording) {
     this._recording = recording;
     recording.sceneSaveState = JSON.parse(JSON.stringify(this._initialSave));
+    recording.sceneTransitions = [];
     this.command.beginRecording(this, recording);
   }
 
   stopRecording() {
     const recording = this._recording;
     delete this._recording;
-    this.command.stopRecording(this);
+    this.command.stopRecording();
     return recording;
   }
 
@@ -968,7 +1145,9 @@ export default class SuperScene extends Phaser.Scene {
     if (this._replay && this._replay.timeSight) {
       const replay = this._replay;
       this.game.stopReplay();
-      this.game.beginReplay(replay);
+      this.game.beginReplay(replay, {
+        startFromTransition: this._replayLatestTransition,
+      });
     } else {
       this.replayParticleSystems();
     }
@@ -979,18 +1158,20 @@ export default class SuperScene extends Phaser.Scene {
       this.removeAnimations();
     }
 
-    this.game.recompileShader();
+    this.game.recompileMainShaders();
   }
 
   removeAnimations() {
-    this.physics.world.bodies.entries.forEach((body) => {
-      if (body.gameObject && body.gameObject.anims) {
-        // none of these seem to work
-        body.gameObject.anims.pause();
-        body.gameObject.anims.stop();
-        body.gameObject.anims.remove();
-      }
-    });
+    if (this.physics && this.physics.world && this.physics.world.bodies && this.physics.world.bodies.entries) {
+      this.physics.world.bodies.entries.forEach((body) => {
+        if (body.gameObject && body.gameObject.anims) {
+          // none of these seem to work
+          body.gameObject.anims.pause();
+          body.gameObject.anims.stop();
+          body.gameObject.anims.remove();
+        }
+      });
+    }
 
     Object.keys(this.anims.anims.entries).forEach((key) => {
       this.anims.remove(key);
@@ -1004,12 +1185,14 @@ export default class SuperScene extends Phaser.Scene {
 
     this.setupAnimations();
 
-    this.physics.world.bodies.entries.forEach((body) => {
-      if (body.gameObject && body.gameObject.anims) {
-        const {key} = body.gameObject.anims.currentAnim;
-        body.gameObject.anims.play(key, false);
-      }
-    });
+    if (this.physics && this.physics.world && this.physics.world.bodies && this.physics.world.bodies.entries) {
+      this.physics.world.bodies.entries.forEach((body) => {
+        if (body.gameObject && body.gameObject.anims && body.gameObject.anims.currentAnim) {
+          const {key} = body.gameObject.anims.currentAnim;
+          body.gameObject.anims.play(key, false);
+        }
+      });
+    }
   }
 
   particleSystem(name, options = {}, reloadSeed) {
@@ -1059,6 +1242,46 @@ export default class SuperScene extends Phaser.Scene {
     const tween = this.tweens.add(massageTweenProps(target, props, options));
 
     return tween;
+  }
+
+  tweenPercent(duration, update, onComplete, startPoint = 0) {
+    let tween;
+
+    // eslint-disable-next-line prefer-const
+    tween = this.tweens.addCounter({
+      from: startPoint,
+      to: 100,
+      duration,
+      onUpdate: () => {
+        const factor = tween.getValue() / 100.0;
+        update(factor);
+      },
+      onComplete,
+    });
+
+    return tween;
+  }
+
+  tweenPercentExclusive(fieldName, duration, update, onComplete) {
+    let startPoint = 0;
+    if (this[fieldName]) {
+      startPoint = this[fieldName].getValue();
+      this[fieldName].stop();
+    }
+
+    this[fieldName] = this.tweenPercent(
+      duration * (1 - startPoint / 100.0),
+      update,
+      (...args) => {
+        if (onComplete) {
+          onComplete(...args);
+        }
+        delete this[fieldName];
+      },
+      startPoint,
+    );
+
+    return this[fieldName];
   }
 
   tweenInOut(inDuration, outDuration, update, onMidpoint, onComplete, startPoint = 0) {
@@ -1251,8 +1474,8 @@ export default class SuperScene extends Phaser.Scene {
 
       changes.forEach((change) => {
         if (typeof change === 'string') {
-          if (change === 'disableShaders') {
-            this.game.disableShader();
+          if (change === 'disableMainShaders') {
+            this.game.disableMainShaders();
           } else {
             setProp(change, !prop(change));
           }
@@ -1275,7 +1498,7 @@ export default class SuperScene extends Phaser.Scene {
     const method = `handle${camelName}`;
     if (this[method]) {
       this[method](event);
-    } else if (prop('engine.debug')) {
+    } else if (prop('config.debug')) {
       const debugMethod = `debugHandle${camelName}`;
       if (this[debugMethod]) {
         this[debugMethod](event);
@@ -1287,9 +1510,9 @@ export default class SuperScene extends Phaser.Scene {
     if (object) {
       const lerp = prop('scene.camera.lerp');
       // true is roundPixels to avoid subpixel rendering
-      this.cameras.main.startFollow(object, true, lerp, lerp, offsetX, offsetY);
+      this.camera.startFollow(object, true, lerp, lerp, offsetX, offsetY);
     } else {
-      this.cameras.main.stopFollow();
+      this.camera.stopFollow();
     }
   }
 
@@ -1331,6 +1554,27 @@ export default class SuperScene extends Phaser.Scene {
   positionToScreenCoordinate(x, y) {
     const {tileWidth, tileHeight} = this.game.config;
     return [x * tileWidth + this.xBorder, y * tileHeight + this.yBorder];
+  }
+
+  timeSightMouseDrag() {
+    const {activePointer} = this.game.input;
+    if (activePointer.isDown) {
+      this.cameraFollow();
+
+      if (this._timeSightMouseDragX) {
+        this.camera.scrollX += this._timeSightMouseDragX - activePointer.position.x;
+      }
+
+      if (this._timeSightMouseDragY) {
+        this.camera.scrollY += this._timeSightMouseDragY - activePointer.position.y;
+      }
+
+      this._timeSightMouseDragX = activePointer.position.x;
+      this._timeSightMouseDragY = activePointer.position.y;
+    } else {
+      delete this._timeSightMouseDragX;
+      delete this._timeSightMouseDragY;
+    }
   }
 
   destroy() {

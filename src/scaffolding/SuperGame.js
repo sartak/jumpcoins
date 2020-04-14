@@ -47,6 +47,8 @@ export default class SuperGame extends Phaser.Game {
 
     this._onDisableDebugUI = [];
 
+    this._sceneInitCallbacks = {};
+
     this.command = new CommandManager(commands);
 
     this._shaderSource = {};
@@ -326,31 +328,42 @@ export default class SuperGame extends Phaser.Game {
     return recording;
   }
 
-  beginReplay(replay) {
+  beginReplay(replay, options = {}) {
     this._replay = replay;
 
-    const save = JSON.parse(JSON.stringify(replay.sceneSaveState));
-
-    const newScene = this.topScene().replaceWithSceneNamed(replay.sceneName, replay.initData.seed, {...replay.initData, save});
-    if (!newScene) {
-      // eslint-disable-next-line no-console
-      console.warn(`No scene returned from replaceWithSceneNamed,
-so we are probably about to crash. Perhaps you need to schedule the event
-handler to fire outside the game loop with a setTimeout or something?`);
+    let {startFromTransition} = options;
+    const {sceneTransitions} = replay;
+    if (!startFromTransition && sceneTransitions) {
+      for (let i = 0; i < sceneTransitions.length; i += 1) {
+        if (sceneTransitions[i].tickCount <= replay.preflightCutoff) {
+          startFromTransition = sceneTransitions[i];
+        }
+      }
     }
 
-    this.topScene().beginReplay(replay, {
-      onEnd: () => {
-        this.endedReplay();
-      },
-      onStop: () => {
-        this.stopReplay(true);
-      },
+    const transition = startFromTransition;
+
+    const {sceneSaveState, sceneName, initData} = transition || replay;
+    const save = JSON.parse(JSON.stringify(sceneSaveState));
+    const {seed} = (transition || replay).initData;
+
+    this.topScene().replaceWithSceneNamed(sceneName, seed, {...initData, save}).then((newScene) => {
+      newScene.beginReplay(replay, {
+        ...options,
+        startFromTransition: transition,
+        preflightCutoff: (transition && transition.tickCount ? (transition.tickCount + 1) : 0),
+        onEnd: () => {
+          this.endedReplay();
+        },
+        onStop: () => {
+          this.stopReplay(true);
+        },
+      });
+
+      if (this.onReplayBegin) {
+        this.onReplayBegin(replay);
+      }
     });
-
-    if (this.onReplayBegin) {
-      this.onReplayBegin(replay);
-    }
   }
 
   endedReplay() {
@@ -405,18 +418,27 @@ handler to fire outside the game loop with a setTimeout or something?`);
   }
 
   cutoffTimeSightEnter() {
-    this.topScene().cutoffTimeSightEnter();
+    const scene = this.topScene();
+    if (scene) {
+      scene.cutoffTimeSightEnter();
+    }
   }
 
   cutoffTimeSightChanged(start, end) {
-    this.topScene().cutoffTimeSightChanged(start, end);
+    const scene = this.topScene();
+    if (scene) {
+      scene.cutoffTimeSightChanged(start, end);
+    }
   }
 
   cutoffTimeSightLeave() {
-    this.topScene().cutoffTimeSightLeave();
+    const scene = this.topScene();
+    if (scene) {
+      scene.cutoffTimeSightLeave();
+    }
   }
 
-  shaderInstance(shaderName = 'main') {
+  shaderInstance(shaderName) {
     if (this.renderer.type !== Phaser.WEBGL) {
       return null;
     }
@@ -424,7 +446,7 @@ handler to fire outside the game loop with a setTimeout or something?`);
     return this.renderer.getPipeline(shaderName);
   }
 
-  initializeShader(shaderName = 'main', replace) {
+  initializeShader(shaderName, replace) {
     if (this.renderer.type !== Phaser.WEBGL) {
       return;
     }
@@ -433,7 +455,7 @@ handler to fire outside the game loop with a setTimeout or something?`);
       return;
     }
 
-    const source = this.fullShaderSource();
+    const source = this.generateShaderSource(shaderName);
 
     if (source) {
       const shaderClass = this.shaderInstantiation(source);
@@ -459,15 +481,23 @@ handler to fire outside the game loop with a setTimeout or something?`);
     this._shaderSource[shaderName] = source;
   }
 
+  initializeMainShaders() {
+    this.initializeShader('main');
+  }
+
   updateShaderFragments(nextCoord, nextColor) {
     this._shaderCoordFragments = nextCoord;
     this._shaderColorFragments = nextColor;
     this.shaderFragments = [...(nextCoord || []), ...(nextColor || [])];
 
-    this.recompileShader();
+    this.recompileMainShaders();
   }
 
-  shaderMainFull() {
+  generateShaderSourceInternal(shaderName) {
+    if (shaderName !== 'main') {
+      throw new Error('Multi-shader support not yet available');
+    }
+
     const [shaderCoordSource, shaderColorSource] = [this._shaderCoordFragments, this._shaderColorFragments].map((fragments) => {
       if (!fragments) {
         return '';
@@ -499,7 +529,11 @@ handler to fire outside the game loop with a setTimeout or something?`);
     `;
   }
 
-  fullShaderSource() {
+  generateShaderSource(shaderName) {
+    if (shaderName !== 'main') {
+      throw new Error('Multi-shader support not yet available');
+    }
+
     const builtinDeclarations = `
       precision mediump float;
     `;
@@ -529,7 +563,7 @@ handler to fire outside the game loop with a setTimeout or something?`);
       });
     });
 
-    const userShaderMain = this.shaderMainFull();
+    const userShaderMain = this.generateShaderSourceInternal(shaderName);
     if (!userShaderMain) {
       return userShaderMain;
     }
@@ -551,13 +585,13 @@ handler to fire outside the game loop with a setTimeout or something?`);
     `;
   }
 
-  recompileShader(shaderName = 'main') {
+  recompileShader(shaderName) {
     if (this.renderer.type !== Phaser.WEBGL) {
       return;
     }
 
     const oldSource = this._shaderSource[shaderName];
-    const newSource = this.fullShaderSource();
+    const newSource = this.generateShaderSource(shaderName);
 
     if (oldSource === newSource) {
       return;
@@ -570,26 +604,33 @@ handler to fire outside the game loop with a setTimeout or something?`);
 
     if (newSource) {
       this.initializeShader(shaderName, true);
-    }
-    else {
+    } else {
       this.renderer.removePipeline(shaderName);
     }
 
-    const shader = this.shaderInstance();
+    const shader = this.shaderInstance(shaderName);
 
     this.scene.scenes.forEach((scene) => {
+      if (scene.shaderName !== shaderName) {
+        return;
+      }
+
       scene.shader = shader;
       if (newSource) {
         scene._shaderInitialize();
         scene._shaderUpdate();
-        scene.cameras.main.setPipeline(shader);
+        scene.camera.setPipeline(shader);
       } else {
-        scene.cameras.main.clearRenderToTexture();
+        scene.camera.clearRenderToTexture();
       }
     });
   }
 
-  disableShader(shaderName = 'main') {
+  recompileMainShaders() {
+    this.recompileShader('main');
+  }
+
+  disableShader(shaderName) {
     if (this.renderer.type !== Phaser.WEBGL) {
       return;
     }
@@ -601,9 +642,17 @@ handler to fire outside the game loop with a setTimeout or something?`);
     const shader = this.shaderInstance(shaderName);
 
     this.scene.scenes.forEach((scene) => {
+      if (scene.shaderName !== shaderName) {
+        return;
+      }
+
       scene.shader = shader;
-      scene.cameras.main.clearRenderToTexture();
+      scene.camera.clearRenderToTexture();
     });
+  }
+
+  disableMainShaders() {
+    this.disableShader('main');
   }
 
   shaderInstantiation(fragShader) {
@@ -627,5 +676,26 @@ handler to fire outside the game loop with a setTimeout or something?`);
       // eslint-disable-next-line no-console
       console.error(e);
     }
+  }
+
+  onSceneInit(key, cb) {
+    if (!this._sceneInitCallbacks[key]) {
+      this._sceneInitCallbacks[key] = [];
+    }
+
+    this._sceneInitCallbacks[key].push(cb);
+  }
+
+  sceneDidInit(scene) {
+    const {key} = scene.scene;
+    if (!this._sceneInitCallbacks[key]) {
+      return;
+    }
+
+    this._sceneInitCallbacks[key].forEach((cb) => {
+      cb(scene);
+    });
+
+    delete this._sceneInitCallbacks[key];
   }
 }

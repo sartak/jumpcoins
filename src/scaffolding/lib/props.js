@@ -77,28 +77,29 @@ export function builtinPropSpecs(commands, shaderCoordFragments, shaderColorFrag
     }],
     'scene.replaceWithSelf': [(scene) => scene.replaceWithSelf(false)],
 
-    'scene.camera.width': [0, null, 'cameras.main.width'],
-    'scene.camera.height': [0, null, 'cameras.main.height'],
-    'scene.camera.zoom': [0.1, null, 'cameras.main.zoom'],
-    'scene.camera.rotation': [0.1, null, 'cameras.main.rotation'],
-    'scene.camera.x': [0, null, 'cameras.main.x'],
-    'scene.camera.y': [0, null, 'cameras.main.y'],
-    'scene.camera.scrollX': [0, null, 'cameras.main.scrollX'],
-    'scene.camera.scrollY': [0, null, 'cameras.main.scrollY'],
-    'scene.camera.centerX': [0, null, 'cameras.main.centerX'],
-    'scene.camera.centerY': [0, null, 'cameras.main.centerY'],
-    'scene.camera.boundsX': [0, null, 'cameras.main._bounds.x'],
-    'scene.camera.boundsY': [0, null, 'cameras.main._bounds.y'],
-    'scene.camera.boundsWidth': [0, null, 'cameras.main._bounds.width'],
-    'scene.camera.boundsHeight': [0, null, 'cameras.main._bounds.height'],
-    'scene.camera.useBounds': [true, null, 'cameras.main.useBounds'],
+    'scene.camera.width': [0, null, 'camera.width'],
+    'scene.camera.height': [0, null, 'camera.height'],
+    'scene.camera.alpha': [0.1, null, 'camera.alpha'],
+    'scene.camera.zoom': [0.1, null, 'camera.zoom'],
+    'scene.camera.rotation': [0.1, null, 'camera.rotation'],
+    'scene.camera.x': [0, null, 'camera.x'],
+    'scene.camera.y': [0, null, 'camera.y'],
+    'scene.camera.scrollX': [0, null, 'camera.scrollX'],
+    'scene.camera.scrollY': [0, null, 'camera.scrollY'],
+    'scene.camera.centerX': [0, null, 'camera.centerX'],
+    'scene.camera.centerY': [0, null, 'camera.centerY'],
+    'scene.camera.boundsX': [0, null, 'camera._bounds.x'],
+    'scene.camera.boundsY': [0, null, 'camera._bounds.y'],
+    'scene.camera.boundsWidth': [0, null, 'camera._bounds.width'],
+    'scene.camera.boundsHeight': [0, null, 'camera._bounds.height'],
+    'scene.camera.useBounds': [true, null, 'camera.useBounds'],
 
     'scene.camera.follow': ['', null, objectIdentifier(
       (scene) => scene.level,
-      (scene) => scene.cameras.main._follow,
+      (scene) => scene.camera._follow,
     )],
-    'scene.camera.followOffsetX': [0, null, 'cameras.main.followOffset.x'],
-    'scene.camera.followOffsetY': [0, null, 'cameras.main.followOffset.y'],
+    'scene.camera.followOffsetX': [0, null, 'camera.followOffset.x'],
+    'scene.camera.followOffsetY': [0, null, 'camera.followOffset.y'],
 
     'scene.camera.lerp': [1, 0, 1, (value, scene) => {
       scene.setCameraLerp();
@@ -284,7 +285,7 @@ function shaderProps(coordFragments, colorFragments) {
   injectBuiltinFragment(colorFragments, false);
 
   [...(coordFragments || []), ...(colorFragments || [])].forEach(([fragmentName, uniforms]) => {
-    props[`shader.${fragmentName}.enabled`] = [true, (value, scene, game) => game.recompileShader()];
+    props[`shader.${fragmentName}.enabled`] = [true, (value, scene, game) => game.recompileMainShaders()];
 
     Object.entries(uniforms).forEach(([uniformName, spec]) => {
       // eslint-disable-next-line prefer-const
@@ -478,7 +479,7 @@ export function ManageableProps(propSpecs) {
         try {
           const {game} = window;
           const scene = game.topScene();
-          scene.command.recordPropExecution(scene, key);
+          scene.command.recordPropExecution(key);
           original(scene, game);
         } catch (e) {
           // eslint-disable-next-line no-console
