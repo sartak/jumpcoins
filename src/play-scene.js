@@ -309,6 +309,7 @@ export default class PlayScene extends SuperScene {
   setupEnemy(enemy) {
     // 0.5 feels better than 1.0
     enemy.body.setGravityY(prop('rules.base_gravity') * prop('rules.jump.down_gravity') * 0.5);
+    enemy.anims.play(prop('enemies.animationVisible') ? enemy.config.walkAnimation : enemy.config.neutralAnimation, true);
   }
 
   scheduleMover(mover, isFirst) {
@@ -1920,8 +1921,6 @@ export default class PlayScene extends SuperScene {
     const {level} = this;
     const {enemies} = level;
 
-    const animate = prop('enemies.animationVisible');
-
     enemies.forEach((enemy) => {
       // hasn't ever touched the floor yet…
       if (!enemy.body.touching.down && enemy.movingLeft === undefined) {
@@ -1955,8 +1954,6 @@ export default class PlayScene extends SuperScene {
       }
 
       enemy.floorCollision = null;
-
-      enemy.anims.play(animate ? enemy.config.walkAnimation : enemy.config.neutralAnimation, true);
     });
   }
 
