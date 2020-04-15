@@ -1501,9 +1501,8 @@ export default class PlayScene extends SuperScene {
         skipIntro: null,
         save: null,
       }, {
-        duration: 1000,
+        name: 'effects.winTransition',
         animation,
-        ease: 'Cubic.easeInOut',
       });
     };
 

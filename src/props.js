@@ -520,6 +520,14 @@ export const propSpecs = {
     loop: -1,
   }],
 
+  'effects.winTransition.transition': [{
+    animation: 'pushLeft',
+    duration: 1000,
+    ease: 'Cubic.easeInOut',
+    delayNewSceneShader: true,
+    removeOldSceneShader: true,
+  }],
+
   'effects.identifyEnemy.tween': [{
     duration: 200,
     alpha: 0.1,
