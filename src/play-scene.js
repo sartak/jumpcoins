@@ -1605,8 +1605,10 @@ export default class PlayScene extends SuperScene {
     this.setupBackgroundFloodlights();
 
     this.setupLevel(levelIndex, skipIntro);
+  }
 
-    this.playMusic(this.level.music);
+  musicName() {
+    return this.level && this.level.music;
   }
 
   manageWallDragPuff(isEnabled, isLeft) {
@@ -3015,13 +3017,21 @@ export default class PlayScene extends SuperScene {
     );
   }
 
-  _hot() {
+  _hotReloadCurrentLevel() {
     const {x, y} = this.level.player;
-    this.replaceWithSelf(false, {
+    super._hotReloadCurrentLevel({
       skipIntro: true,
+    }, {
+      animation: 'crossFade',
+      duration: 200,
+      delayNewSceneShader: true,
+      removeOldSceneShader: true,
     }).then((scene) => {
       scene.level.player.x = x;
       scene.level.player.y = y;
     });
+  }
+
+  _hot() {
   }
 }
