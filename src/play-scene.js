@@ -2,53 +2,6 @@ import SuperScene from './scaffolding/SuperScene';
 import prop from './props';
 import analytics from './scaffolding/lib/analytics';
 
-import tileWall from './assets/tiles/wall.png';
-import tileSpikesUp from './assets/tiles/spikes-up.png';
-import tileSpikesDown from './assets/tiles/spikes-down.png';
-import tileSpikesLeft from './assets/tiles/spikes-left.png';
-import tileSpikesRight from './assets/tiles/spikes-right.png';
-import tileEye from './assets/tiles/eye.png';
-import tileSemiground from './assets/tiles/semiground.png';
-import tileTransparent from './assets/tiles/transparent.png';
-
-import spritePlayerDefault from './assets/sprites/player-default.png';
-import spritePlayerShielded from './assets/sprites/player-shielded.png';
-import spriteJumpcoin from './assets/sprites/jumpcoin.png';
-import spriteLifecoin from './assets/sprites/lifecoin.png';
-import spriteEnemyA from './assets/sprites/enemy-a.png';
-import spriteEnemyB from './assets/sprites/enemy-b.png';
-
-import effectImagePuff from './assets/effects/puff.png';
-import effectImageSpark from './assets/effects/spark.png';
-import effectImageFloodlight from './assets/effects/floodlight.png';
-import effectBackgroundScreen from './assets/effects/background-screen.png';
-import effectPupil from './assets/effects/pupil.png';
-import effectBlack from './assets/effects/black.png';
-
-import badgeCompleted from './assets/badges/completed.png';
-import badgeDamageless from './assets/badges/damageless.png';
-import badgeDeathless from './assets/badges/deathless.png';
-import badgeRich from './assets/badges/rich.png';
-import badgeBirdie from './assets/badges/birdie.png';
-import badgeKiller from './assets/badges/killer.png';
-import badgeEmpty from './assets/badges/empty.png';
-
-import musicWorld1 from './assets/music/world1.mp3';
-import musicWorld2 from './assets/music/world2.mp3';
-import musicWorld3 from './assets/music/world3.mp3';
-import musicBye from './assets/music/bye.mp3';
-
-import soundCoin from './assets/sounds/coin.wav';
-import soundJump1 from './assets/sounds/jump1.wav';
-import soundJump2 from './assets/sounds/jump2.wav';
-import soundJump3 from './assets/sounds/jump3.wav';
-import soundDoubleJump from './assets/sounds/doublejump.wav';
-import soundWallJump from './assets/sounds/walljump.wav';
-import soundKill from './assets/sounds/kill.wav';
-import soundWin from './assets/sounds/win.wav';
-import soundDie from './assets/sounds/die.wav';
-import soundBadge from './assets/sounds/badge.wav';
-
 const ZOrder = {};
 [
   'backgroundFloodlights',
@@ -214,59 +167,6 @@ export default class PlayScene extends SuperScene {
     } else if (config.skipIntro === null || !('skipIntro' in config)) {
       config.skipIntro = prop('level.skip_intro');
     }
-  }
-
-  preload() {
-    super.preload();
-
-    const {tileWidth, tileHeight} = this.game.config;
-
-    this.load.image('tileWall', tileWall);
-    this.load.image('tileSpikesUp', tileSpikesUp);
-    this.load.image('tileSpikesDown', tileSpikesDown);
-    this.load.image('tileSpikesLeft', tileSpikesLeft);
-    this.load.image('tileSpikesRight', tileSpikesRight);
-    this.load.image('tileEye', tileEye);
-    this.load.image('tileSemiground', tileSemiground);
-    this.load.image('tileTransparent', tileTransparent);
-
-    this.load.spritesheet('spritePlayerDefault', spritePlayerDefault, {frameWidth: tileWidth, frameHeight: tileHeight});
-    this.load.spritesheet('spritePlayerShielded', spritePlayerShielded, {frameWidth: tileWidth, frameHeight: tileHeight});
-    this.load.spritesheet('spriteEnemyA', spriteEnemyA, {frameWidth: tileWidth, frameHeight: tileHeight});
-    this.load.spritesheet('spriteEnemyB', spriteEnemyB, {frameWidth: tileWidth, frameHeight: tileHeight});
-    this.load.image('spriteLifecoin', spriteLifecoin);
-    this.load.spritesheet('spriteJumpcoin', spriteJumpcoin, {frameWidth: tileWidth, frameHeight: tileHeight});
-
-    this.load.image('effectImagePuff', effectImagePuff);
-    this.load.image('effectImageSpark', effectImageSpark);
-    this.load.image('effectImageFloodlight', effectImageFloodlight);
-    this.load.image('effectBackgroundScreen', effectBackgroundScreen);
-    this.load.image('effectPupil', effectPupil);
-    this.load.image('effectBlack', effectBlack);
-
-    this.load.image('badgeCompleted', badgeCompleted);
-    this.load.image('badgeDamageless', badgeDamageless);
-    this.load.image('badgeDeathless', badgeDeathless);
-    this.load.image('badgeRich', badgeRich);
-    this.load.image('badgeBirdie', badgeBirdie);
-    this.load.image('badgeKiller', badgeKiller);
-    this.load.image('badgeEmpty', badgeEmpty);
-
-    this.load.audio('musicWorld1', musicWorld1);
-    this.load.audio('musicWorld2', musicWorld2);
-    this.load.audio('musicWorld3', musicWorld3);
-    this.load.audio('musicBye', musicBye);
-
-    this.load.audio('soundCoin', soundCoin);
-    this.load.audio('soundJump1', soundJump1);
-    this.load.audio('soundJump2', soundJump2);
-    this.load.audio('soundJump3', soundJump3);
-    this.load.audio('soundDoubleJump', soundDoubleJump);
-    this.load.audio('soundWallJump', soundWallJump);
-    this.load.audio('soundKill', soundKill);
-    this.load.audio('soundWin', soundWin);
-    this.load.audio('soundDie', soundDie);
-    this.load.audio('soundBadge', soundBadge);
   }
 
   stabilizeFilename(filename) {
