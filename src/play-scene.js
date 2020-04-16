@@ -1264,7 +1264,6 @@ export default class PlayScene extends SuperScene {
 
   respawn() {
     const {level} = this;
-    const {player} = level;
 
     if (level.isRespawning) {
       return;
@@ -1530,7 +1529,6 @@ export default class PlayScene extends SuperScene {
   }
 
   jumpToLevel(index) {
-    const {game} = this;
     const count = this.levelIds().length;
     this.replaceWithSelf(true, {
       levelIndex: (index + count) % count,
@@ -3023,7 +3021,7 @@ export default class PlayScene extends SuperScene {
       skipIntro: true,
     }, {
       animation: 'crossFade',
-      duration: 200,
+      duration: 500,
       delayNewSceneShader: true,
       removeOldSceneShader: true,
     }).then((scene) => {
