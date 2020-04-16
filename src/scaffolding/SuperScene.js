@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import deepEqual from 'deep-equal';
 import prop, {propsWithPrefix, manageableProps, propSpecs} from '../props';
 import {updatePropsFromStep, overrideProps, refreshUI} from './lib/manage-gui';
-import massageParticleProps, {injectEmitterOpSeededRandom, particlePropFromProp} from './lib/particles';
-import massageTransitionProps, {applyPause} from './lib/transitions';
+import massageParticleProps, {injectEmitterOpSeededRandom, injectParticleEmitterManagerPreUpdate, particlePropFromProp} from './lib/particles';
+import massageTransitionProps, {baseTransitionProps, applyPause} from './lib/transitions';
 import {injectAddSpriteTimeScale} from './lib/sprites';
 import {injectAnimationUpdate} from './lib/anims';
 import massageTweenProps, {injectTweenManagerAdd} from './lib/tweens';
@@ -592,6 +592,8 @@ export default class SuperScene extends Phaser.Scene {
         newUnpauseFn();
       }
 
+      newScene.playMusicIfSet();
+
       if (swapScenes) {
         newScene.game.scene.bringToTop(newScene.scene.key);
       }
@@ -621,10 +623,13 @@ export default class SuperScene extends Phaser.Scene {
         newUnpauseFn();
       }
 
-      oldScene.didTransitionTo(newScene, transition);
-      newScene.didTransitionFrom(oldScene, transition);
-      oldScene.scene.remove();
       _hasCompleted = true;
+
+      newScene.timer(() => {
+        oldScene.didTransitionTo(newScene, transition);
+        newScene.didTransitionFrom(oldScene, transition);
+        oldScene.scene.remove();
+      }).ignoresScenePause = true;
 
       if (transition) {
         const waitTimer = newScene.timer(() => {
@@ -1471,6 +1476,10 @@ export default class SuperScene extends Phaser.Scene {
     this.game.recompileMainShaders();
   }
 
+  _hotReloadCurrentLevel(...args) {
+    return this.replaceWithSelf(false, ...args);
+  }
+
   removeAnimations() {
     if (this.physics && this.physics.world && this.physics.world.bodies && this.physics.world.bodies.entries) {
       this.physics.world.bodies.entries.forEach((body) => {
@@ -1532,12 +1541,10 @@ export default class SuperScene extends Phaser.Scene {
 
     if (props.preemit || (reloadSeed && props.preemitOnReload)) {
       this.preemitEmitter(emitter);
-      if (this._paused.particles) {
-        this.timer(() => particles.pause()).ignoresScenePause = true;
-      }
-    } else if (this._paused.particles) {
-      particles.pause();
     }
+
+    emitter.ignoresScenePause = emitterProps.ignoresScenePause;
+    emitter.updatesOnceOnPause = emitterProps.updatesOnceOnPause;
 
     this.particleSystems.push({
       particles, emitter, name, options,
@@ -1568,13 +1575,22 @@ export default class SuperScene extends Phaser.Scene {
     const prefix = typeof input === 'object' ? input.name : input;
     const options = typeof input === 'object' ? input : {};
 
-    // throws error if invalid
-    prop(`${prefix}.animation`);
+    let props;
 
-    const props = {
-      ...propsWithPrefix(`${prefix}.`),
-      ...options,
-    };
+    if (prefix) {
+      // throws error if invalid
+      prop(`${prefix}.animation`);
+
+      props = {
+        ...propsWithPrefix(`${prefix}.`),
+        ...options,
+      };
+    } else {
+      props = {
+        ...baseTransitionProps,
+        ...options,
+      };
+    }
 
     return massageTransitionProps(props, options);
   }
@@ -1686,7 +1702,7 @@ export default class SuperScene extends Phaser.Scene {
 
   playSound(baseName, variants, volume = 1.0) {
     // preflight etc
-    if (!this.scene.isVisible()) {
+    if (!this.scene.isVisible() || game._replayPreflight) {
       return;
     }
 
@@ -1718,8 +1734,18 @@ export default class SuperScene extends Phaser.Scene {
     sounds.forEach((sound) => sound.setVolume(sound.requestedVolume * multiplier));
   }
 
-  playMusic(name, forceRestart) {
+  playMusic(name = this.musicName(), forceRestart = false) {
     this.game.playMusic(name, forceRestart);
+  }
+
+  playMusicIfSet(name = this.musicName(), forceRestart = false) {
+    if (name) {
+      return this.playMusic(name, forceRestart);
+    }
+  }
+
+  musicName() {
+    return null;
   }
 
   timer(callback, time) {
@@ -1953,6 +1979,8 @@ export default class SuperScene extends Phaser.Scene {
     if (transition && transition.delayNewSceneShader) {
       this._setupShader();
     }
+
+    this.playMusic();
   }
 
   pauseInputForTransition(transition) {
@@ -1998,9 +2026,9 @@ export default class SuperScene extends Phaser.Scene {
   pauseAllParticleSystems() {
     this._paused.particles = true;
 
-    this.particleSystems.forEach((p) => {
-      p.particles.pause();
-    });
+    if (this.particleSystems.length) {
+      injectParticleEmitterManagerPreUpdate(this.particleSystems[0].particles);
+    }
   }
 
   pauseAllTweens() {
@@ -2126,6 +2154,9 @@ if (module.hot) {
             if (scene._hot) {
               scene._hot();
             }
+
+            scene._hotReloadCurrentLevel();
+
           } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e);
