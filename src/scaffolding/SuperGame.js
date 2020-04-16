@@ -49,6 +49,8 @@ export default class SuperGame extends Phaser.Game {
 
     this._sceneInitCallbacks = {};
 
+    this.assets = {};
+
     this.command = new CommandManager(commands);
 
     this._shaderSource = {};

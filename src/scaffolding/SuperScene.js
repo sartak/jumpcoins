@@ -12,6 +12,8 @@ import {saveField, loadField} from './lib/store';
 
 import {parseMaps, parseLevelLines} from './lib/level-parser';
 import mapsFile from '../assets/maps.txt';
+import * as assets from '../assets';
+import {preloadAssets, reloadAssets} from './lib/assets';
 
 const baseConfig = {
 };
@@ -296,6 +298,8 @@ export default class SuperScene extends Phaser.Scene {
 
   preload() {
     this.load.text('_mapsFile', mapsFile);
+
+    preloadAssets(this, assets);
   }
 
   levelIds() {
@@ -1474,6 +1478,8 @@ export default class SuperScene extends Phaser.Scene {
     }
 
     this.game.recompileMainShaders();
+
+    this.playMusic();
   }
 
   _hotReloadCurrentLevel(...args) {
@@ -2156,12 +2162,64 @@ if (module.hot) {
             }
 
             scene._hotReloadCurrentLevel();
-
           } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e);
           }
         });
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
+  });
+
+  module.hot.accept('../assets', () => {
+    try {
+      const next = require('../assets');
+      const {game} = window;
+
+      reloadAssets(game.topScene(), next).then(([changedAssets, changesByType]) => {
+        const scene = game.topScene();
+        let sawChanges = false;
+
+        Object.entries(changedAssets).forEach(([type, changed]) => {
+          if (changesByType[type] && changesByType[type].length) {
+            sawChanges = true;
+            // eslint-disable-next-line no-console
+            console.info(`Hot-loading ${type}: ${changesByType[type].join(', ')}`);
+          }
+
+          if (type === 'musicAssets') {
+            const {currentMusicName} = game;
+            if (changed[currentMusicName]) {
+              game.playMusic(currentMusicName, true);
+            }
+          } else if (type === 'imageAssets' || type === 'spriteAssets') {
+            Object.entries(changed).forEach(([key, texture]) => {
+              scene.add.displayList.list.forEach((object) => {
+                if (object.texture && object.texture.key === key) {
+                  if (object.setTexture) {
+                    object.setTexture(key);
+                  } else {
+                    object.texture = texture;
+                  }
+                }
+              });
+            });
+          }
+        });
+
+        if (!sawChanges) {
+          return;
+        }
+
+        if (scene._builtinHot) {
+          scene._builtinHot();
+        }
+        if (scene._hot) {
+          scene._hot();
+        }
       });
     } catch (e) {
       // eslint-disable-next-line no-console
