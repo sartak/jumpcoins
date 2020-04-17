@@ -588,7 +588,7 @@ export default class SuperScene extends Phaser.Scene {
     }
 
     if (!sceneId) {
-      sceneId = this.randFloat('sceneId');
+      sceneId = String(this.randFloat('sceneId'));
     }
 
     const target = `scene-${this.randFloat('sceneId') * Date.now()}`;
@@ -1034,10 +1034,11 @@ export default class SuperScene extends Phaser.Scene {
     this._replay = replay;
     this._replayOptions = replayOptions;
     this._replayLatestTransition = replayOptions.startFromTransition;
+    const startTick = this._replayLatestTransition ? (this._replayLatestTransition.tickCount || 0) : 0;
 
     command.beginReplay(replay, {
       ...replayOptions,
-      startTick: replay.startTick,
+      startTick,
       onEnd: () => {
         this.game.topScene().endedReplay();
       },
@@ -2072,11 +2073,11 @@ export default class SuperScene extends Phaser.Scene {
   }
 
   pauseInputForTransition(transition) {
-    this.command.ignoreAll(this, '_transition', true);
+    this.command.ignoreAll('_transition', true);
   }
 
   unpauseInputForTransition(transition) {
-    this.command.ignoreAll(this, '_transition', false);
+    this.command.ignoreAll('_transition', false);
   }
 
   pausePhysicsForTransition(transition) {

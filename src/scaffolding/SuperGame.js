@@ -33,7 +33,7 @@ export default class SuperGame extends Phaser.Game {
 
     this.debug = config.debug;
 
-    this.scene.add('BootScene', BootScene, true, {seed: Date.now(), sceneId: Math.random()});
+    this.scene.add('BootScene', BootScene, true, {seed: Date.now(), sceneId: String(Math.random())});
 
     this.preloadScenes = preloadScenes;
 
@@ -350,11 +350,16 @@ export default class SuperGame extends Phaser.Game {
       }
     }
 
+    const preflightCutoff = Math.max(
+      replay.preflightCutoff,
+      startFromTransition ? (startFromTransition.tickCount || 0) : 0,
+    );
+
     this.transitionToSceneToBeginReplay(replay, startFromTransition).then((newScene) => {
       newScene.beginReplay(replay, {
         ...options,
         startFromTransition,
-        preflightCutoff: (startFromTransition && startFromTransition.tickCount ? (startFromTransition.tickCount + 1) : 0),
+        preflightCutoff,
         onEnd: () => {
           this.endedReplay();
         },
