@@ -7,12 +7,12 @@ import massageTransitionProps, {baseTransitionProps, applyPause} from './lib/tra
 import {injectAddSpriteTimeScale} from './lib/sprites';
 import {injectAnimationUpdate} from './lib/anims';
 import massageTweenProps, {injectTweenManagerAdd} from './lib/tweens';
-import {shaderTypeMeta, propNamesForUniform} from './lib/props';
+import {shaderTypeMeta, propNamesForUniform} from './lib/shaders';
 import {saveField, loadField} from './lib/store';
 
 import {parseMaps, parseLevelLines} from './lib/level-parser';
 import mapsFile from '../assets/maps.txt';
-import * as assets from '../assets';
+import * as assets from '../assets/index';
 import {preloadAssets, reloadAssets} from './lib/assets';
 
 const baseConfig = {
@@ -350,6 +350,11 @@ export default class SuperScene extends Phaser.Scene {
       index,
     };
 
+    if (level.background) {
+      level.background = this.add.sprite(0, 0, level.background);
+      level.background.setPosition(level.background.width * 0.5, level.background.height * 0.5);
+    }
+
     return level;
   }
 
@@ -411,6 +416,42 @@ export default class SuperScene extends Phaser.Scene {
     }
     if (this.shader) {
       this._shaderUpdate();
+    }
+
+    this.positionBackground();
+  }
+
+  positionBackground() {
+    const {
+      level, game, xBorder, yBorder, camera,
+    } = this;
+    if (!level) {
+      return;
+    }
+
+    const {background, width: levelWidth, height: levelHeight} = level;
+    if (!background) {
+      return;
+    }
+
+    const {width: gameWidth, height: gameHeight} = game.config;
+    const {width: backgroundWidth, height: backgroundHeight} = background;
+    const {scrollX, scrollY} = camera;
+
+    const xDivisor = levelWidth - gameWidth + xBorder * 2;
+    if (xDivisor === 0) {
+      background.x = backgroundWidth * 0.5;
+    } else {
+      const xFactor = scrollX / xDivisor;
+      background.x = xBorder + backgroundWidth * 0.5 + xFactor * (levelWidth - backgroundWidth);
+    }
+
+    const yDivisor = levelHeight - gameHeight + yBorder * 2;
+    if (yDivisor === 0) {
+      background.y = backgroundHeight * 0.5;
+    } else {
+      const yFactor = scrollY / yDivisor;
+      background.y = yBorder + backgroundHeight * 0.5 + yFactor * (levelHeight - backgroundHeight);
     }
   }
 
@@ -480,7 +521,12 @@ export default class SuperScene extends Phaser.Scene {
 
         const [, , setter] = shaderTypeMeta[type];
 
-        shaderUpdate.push(`  shader.${setter}('${name}', this['${name}']);`);
+        if (type === 'bool') {
+          shaderUpdate.push(`  shader.${setter}('${name}', this['${name}'] ? 1.0 : 0.0);`);
+        }
+        else {
+          shaderUpdate.push(`  shader.${setter}('${name}', this['${name}']);`);
+        }
       });
     });
 
@@ -2174,9 +2220,9 @@ if (module.hot) {
     }
   });
 
-  module.hot.accept('../assets', () => {
+  module.hot.accept('../assets/index', () => {
     try {
-      const next = require('../assets');
+      const next = require('../assets/index');
       const {game} = window;
 
       reloadAssets(game.topScene(), next).then(([changedAssets, changesByType]) => {
