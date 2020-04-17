@@ -1021,7 +1021,7 @@ export default class PlayScene extends SuperScene {
     if (knockback) {
       player.setVelocityY(-prop('rules.damage.spike_knockback_y'));
 
-      command.ignoreAll(this, 'knockback', true);
+      command.ignoreAll('knockback', true);
       player.canCancelKnockbackIgnore = false;
 
       this.timer(
@@ -1206,7 +1206,7 @@ export default class PlayScene extends SuperScene {
     }
 
     player.alpha = 0;
-    command.ignoreAll(this, 'spawn', true);
+    command.ignoreAll('spawn', true);
 
     this.tween(
       'effects.spawnPlayer',
@@ -1214,7 +1214,7 @@ export default class PlayScene extends SuperScene {
       {
         delay,
         onComplete: () => {
-          command.ignoreAll(this, 'spawn', false);
+          command.ignoreAll('spawn', false);
           level.startedAt = physics.time;
           level.isRespawning = false;
           this.cameraFollow(player);
@@ -1790,7 +1790,7 @@ export default class PlayScene extends SuperScene {
       } else if (command.right.held) {
         player.setVelocityX(x);
         player.facingLeft = false;
-      } else if (!command.ignoreAll(this, 'knockback')) {
+      } else if (!command.ignoreAll('knockback')) {
         player.setVelocityX(0);
       }
     }
@@ -1949,9 +1949,9 @@ export default class PlayScene extends SuperScene {
       player.landedTime = null;
     }
 
-    if (command.ignoreAll(this, 'knockback') && player.canCancelKnockbackIgnore) {
+    if (command.ignoreAll('knockback') && player.canCancelKnockbackIgnore) {
       if (player.body.touching.down || player.body.touching.left || player.body.touching.right || player.body.touching.up) {
-        command.ignoreAll(this, 'knockback', false);
+        command.ignoreAll('knockback', false);
         player.canCancelKnockbackIgnore = false;
       }
     }
@@ -2585,7 +2585,7 @@ export default class PlayScene extends SuperScene {
     const {level, command} = this;
     const {hud} = level;
 
-    command.ignoreAll(this, 'intro', true);
+    command.ignoreAll('intro', true);
 
     const banner = this.renderBanner();
     hud.intro.push(banner);
@@ -2627,7 +2627,7 @@ export default class PlayScene extends SuperScene {
             banner,
             {
               onComplete: () => {
-                command.ignoreAll(this, 'intro', false);
+                command.ignoreAll('intro', false);
               },
             },
           );
@@ -2712,7 +2712,7 @@ export default class PlayScene extends SuperScene {
     const {level, command} = this;
     const {player, hud} = level;
 
-    command.ignoreAll(this, 'outro', true);
+    command.ignoreAll('outro', true);
 
     player.disableBody(true, false);
 
@@ -2877,7 +2877,7 @@ export default class PlayScene extends SuperScene {
     x += this.camera.scrollX;
     y += this.camera.scrollY;
 
-    command.ignoreAll(this, 'debugTeleport', true);
+    command.ignoreAll('debugTeleport', true);
     player.disableBody(true, false);
 
     this.tween(
@@ -2903,7 +2903,7 @@ export default class PlayScene extends SuperScene {
                   {
                     onComplete: () => {
                       player.enableBody();
-                      command.ignoreAll(this, 'debugTeleport', false);
+                      command.ignoreAll('debugTeleport', false);
                     },
                   },
                 );

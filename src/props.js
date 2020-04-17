@@ -83,10 +83,10 @@ export const shaderColorFragments = [
 export const propSpecs = {
   ...builtinPropSpecs(commands, shaderCoordFragments, shaderColorFragments),
 
-  'command.ignore_all.intro': [false, null, (scene) => scene.command.ignoreAll(scene, 'intro')],
-  'command.ignore_all.spawn': [false, null, (scene) => scene.command.ignoreAll(scene, 'spawn')],
-  'command.ignore_all.knockback': [false, null, (scene) => scene.command.ignoreAll(scene, 'knockback')],
-  'command.ignore_all.outro': [false, null, (scene) => scene.command.ignoreAll(scene, 'outro')],
+  'command.ignore_all.intro': [false, null, (scene) => scene.command.ignoreAll('intro')],
+  'command.ignore_all.spawn': [false, null, (scene) => scene.command.ignoreAll('spawn')],
+  'command.ignore_all.knockback': [false, null, (scene) => scene.command.ignoreAll('knockback')],
+  'command.ignore_all.outro': [false, null, (scene) => scene.command.ignoreAll('outro')],
 
   'config.timesight_jumpcoins': [false],
   'config.timesight_player': [true],
