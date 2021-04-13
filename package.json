@@ -35,7 +35,7 @@
         "lodash"
       ],
       [
-        "https://sfbgames.com/chiptone/",
+        "https://sfbgames.itch.io/chiptone",
         "chiptone"
       ],
       [
@@ -69,7 +69,7 @@
     "jest-environment-jsdom-fourteen": "0.1.0",
     "jest-resolve": "24.7.1",
     "jest-watch-typeahead": "0.3.0",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.21",
     "mini-css-extract-plugin": "0.5.0",
     "optimize-css-assets-webpack-plugin": "5.0.1",
     "phaser": "^3.17.0",
@@ -86,11 +86,12 @@
     "resolve": "1.10.0",
     "sass-loader": "7.1.0",
     "semver": "6.0.0",
+    "simplex-noise": "^2.4.0",
     "style-loader": "0.23.1",
     "terser-webpack-plugin": "1.2.3",
     "url-loader": "1.1.2",
     "webpack": "4.29.6",
-    "webpack-dev-server": "3.2.1",
+    "webpack-dev-server": "^3.11.2",
     "webpack-manifest-plugin": "2.0.4",
     "workbox-webpack-plugin": "4.2.0"
   },
