@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import SuperScene from './scaffolding/SuperScene';
 import prop from './props';
 import analytics from './scaffolding/lib/analytics';
@@ -2071,7 +2072,7 @@ export default class PlayScene extends SuperScene {
     if (type !== JumpNormal) {
       this.camera.shake(
         prop('effects.jumpShake.duration_ms'),
-        prop('effects.jumpShake.amount'),
+        new Phaser.Math.Vector2(0, prop('effects.jumpShake.amount')),
       );
     }
   }
