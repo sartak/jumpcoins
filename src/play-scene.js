@@ -2590,6 +2590,7 @@ export default class PlayScene extends SuperScene {
     const {hud} = level;
 
     command.ignoreAll('intro', true);
+    command.ignoreAll('outro', false);
 
     const banner = this.renderBanner();
     hud.intro.push(banner);
