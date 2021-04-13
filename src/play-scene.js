@@ -999,7 +999,7 @@ export default class PlayScene extends SuperScene {
     const {level, command} = this;
     const {player} = level;
 
-    if (player.invincible) {
+    if (player.invincible || player.spentLifecoin) {
       return;
     }
 
@@ -1042,7 +1042,7 @@ export default class PlayScene extends SuperScene {
 
     this.killEnemy(enemy);
 
-    if (player.invincible) {
+    if (player.invincible || player.spentLifecoin) {
       return;
     }
 
