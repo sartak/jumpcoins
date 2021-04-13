@@ -1060,6 +1060,7 @@ export default class PlayScene extends SuperScene {
       level.damageTaken += 1;
       save.levels[level.filename].damageTaken += 1;
       this.damageBlur();
+      this.trauma(spendJumpcoin ? 0.4 : 0.8);
     }
 
     let coin;
