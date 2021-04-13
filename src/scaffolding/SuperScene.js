@@ -1800,6 +1800,10 @@ export default class SuperScene extends Phaser.Scene {
   }
 
   trauma(amount) {
+    if (amount && !this._trauma) {
+      this._traumaStart = this.time.now;
+    }
+
     const newTrauma = Math.min(Math.max(this._trauma + amount, 0), 1);
     const shake = newTrauma ** prop('scene.trauma.exponent');
     this._trauma = newTrauma;
@@ -1839,7 +1843,12 @@ export default class SuperScene extends Phaser.Scene {
       this.sounds = this.sounds.filter((s) => s !== sound);
     });
 
-    sound.play();
+    try {
+      sound.play();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.log(`Could not play sound ${name}: ${e}`);
+    }
   }
 
   changeVolume(newVolume) {
