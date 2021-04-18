@@ -125,6 +125,7 @@ export function builtinPropSpecs(commands, shaderCoordFragments, shaderColorFrag
     'scene.trauma.dy': [30.0, 0, 100],
     'scene.trauma.dt': [0.17, 0, 1],
     'scene.trauma.speed': [0.2, 0, 1],
+    'scene.trauma.easeIn': [100, 0, 1000],
     'scene.trauma.legacy': [false],
     'scene.trauma.mild': [(scene) => scene.trauma(0.2)],
     'scene.trauma.minor': [(scene) => scene.trauma(0.5)],
@@ -153,6 +154,7 @@ export function builtinPropSpecs(commands, shaderCoordFragments, shaderColorFrag
 
     'command.ignore_all.any': [false, null, (scene) => scene.command.ignoreAll()],
     'command.ignore_all._transition': [false, null, (scene) => scene.command.ignoreAll('_transition')],
+    'command.ignore_all._sleep': [false, null, (scene) => scene.command.ignoreAll('_sleep')],
 
     ...commandProps(commands),
     ...shaderProps(shaderCoordFragments, shaderColorFragments),
@@ -172,6 +174,17 @@ function commandProps(commands) {
     props[`command.${name}.releasedFrames`] = [0, null];
     props[`command.${name}.heldDuration`] = [0, null];
     props[`command.${name}.releasedDuration`] = [0, null];
+
+    if (config.cooldown) {
+      props[`command.${name}.cooldown`] = [config.cooldown, 0, 100000];
+      props[`command.${name}.coolingDown`] = [false, null, (scene) => scene.command[name].coolingDown];
+      props[`command.${name}.coolingDownTime`] = [0.01, null, (scene) => scene.command[name].coolingDownTime];
+    }
+
+    if (config.joystick) {
+      props[`command.${name}.x`] = [0.01, null, (scene) => scene.command[name].held[0]];
+      props[`command.${name}.y`] = [0.01, null, (scene) => scene.command[name].held[1]];
+    }
 
     props[`command.${name}.enabled`] = [true];
 
@@ -207,6 +220,8 @@ const knownInputs = [
   'gamepad.RSTICK.DOWN',
   'gamepad.RSTICK.LEFT',
   'gamepad.RSTICK.RIGHT',
+  'gamepad.LSTICK.RAW',
+  'gamepad.RSTICK.RAW',
 
   ...(Object.keys(Phaser.Input.Keyboard.KeyCodes).map((x) => `keyboard.${x}`)),
 ].reduce((a, b) => {

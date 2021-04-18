@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import SuperScene from './scaffolding/SuperScene';
 import prop from './props';
 import analytics from './scaffolding/lib/analytics';
+import {NormalizeVector} from './scaffolding/lib/vector';
 
 const ZOrder = {};
 [

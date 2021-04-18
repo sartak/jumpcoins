@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import deepEqual from 'deep-equal';
-import prop, {propsWithPrefix, manageableProps, propSpecs} from '../props';
+import prop, {
+  propsWithPrefix, manageableProps, tileDefinitions, propSpecs,
+} from '../props';
 import {updatePropsFromStep, overrideProps, refreshUI} from './lib/manage-gui';
 import massageParticleProps, {injectEmitterOpSeededRandom, injectParticleEmitterManagerPreUpdate, particlePropFromProp} from './lib/particles';
 import massageTransitionProps, {baseTransitionProps, applyPause} from './lib/transitions';
@@ -47,6 +49,14 @@ export default class SuperScene extends Phaser.Scene {
   }
 
   init(config) {
+    const {
+      tileWidth, tileHeight, width, height,
+    } = this.game.config;
+    this.tileWidth = tileWidth;
+    this.tileHeight = tileHeight;
+    this.halfWidth = tileWidth / 2;
+    this.halfHeight = tileWidth / 2;
+
     if (!config.seed) {
       throw new Error(`You must provide a "seed" (e.g. Date.now()) to ${this.constructor.name}`);
     }
@@ -61,7 +71,7 @@ export default class SuperScene extends Phaser.Scene {
     this.command.attachScene(this, config._timeSightTarget);
 
     this.camera = this.cameras.main;
-    this.camera.setBackgroundColor(0);
+    this.camera.setBackgroundColor(this.cameraColor());
     injectCameraShake(this.camera);
 
     if (config.save) {
@@ -105,7 +115,7 @@ export default class SuperScene extends Phaser.Scene {
         let time = 0;
         physics.time = physics.dt = 0;
         world.step = (originalDelta) => {
-          const delta = originalDelta * world.timeScale * world.timeScale;
+          const delta = originalDelta / world.timeScale;
 
           const dt = delta * 1000;
           time += dt;
@@ -206,9 +216,6 @@ export default class SuperScene extends Phaser.Scene {
       }
     }
 
-    const {
-      width, height, tileWidth, tileHeight,
-    } = this.game.config;
     const mapWidth = Math.floor(width / (tileWidth + 2));
     const mapHeight = Math.floor(height / (tileHeight + 3));
 
@@ -355,7 +362,7 @@ export default class SuperScene extends Phaser.Scene {
     const [lines, config] = spec;
     const {map, mapText, lookups} = parseLevelLines(lines, this.mapsAreRectangular);
 
-    const {tileWidth, tileHeight} = this.game.config;
+    const {tileWidth, tileHeight} = this;
     const heightInTiles = map.length;
     const height = tileHeight * heightInTiles;
     const widthInTiles = Math.max(...map.map((a) => a.length));
@@ -377,6 +384,463 @@ export default class SuperScene extends Phaser.Scene {
       level.background = this.add.sprite(0, 0, level.background);
       level.background.setPosition(level.background.width * 0.5, level.background.height * 0.5);
     }
+
+    if (level.underground) {
+      this.createUnderground(level.underground);
+    }
+
+    return level;
+  }
+
+  createUnderground(name) {
+    if (this.game.debug) {
+      const template = this.add.image(0, 0, name);
+      const {width, height} = template;
+      template.destroy();
+
+      // eslint-disable-next-line no-bitwise
+      const isPowerOfTwo = (x) => x && !(x & (x - 1));
+      if (!isPowerOfTwo(width) || !isPowerOfTwo(height)) {
+        // eslint-disable-next-line no-console
+        console.error(`Underground ${name} is ${width}x${height}; please use an image having powers-of-two dimensions for best rendering`);
+      }
+    }
+
+    const {
+      width, height, tileWidth, tileHeight,
+    } = this.game.config;
+
+    // Add some fudge because even with late updates to underground position
+    // we still see the background peek through
+    const w = width + 10 * tileWidth;
+    const h = height + 10 * tileHeight;
+    const underground = this.add.tileSprite(w / 2, h / 2, w, h, name);
+    underground.tilePositionX = 0;
+    underground.tilePositionY = 0;
+    this.underground = underground;
+  }
+
+  executeScript(script) {
+    const {execute, delay} = script;
+
+    if (delay) {
+      this.timer(() => {
+        this.executeScript({...script, delay: 0});
+      }, delay);
+      return;
+    }
+
+    if (execute) {
+      if (typeof execute === 'object') {
+        const [method, ...args] = execute;
+        this[method](...args);
+      } else {
+        this[execute]();
+      }
+    }
+  }
+
+  textSize() {
+    return '24px';
+  }
+
+  textColor() {
+    return 'rgb(255, 0, 0)';
+  }
+
+  strokeColor() {
+    return 'rgb(0, 0, 0)';
+  }
+
+  strokeWidth() {
+    return 6;
+  }
+
+  cameraColor() {
+    return 0x000000;
+  }
+
+  text(x, y, text, options = {}) {
+    const label = this.add.text(
+      x,
+      y,
+      text,
+      {
+        fontFamily: '"Avenir Next", "Avenir", "Helvetica Neue", "Helvetica", "Arial"',
+        fontWeight: 'bold',
+        fontSize: this.textSize(options),
+        color: this.textColor(options),
+        ...options,
+      },
+    );
+
+    if (options.stroke !== null) {
+      if (options.stroke === undefined) {
+        label.setStroke(this.strokeColor(options), this.strokeWidth(options));
+      } else {
+        label.setStroke(...options.stroke);
+      }
+    }
+
+    return label;
+  }
+
+  speak(...args) {
+    let delay = 0;
+
+    let xc = args.shift();
+    let yc;
+
+    if (xc && !Number.isInteger(xc)) {
+      const lookups = this.level.mapLookups[xc];
+      xc = yc = lookups.map((t) => t.object).find((o) => o);
+      if (xc === undefined) {
+        xc = lookups[0].xCoord;
+        yc = lookups[0].yCoord;
+      }
+    } else {
+      yc = args.shift();
+    }
+
+    if (xc === null || xc === undefined) {
+      xc = this.game.config.width / 2;
+    }
+    if (yc === null || yc === undefined) {
+      yc = this.game.config.height / 2;
+    }
+
+    let lines = args.shift();
+    if (!Array.isArray(lines)) {
+      lines = [lines];
+    }
+
+    const options = args.shift() || {};
+
+    lines.forEach((line, i) => {
+      const {
+        duration, inTime, outTime, text, extraDelay,
+        dx, dy, ox, oy, noOut, follow,
+      } = {
+        inTime: 200,
+        outTime: 200,
+        duration: null,
+        extraDelay: 200,
+        dy: null,
+        dx: null,
+        ox: 0,
+        oy: 0,
+        noOut: false,
+        follow: true,
+        ...options,
+        ...(typeof line === 'object' ? line : {text: line}),
+      };
+
+      const d = duration === null ? text.length * 100 : duration;
+      const dx1 = dx === null ? 0 : dx;
+      const dy1 = dy === null ? -this.game.config.tileHeight : dy;
+
+      this.timer(() => {
+        let xl = xc;
+        let yl = yc;
+
+        let xo = typeof xl === 'object' ? xl : null;
+        let yo = typeof yl === 'object' ? yl : null;
+
+        if (xo) {
+          xl = xo.x;
+          if (!follow) {
+            xo = null;
+          }
+        }
+        if (yo) {
+          yl = yo.y;
+          if (!follow) {
+            yo = null;
+          }
+        }
+
+        xl += ox;
+        yl += oy;
+
+        const label = this.text(xl, yl, text);
+        const halfWidth = label.width / 2;
+        const halfHeight = label.height / 2;
+        label.x -= halfWidth;
+        label.y -= halfHeight;
+
+        let lx = label.x;
+        let ly = label.y;
+        label.alpha = 0;
+
+        this.tweenPercent(
+          inTime,
+          (factor) => {
+            label.alpha = factor;
+
+            if (xo) {
+              label.x = (xo.xCoord === undefined ? xo.x : xo.xCoord) - halfWidth + dx1;
+              lx = label.x;
+            }
+
+            if (yo) {
+              label.y = (yo.yCoord === undefined ? yo.y : yo.yCoord) - halfHeight + dy1;
+              ly = label.y;
+            }
+
+            label.x = lx - dx1 * (1.0 - factor) + ox;
+            label.y = ly - dy1 * (1.0 - factor) + oy;
+          },
+          null,
+          0,
+          'Cubic.easeOut',
+        );
+
+        this.timer(() => {
+          this.tweenPercent(
+            d,
+            (factor) => {
+              if (xo) {
+                label.x = (xo.xCoord === undefined ? xo.x : xo.xCoord) - halfWidth + dx1;
+                lx = label.x;
+              }
+              if (yo) {
+                label.y = (yo.yCoord === undefined ? yo.y : yo.yCoord) - halfHeight + dy1;
+                ly = label.y;
+              }
+
+              label.x = lx + ox;
+              label.y = ly + oy;
+            },
+            null,
+            0,
+            'Cubic.easeOut',
+          );
+        }, inTime);
+
+        if (noOut) {
+          return;
+        }
+
+        this.timer(() => {
+          this.tweenPercent(
+            outTime,
+            (factor) => {
+              label.alpha = 1.0 - factor;
+
+              if (xo) {
+                label.x = (xo.xCoord === undefined ? xo.x : xo.xCoord) - halfWidth + dx1;
+                lx = label.x;
+              }
+
+              if (yo) {
+                label.y = (yo.yCoord === undefined ? yo.y : yo.yCoord) - halfHeight + dy1;
+                ly = label.y;
+              }
+
+              label.x = lx - dx1 * factor + ox;
+              label.y = ly - dy1 * factor + oy;
+            },
+            () => {
+              label.destroy();
+            },
+            0,
+            'Cubic.easeOut',
+          );
+        }, inTime + d);
+      }, extraDelay + delay);
+
+      delay += extraDelay + d + inTime + outTime;
+    });
+  }
+
+  createLevel(id) {
+    const level = this.level = this.loadLevel(id);
+    this.addMap();
+    return level;
+  }
+
+  createTileForGroup(groupName, x, y) {
+    const {
+      level, tileWidth, tileHeight, halfWidth, halfHeight,
+    } = this;
+    const group = level.groups[groupName];
+
+    let object;
+
+    if (group.image) {
+      object = group.group.create(x, y, group.image);
+    } else {
+      object = this.add.rectangle(x, y, tileWidth, tileHeight);
+      group.group.add(object);
+    }
+    group.objects.push(object);
+
+    if (group.isCircle) {
+      const radius = (halfHeight + halfWidth) / 2;
+      object.setCircle(radius);
+    }
+
+    return object;
+  }
+
+  addMap() {
+    const {
+      level, tileWidth, tileHeight, halfWidth, halfHeight,
+    } = this;
+
+    const groups = level.groups = {};
+    Object.values(tileDefinitions).forEach((spec) => {
+      if (!spec) {
+        return;
+      }
+
+      if (spec.group) {
+        let group;
+        if (spec.isStatic) {
+          group = this.physics.add.staticGroup();
+        } else {
+          group = this.physics.add.group();
+        }
+
+        groups[spec.group] = {
+          tiles: [],
+          objects: [],
+          ...spec,
+          group,
+        };
+      }
+    });
+
+    const combine = {};
+
+    level.map.forEach((row, y) => {
+      row.forEach((tile, x) => {
+        const {glyph, group} = tile;
+        const [xCoord, yCoord] = this.positionToScreenCoordinate(tile.x, tile.y);
+        tile.xCoord = xCoord;
+        tile.yCoord = yCoord;
+
+        if (group) {
+          if (tile.combine) {
+            const combiner = tile.combine === true ? glyph : tile.combine;
+
+            if (!combine[combiner]) {
+              combine[combiner] = [];
+            }
+
+            combine[combiner].push(tile);
+            return;
+          }
+
+          const object = this.createTileForGroup(group, xCoord + halfWidth, yCoord + halfHeight);
+          object.tiles = [tile];
+          tile.object = object;
+        } else if (tile.image) {
+          const image = this.add.image(xCoord + halfWidth, yCoord + halfHeight, tile.image);
+          image.tile = tile;
+          tile.image = image;
+        }
+
+        if (tile.combine) {
+          // eslint-disable-next-line no-console
+          console.warn(`Cannot combine tile of type ${tile.glyph}; needs a group`);
+        }
+      });
+    });
+
+    Object.values(combine).forEach((tiles) => {
+      const {preferCombineVertical} = tiles[0];
+      const dxPrimary = preferCombineVertical ? 0 : 1;
+      const dyPrimary = preferCombineVertical ? 1 : 0;
+      const dxSecondary = preferCombineVertical ? 1 : 0;
+      const dySecondary = preferCombineVertical ? 0 : 1;
+
+      const group = level.groups[tiles[0].group];
+
+      if (preferCombineVertical) {
+        tiles.sort((a, b) => a.x - b.x || a.y - b.y);
+      } else {
+        tiles.sort((a, b) => a.y - b.y || a.x - b.x);
+      }
+
+      const m = this.level.map[0].map((row) => []);
+      // fake autovivify for last row
+      m.push([]);
+
+      tiles.forEach((tile) => {
+        const {x, y} = tile;
+        m[x][y] = tile;
+      });
+
+      const chains = {};
+
+      // This starts at the top left and greedily scans down/right for
+      // chaining; this could be improved by looking for the "best"
+      // at each scanline, e.g. when preferring horizontal this should
+      // create one one-tile chain and one three-tile chain
+      //   *
+      //   ***
+      // but instead it creates two two-tile chains
+
+      tiles.forEach((tile) => {
+        const {x, y, combineWith} = tile;
+
+        const id = `${x}/${y}`;
+
+        // Start a new chain
+        if (!combineWith) {
+          const primary = m[x + dxPrimary][y + dyPrimary];
+          if (primary && !primary.combineWith) {
+            primary.combineWith = id;
+            primary.dxNext = dxPrimary;
+            primary.dyNext = dyPrimary;
+            chains[id] = [tile, primary];
+          } else {
+            const secondary = m[x + dxSecondary][y + dySecondary];
+            if (secondary && !secondary.combineWith) {
+              secondary.combineWith = id;
+              secondary.dxNext = dxSecondary;
+              secondary.dyNext = dySecondary;
+              chains[id] = [tile, secondary];
+            } else {
+              chains[id] = [tile];
+            }
+          }
+        } else {
+          const {dxNext, dyNext} = tile;
+          // Continue existing chain
+          const next = m[x + dxNext][y + dyNext];
+          if (next && !next.combineWith) {
+            next.combineWith = combineWith;
+            next.dxNext = dxNext;
+            next.dyNext = dyNext;
+            chains[combineWith].push(next);
+          }
+        }
+      });
+
+      Object.entries(chains).forEach(([id, chainTiles]) => {
+        const first = chainTiles[0];
+        const last = chainTiles[chainTiles.length - 1];
+        const [x0, y0] = this.positionToScreenCoordinate(first.x, first.y);
+        const [x1, y1] = this.positionToScreenCoordinate(last.x, last.y);
+        const w = x1 - x0 + tileWidth;
+        const h = y1 - y0 + tileHeight;
+        const object = this.add.rectangle(x0 + w * 0.5, y0 + h * 0.5, w, h);
+
+        group.group.add(object);
+        group.objects.push(object);
+        object.tiles = chainTiles;
+
+        chainTiles.forEach((tile) => {
+          const image = this.add.image(tile.xCoord + halfWidth, tile.yCoord + halfHeight, tile.image);
+          image.tile = tile;
+          image.alpha = 0.5;
+          tile.image = image;
+          tile.object = object;
+        });
+      });
+    });
 
     return level;
   }
@@ -422,6 +886,16 @@ export default class SuperScene extends Phaser.Scene {
     this.setCameraBounds();
     this.setCameraDeadzone();
     this.setCameraLerp();
+
+    if (this.level && this.level.scripts) {
+      let delay = 0;
+      this.level.scripts.forEach((script) => {
+        if (script.delay) {
+          delay += script.delay;
+        }
+        this.executeScript({...script, delay});
+      });
+    }
   }
 
   update(time, dt) {
@@ -442,6 +916,7 @@ export default class SuperScene extends Phaser.Scene {
     }
 
     this.positionBackground();
+    this.positionUnderground();
   }
 
   positionBackground() {
@@ -475,6 +950,18 @@ export default class SuperScene extends Phaser.Scene {
     } else {
       const yFactor = scrollY / yDivisor;
       background.y = yBorder + backgroundHeight * 0.5 + yFactor * (levelHeight - backgroundHeight);
+    }
+  }
+
+  positionUnderground() {
+    const {
+      underground, camera, tileWidth, tileHeight
+    } = this;
+    if (underground) {
+      underground.x = camera.scrollX + underground.width / 2 - tileWidth * 5;
+      underground.y = camera.scrollY + underground.height / 2 - tileHeight * 5;
+      underground.tilePositionX = camera.scrollX % tileWidth;
+      underground.tilePositionY = camera.scrollY % tileHeight;
     }
   }
 
@@ -747,6 +1234,8 @@ export default class SuperScene extends Phaser.Scene {
       } else if (animation === 'fadeInOut') {
         swapScenes = true;
 
+        newScene.camera.setBackgroundColor(0);
+        oldScene.camera.setBackgroundColor(0);
         newScene.camera.alpha = 0;
         oldScene.camera.alpha = 1;
 
@@ -891,7 +1380,7 @@ export default class SuperScene extends Phaser.Scene {
           newScene.camera.alpha = 0;
 
           newCamera = newScene.cameras.add(0, 0, width, height);
-          newCamera.setBackgroundColor(0);
+          newCamera.setBackgroundColor(newScene.cameraColor());
           newCamera.scrollX = newScene.camera.scrollX;
           newCamera.scrollY = newScene.camera.scrollY;
 
@@ -905,7 +1394,7 @@ export default class SuperScene extends Phaser.Scene {
           oldScene.camera.alpha = 0;
 
           oldCamera = oldScene.cameras.add(0, 0, width, height);
-          oldCamera.setBackgroundColor(0);
+          oldCamera.setBackgroundColor(oldScene.cameraColor());
           oldCamera.scrollX = oldScene.camera.scrollX;
           oldCamera.scrollY = oldScene.camera.scrollY;
 
@@ -1032,6 +1521,19 @@ export default class SuperScene extends Phaser.Scene {
     }
   }
 
+  sleep(duration, ignoreTimeScale = false) {
+    this.pauseEverythingForSleep(duration);
+
+    const timer = this.timer(() => {
+      this.unpauseEverythingForSleep(duration);
+    }, duration);
+
+    timer.ignoresScenePause = true;
+    if (ignoreTimeScale) {
+      timer.ignoresTimeScale = true;
+    }
+  }
+
   beginReplay(replay, replayOptions) {
     const {command, game} = this;
     const {loop} = game;
@@ -1094,7 +1596,7 @@ export default class SuperScene extends Phaser.Scene {
 
       let postflightCutoff;
       if ('postflightCutoff' in replay) {
-        postflightCutoff = replay.postflightCutoff;
+        ({postflightCutoff} = replay.postflightCutoff);
         delete replay.postflightCutoff;
       }
 
@@ -1800,6 +2302,95 @@ export default class SuperScene extends Phaser.Scene {
     return this[fieldName];
   }
 
+  tweenSustain(inDuration, sustainDuration, outDuration, update, onSustain, onOut, onComplete, startPoint = 0, inEase = 'Linear', outEase = inEase) {
+    let tween;
+
+    tween = this.tweens.addCounter({
+      from: startPoint,
+      to: 100,
+      ease: inEase,
+      duration: inDuration,
+      onUpdate: () => {
+        const factor = tween.getValue() / 100.0;
+        update(factor, 'in');
+      },
+      onComplete: () => {
+        tween = this.tweens.addCounter({
+          from: 0,
+          to: 100,
+          duration: sustainDuration,
+          onUpdate: () => {
+            const factor = tween.getValue() / 100.0;
+            update(1, 'sustain', factor);
+          },
+          onComplete: () => {
+            tween = this.tweens.addCounter({
+              from: 100,
+              to: 0,
+              ease: outEase,
+              duration: outDuration,
+              onUpdate: () => {
+                const factor = tween.getValue() / 100.0;
+                update(factor, 'out');
+              },
+              onComplete,
+            });
+
+            if (onOut) {
+              onOut(tween);
+            }
+          },
+        });
+
+        if (onSustain) {
+          onSustain(tween);
+        }
+      },
+    });
+
+    return tween;
+  }
+
+  tweenSustainExclusive(fieldName, inDuration, sustainDuration, outDuration, update, onSustain, onOut, onComplete, inEase = 'Linear', outEase = inEase) {
+    let startPoint = 0;
+    if (this[fieldName]) {
+      startPoint = this[fieldName].getValue();
+      this[fieldName].stop();
+    }
+
+    this[fieldName] = this.tweenSustain(
+      inDuration * (1 - startPoint / 100.0),
+      sustainDuration,
+      outDuration,
+      update,
+      (tween, ...args) => {
+        if (onSustain) {
+          onSustain(tween, ...args);
+        }
+
+        this[fieldName] = tween;
+      },
+      (tween, ...args) => {
+        if (onOut) {
+          onOut(tween, ...args);
+        }
+
+        this[fieldName] = tween;
+      },
+      (...args) => {
+        if (onComplete) {
+          onComplete(...args);
+        }
+        delete this[fieldName];
+      },
+      startPoint,
+      inEase,
+      outEase,
+    );
+
+    return this[fieldName];
+  }
+
   trauma(amount) {
     if (amount && !this._trauma) {
       this._traumaStart = this.time.now;
@@ -1849,6 +2440,7 @@ export default class SuperScene extends Phaser.Scene {
     try {
       sound.requestedVolume = volume;
       sound.setVolume(volume * this.game.volume * prop('scene.soundVolume'));
+      sound.timeScale = 1;
       sound.play();
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -1900,7 +2492,11 @@ export default class SuperScene extends Phaser.Scene {
       }
 
       if (timer.time) {
-        timer.time -= dt;
+        if (timer.ignoresTimeScale) {
+          timer.time -= dt * this.timeScale;
+        } else {
+          timer.time -= dt;
+        }
         if (timer.time > 0) {
           newTimers.push(timer);
           return;
@@ -1916,7 +2512,7 @@ export default class SuperScene extends Phaser.Scene {
     const isPaused = this._paused.tweens;
 
     // taken from Phaser TweenManager.update
-    const dt = origDt * tweens.timeScale;
+    const dt = origDt / tweens.timeScale;
 
     tweens._active.forEach((tween) => {
       if (isPaused && !tween.ignoresScenePause) {
@@ -2075,8 +2671,17 @@ export default class SuperScene extends Phaser.Scene {
   }
 
   positionToScreenCoordinate(x, y) {
-    const {tileWidth, tileHeight} = this.game.config;
-    return [x * tileWidth + this.xBorder, y * tileHeight + this.yBorder];
+    const {
+      xBorder, yBorder, tileWidth, tileHeight,
+    } = this;
+    return [x * tileWidth + xBorder, y * tileHeight + yBorder];
+  }
+
+  positionToScreenCoordinateHalf(x, y) {
+    const {
+      xBorder, yBorder, tileWidth, tileHeight, halfWidth, halfHeight,
+    } = this;
+    return [x * tileWidth + xBorder + halfWidth, y * tileHeight + yBorder + halfHeight];
   }
 
   timeSightMouseDrag() {
@@ -2125,6 +2730,14 @@ export default class SuperScene extends Phaser.Scene {
     this.command.ignoreAll('_transition', false);
   }
 
+  pauseInputForSleep(duration) {
+    this.command.ignoreAll('_sleep', true);
+  }
+
+  unpauseInputForSleep(duration) {
+    this.command.ignoreAll('_sleep', false);
+  }
+
   pausePhysicsForTransition(transition) {
     this.pauseInputForTransition(transition);
 
@@ -2133,8 +2746,24 @@ export default class SuperScene extends Phaser.Scene {
     this.pauseAllAnimations();
   }
 
+  pausePhysicsForSleep(duration) {
+    this.pauseInputForSleep(duration);
+
+    this._paused.physics = true;
+
+    this.pauseAllAnimations();
+  }
+
   unpausePhysicsForTransition(transition) {
     this.unpauseInputForTransition(transition);
+
+    this._paused.physics = false;
+
+    this.resumeAllAnimations();
+  }
+
+  unpausePhysicsForSleep(duration) {
+    this.unpauseInputForSleep(duration);
 
     this._paused.physics = false;
 
@@ -2151,6 +2780,22 @@ export default class SuperScene extends Phaser.Scene {
 
   unpauseEverythingForTransition(transition) {
     this.unpausePhysicsForTransition(transition);
+
+    this._paused.timers = false;
+    this.resumeAllParticleSystems();
+    this.resumeAllTweens();
+  }
+
+  pauseEverythingForSleep(duration) {
+    this.pausePhysicsForSleep(duration);
+
+    this._paused.timers = true;
+    this.pauseAllParticleSystems();
+    this.pauseAllTweens();
+  }
+
+  unpauseEverythingForSleep(duration) {
+    this.unpausePhysicsForSleep(duration);
 
     this._paused.timers = false;
     this.resumeAllParticleSystems();
