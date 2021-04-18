@@ -1,15 +1,15 @@
 {
-  "name": "Jumpcoins",
+  "name": "Jumpcoins Deluxe",
   "homepage": "/",
   "version": "0.2.0",
   "productionDisplay": {
-    "displayName": "Jumpcoins",
+    "displayName": "Jumpcoins Deluxe",
     "analyticsId": "UA-21253667-3",
     "authorName": "@sartak",
     "authorURL": "https://sartak.org",
     "authorTwitter": "sartak",
     "authorTwitch": "sartak",
-    "eventDescription": "created solo in 48 hours as part of",
+    "eventDescription": "created after",
     "eventNamePre": "the",
     "eventNameBold": "Ludum Dare 44",
     "eventNamePost": "compo",
