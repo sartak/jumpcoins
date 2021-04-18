@@ -1435,6 +1435,9 @@ export default class PlayScene extends SuperScene {
 
   jumpToLevel(index) {
     const count = this.levelIds().length;
+
+    this.command.clearIgnoreAlls();
+
     this.replaceWithSelf(true, {
       levelIndex: (index + count) % count,
       skipIntro: true,
