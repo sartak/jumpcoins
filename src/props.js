@@ -79,6 +79,8 @@ export const shaderCoordFragments = [
 export const shaderColorFragments = [
   'blur',
 ];
+export const shaderPipelines = {
+};
 
 export const propSpecs = {
   ...builtinPropSpecs(commands, shaderCoordFragments, shaderColorFragments),

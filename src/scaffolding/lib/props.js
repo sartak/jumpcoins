@@ -57,6 +57,7 @@ export function builtinPropSpecs(commands, shaderCoordFragments, shaderColorFrag
     'scene.scene_time': [0.01, null, 'scene_time'],
     'scene.music': ['', null, 'currentMusicName'],
     'scene.timeScale': [0.01, null, 'timeScale'],
+    'scene.shaderName': ['', null, 'shaderName'],
     'scene.physicsFps': [0.01, null, 'physics.world.fps'],
     'scene.images': [0, null, (scene) => scene.add.displayList.list.filter((node) => node.type === 'Image').length],
     'scene.sprites': [0, null, (scene) => scene.add.displayList.list.filter((node) => node.type === 'Sprite').length],
@@ -131,6 +132,7 @@ export function builtinPropSpecs(commands, shaderCoordFragments, shaderColorFrag
     'scene.trauma.minor': [(scene) => scene.trauma(0.5)],
     'scene.trauma.major': [(scene) => scene.trauma(0.8)],
     'scene.trauma.max': [(scene) => scene.trauma(100)],
+    'scene.trauma.enabled': [true],
 
     ...commandKeyProps(commands),
 

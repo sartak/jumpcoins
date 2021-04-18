@@ -310,6 +310,11 @@ export default class SuperScene extends Phaser.Scene {
     }
   }
 
+  setShader(shaderName) {
+    this.shaderName = shaderName;
+    this._setupShader();
+  }
+
   _setupShader() {
     if (!('shaderName' in this)) {
       this.shaderName = 'main';
@@ -955,7 +960,7 @@ export default class SuperScene extends Phaser.Scene {
 
   positionUnderground() {
     const {
-      underground, camera, tileWidth, tileHeight
+      underground, camera, tileWidth, tileHeight,
     } = this;
     if (underground) {
       underground.x = camera.scrollX + underground.width / 2 - tileWidth * 5;
@@ -967,7 +972,7 @@ export default class SuperScene extends Phaser.Scene {
 
   _shaderInitialize(initializeListeners) {
     const {shaderInitialize} = this;
-    this.game.shaderFragments.forEach(([fragmentName, uniforms]) => {
+    this.game.shaderFragments(this.shaderName).forEach(([fragmentName, uniforms]) => {
       Object.entries(uniforms).forEach(([uniformName, spec]) => {
         const name = `${fragmentName}_${uniformName}`;
         const [type, listenerInitial, listenerIfNull] = spec;
@@ -1019,7 +1024,7 @@ export default class SuperScene extends Phaser.Scene {
       '  shader.setFloat1(\'scene_time\', this.scene_time);',
     ];
 
-    this.game.shaderFragments.forEach(([fragmentName, uniforms]) => {
+    this.game.shaderFragments(this.shaderName).forEach(([fragmentName, uniforms]) => {
       if (!prop(`shader.${fragmentName}.enabled`)) {
         return;
       }
@@ -2073,7 +2078,7 @@ export default class SuperScene extends Phaser.Scene {
       this.removeAnimations();
     }
 
-    this.game.recompileMainShaders();
+    this.game.recompileShaders();
 
     this.playMusic();
   }
@@ -2351,7 +2356,18 @@ export default class SuperScene extends Phaser.Scene {
     return tween;
   }
 
-  tweenSustainExclusive(fieldName, inDuration, sustainDuration, outDuration, update, onSustain, onOut, onComplete, inEase = 'Linear', outEase = inEase) {
+  tweenSustainExclusive(
+    fieldName,
+    inDuration,
+    sustainDuration,
+    outDuration,
+    update,
+    onSustain,
+    onOut,
+    onComplete,
+    inEase = 'Linear',
+    outEase = inEase,
+  ) {
     let startPoint = 0;
     if (this[fieldName]) {
       startPoint = this[fieldName].getValue();
@@ -2401,7 +2417,7 @@ export default class SuperScene extends Phaser.Scene {
     this._trauma = newTrauma;
     this._traumaShake = shake;
 
-    if (shake && prop('scene.trauma.legacy')) {
+    if (shake && prop('scene.trauma.legacy') && prop('scene.trauma.enabled')) {
       const {width, height} = this.game.config;
       const duration = 100;
       const intensity = new Phaser.Math.Vector2(
@@ -2593,8 +2609,8 @@ export default class SuperScene extends Phaser.Scene {
 
       changes.forEach((change) => {
         if (typeof change === 'string') {
-          if (change === 'disableMainShaders') {
-            this.game.disableMainShaders();
+          if (change === 'disableShaders') {
+            this.game.disableShaders();
           } else {
             setProp(change, !prop(change));
           }
